@@ -1,0 +1,8 @@
+<resources>
+    <string name="error_description_timeout" formatted="false" translatable="false">The operation timed out.</string>
+    <string name="error_description_not_connected" formatted="false" translatable="false">The BluetoothDevice is not connected.</string>
+    <string name="error_description_operation_failed" formatted="false" translatable="false">The operation failed.</string>
+    <string name="error_description_connection_failed" formatted="false" translatable="false">The connection attempt failed.</string>
+    <string name="error_description_disconnected" formatted="false" translatable="false">The peripheral was disconnected.</string>
+    <string name="error_description_precondition_failed" formatted="false" translatable="false">Unable to perform the operation.</string>
+</resources>

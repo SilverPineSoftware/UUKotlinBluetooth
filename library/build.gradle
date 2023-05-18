@@ -45,6 +45,7 @@ dependencies {
     implementation 'androidx.core:core-ktx:1.10.1'
 
     implementation "com.silverpine.uu:uu-core-ktx:${uu_core_version}"
+    implementation 'androidx.core:core-ktx:1.10.1'
 
     testImplementation 'junit:junit:4.13.2'
 

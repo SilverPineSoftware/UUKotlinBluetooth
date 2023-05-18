@@ -1,0 +1,147 @@
+package com.silverpine.uu.bluetooth
+
+import android.bluetooth.BluetoothGatt
+import com.silverpine.uu.core.UUError
+
+/**
+ * Container class for UUBluetooth errors
+ */
+internal object UUBluetoothError
+{
+    /**
+     * Lookup key for errorDetails for the failing underlying bluetooth method name.
+     */
+    private const val USER_INFO_KEY_METHOD_NAME = "methodName"
+    private const val USER_INFO_KEY_MESSAGE = "message"
+    private const val USER_INFO_KEY_GATT_STATUS = "gattStatus"
+    private const val DOMAIN = "UUBluetoothError"
+
+    /**
+     * Creates a UUBluetoothError
+     *
+     * @param errorCode error code
+     * @param caughtException caught exception
+     */
+    private fun makeError(errorCode: UUBluetoothErrorCode, caughtException: Exception? = null): UUError
+    {
+        val err = UUError(errorCode.rawValue, DOMAIN, caughtException)
+        err.errorDescription = errorCode.errorDescription
+        return err
+    }
+
+    /**
+     * Wrapper method to return a success error object
+     *
+     * @return a UUBluetoothError object
+     */
+    fun success(): UUError
+    {
+        return makeError(UUBluetoothErrorCode.Success)
+    }
+
+    /**
+     * Wrapper method to return a not connected error
+     *
+     * @return a UUBluetoothError object
+     */
+    fun notConnectedError(): UUError
+    {
+        return makeError(UUBluetoothErrorCode.NotConnected)
+    }
+
+    /**
+     * Wrapper method to return a connection failed error
+     *
+     * @return a UUBluetoothError object
+     */
+    fun connectionFailedError(): UUError
+    {
+        return makeError(UUBluetoothErrorCode.ConnectionFailed)
+    }
+
+    /**
+     * Wrapper method to return a timeout error
+     *
+     * @return a UUBluetoothError object
+     */
+    fun timeoutError(): UUError
+    {
+        return makeError(UUBluetoothErrorCode.Timeout)
+    }
+
+    /**
+     * Wrapper method to return a disconnected error
+     *
+     * @return a UUBluetoothError object
+     */
+    fun disconnectedError(): UUError
+    {
+        return makeError(UUBluetoothErrorCode.Disconnected)
+    }
+
+    /**
+     * Wrapper method to return an underlying Bluetooth method failure.  This is returned when
+     * a method returns false or null or othe error condition.
+     *
+     * @param method the method name
+     *
+     * @return a UUBluetoothError object
+     */
+    fun operationFailedError(method: String): UUError
+    {
+        val err = makeError(UUBluetoothErrorCode.OperationFailed)
+        err.addUserInfo(USER_INFO_KEY_METHOD_NAME, method)
+        return err
+    }
+
+    /**
+     * Wrapper method to return an error on a pre-condition check.
+     *
+     * @param message a developer friendly message about the precondition that failed.
+     *
+     * @return a UUBluetoothError object
+     */
+    fun preconditionFailedError(message: String): UUError
+    {
+        val err = makeError(UUBluetoothErrorCode.PreconditionFailed)
+        err.addUserInfo(USER_INFO_KEY_MESSAGE, message)
+        return err
+    }
+
+    /**
+     * Wrapper method to return an underlying Bluetooth method failure.  This is returned when
+     * a method returns false or null or othe error condition.
+     *
+     * @param caughtException the exception that caused this error
+     *
+     * @return a UUBluetoothError object
+     */
+    fun operationFailedError(caughtException: Exception): UUError
+    {
+        return makeError(UUBluetoothErrorCode.OperationFailed, caughtException)
+    }
+
+    /**
+     * Wrapper method to return an underlying Bluetooth method failure.  This is returned when
+     * a method returns false or null or othe error condition.
+     *
+     * @param method the method name
+     * @param gattStatus the gatt status at time of failure
+     *
+     * @return a UUBluetoothError object
+     */
+    fun gattStatusError(method: String, gattStatus: Int): UUError?
+    {
+        return if (gattStatus != BluetoothGatt.GATT_SUCCESS)
+        {
+            val err = makeError(UUBluetoothErrorCode.OperationFailed)
+            err.addUserInfo(USER_INFO_KEY_METHOD_NAME, method)
+            err.addUserInfo(USER_INFO_KEY_GATT_STATUS, gattStatus.toString())
+            err
+        }
+        else
+        {
+            null
+        }
+    }
+}

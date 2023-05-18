@@ -76,12 +76,12 @@ class UUPeripheral //: Parcelable
     var lastRssiUpdateTime: Long = 0
         private set
 
-    private var manufacturingData: ByteArray? = null
+    var manufacturingData: ByteArray? = null
 
     private var flags: ByteArray? = null
 
     private var localName: String? = null
-    private val serviceUuids: ArrayList<String> = ArrayList()
+    val serviceUuids: ArrayList<String> = ArrayList()
 
     var firstAdvertisementTime: Long = 0
         private set
@@ -101,9 +101,9 @@ class UUPeripheral //: Parcelable
         updateAdvertisement(device, rssi, scanRecord)
     }
 
-    fun getManufacturingData(): ByteArray? {
-        return manufacturingData
-    }
+//    fun getManufacturingData(): ByteArray? {
+//        return manufacturingData
+//    }
 
     val bluetoothDevice: BluetoothDevice
         get() = (device)!!

@@ -1,6 +1,9 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+    id 'kotlin-android'
+    id 'kotlin-parcelize'
+    id 'kotlin-kapt'
 }
 
 android {
@@ -26,6 +29,9 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
+    buildFeatures {
+        dataBinding = true
+    }
     namespace 'com.silverpine.uu.sample.bluetooth'
 }
 
@@ -34,8 +40,15 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.9.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation project(':library')
     implementation 'androidx.core:core-ktx:1.10.1'
+
+    implementation "com.silverpine.uu:uu-core-ktx:${uu_core_version}"
+    //implementation 'com.silverpine.uu:uu-ux-ktx:0.0.4.35-develop-SNAPSHOT'
+    implementation 'com.silverpine.uu:uu-ux-ktx:0.0.4-DEV-004'
+
+
+    implementation project(':library')
+
 
     testImplementation 'junit:junit:4.13.2'
 

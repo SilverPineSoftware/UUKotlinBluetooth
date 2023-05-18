@@ -245,21 +245,21 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
         delegate: UUCharacteristicDelegate
     ) {
         val timerId = readCharacteristicWatchdogTimerId(characteristic)
+
+
+
         val readCharacteristicDelegate: UUCharacteristicDelegate =
-            object : UUCharacteristicDelegate {
-                override fun onComplete(
-                    peripheral: UUPeripheral,
-                    characteristic: BluetoothGattCharacteristic,
-                    error: UUError?
-                ) {
-                    debugLog(
-                        "readCharacteristic",
-                        "Read characteristic complete: $peripheral, error: $error, data: ${characteristic.value.uuToHex()}")
-                    UUTimer.cancelActiveTimer(timerId)
-                    removeReadCharacteristicDelegate(characteristic)
-                    delegate.onComplete(peripheral, characteristic, error)
-                }
-            }
+        { peripheral,
+                characteristic1: BluetoothGattCharacteristic,
+                error: UUError? ->
+                debugLog(
+                    "readCharacteristic",
+                    "Read characteristic complete: $peripheral, error: $error, data: ${characteristic1.value.uuToHex()}")
+                UUTimer.cancelActiveTimer(timerId)
+                removeReadCharacteristicDelegate(characteristic)
+                delegate.invoke(peripheral, characteristic, error)
+
+        }
         registerReadCharacteristicDelegate(characteristic, readCharacteristicDelegate)
         UUTimer.startTimer(timerId, timeout, peripheral) { _,_ ->
             fun onTimer(timer: UUTimer, userInfo: Any?) {
@@ -393,20 +393,18 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
         delegate: UUCharacteristicDelegate
     ) {
         val timerId = setNotifyStateWatchdogTimerId(characteristic)
-        val setNotifyDelegate: UUCharacteristicDelegate = object : UUCharacteristicDelegate {
-            override fun onComplete(
-                peripheral: UUPeripheral,
-                characteristic: BluetoothGattCharacteristic,
-                error: UUError?
-            ) {
+        val setNotifyDelegate: UUCharacteristicDelegate =
+        { peripheral: UUPeripheral,
+                characteristic1: BluetoothGattCharacteristic,
+                error: UUError? ->
                 debugLog(
                     "setNotifyState",
-                    "Set characteristic notify complete: $peripheral, error: $error, data: ${characteristic.value.uuToHex()}")
-                removeSetNotifyDelegate(characteristic)
+                    "Set characteristic notify complete: $peripheral, error: $error, data: ${characteristic1.value.uuToHex()}")
+                removeSetNotifyDelegate(characteristic1)
                 UUTimer.cancelActiveTimer(timerId)
-                delegate.onComplete(peripheral, characteristic, error)
-            }
+                delegate.invoke(peripheral, characteristic1, error)
         }
+
         registerSetNotifyDelegate(characteristic, setNotifyDelegate)
         UUTimer.startTimer(timerId, timeout, peripheral) { _,_ ->
             fun onTimer(timer: UUTimer, userInfo: Any?) {
@@ -507,20 +505,18 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
     ) {
         val timerId = writeCharacteristicWatchdogTimerId(characteristic)
         val writeCharacteristicDelegate: UUCharacteristicDelegate =
-            object : UUCharacteristicDelegate {
-                override fun onComplete(
-                    peripheral: UUPeripheral,
-                    characteristic: BluetoothGattCharacteristic,
-                    error: UUError?
-                ) {
-                    debugLog(
-                        "writeCharacteristic",
-                        "Write characteristic complete: $peripheral, error: $error, data: ${characteristic.value.uuToHex()}")
-                    removeWriteCharacteristicDelegate(characteristic)
-                    UUTimer.cancelActiveTimer(timerId)
-                    delegate.onComplete(peripheral, characteristic, error)
-                }
-            }
+        { peripheral: UUPeripheral,
+                characteristic1: BluetoothGattCharacteristic,
+                error: UUError? ->
+
+                debugLog(
+                    "writeCharacteristic",
+                    "Write characteristic complete: $peripheral, error: $error, data: ${characteristic1.value.uuToHex()}")
+                removeWriteCharacteristicDelegate(characteristic1)
+                UUTimer.cancelActiveTimer(timerId)
+                delegate.invoke(peripheral, characteristic1, error)
+        }
+
         registerWriteCharacteristicDelegate(characteristic, writeCharacteristicDelegate)
         UUTimer.startTimer(timerId, timeout, peripheral) { _,_ ->
             fun onTimer(timer: UUTimer, userInfo: Any?) {
@@ -714,7 +710,7 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
         error: UUError?
     ) {
         try {
-            delegate?.onComplete((peripheral), characteristic, error)
+            delegate?.invoke((peripheral), characteristic, error)
         } catch (ex: Exception) {
             logException("notifyCharacteristicDelegate", ex)
         }

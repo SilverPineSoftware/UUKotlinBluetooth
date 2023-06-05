@@ -17,25 +17,27 @@ import com.silverpine.uu.ux.UURecyclerActivity
 import com.silverpine.uu.ux.uuRequireParcelable
 import com.silverpine.uu.ux.uuShowToast
 
-class PeripheralDetailActivity : UURecyclerActivity() {
-
+class PeripheralDetailActivity : UURecyclerActivity()
+{
     private lateinit var peripheral: UUPeripheral
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        //peripheral = intent.uuRequireParcelable("peripheral")
+        peripheral = intent.uuRequireParcelable("peripheral")
 
         title = peripheral.name
     }
 
-    override fun setupAdapter(recyclerView: RecyclerView) {
+    override fun setupAdapter(recyclerView: RecyclerView)
+    {
         adapter.registerClass(LabelValueViewModel::class.java, R.layout.label_value_row, BR.vm)
         adapter.registerClass(ServiceViewModel::class.java, R.layout.service_row, BR.vm)
         adapter.registerClass(SectionHeaderViewModel::class.java, R.layout.section_header, BR.vm)
     }
 
-    override fun handleRowTapped(viewModel: ViewModel) {
+    override fun handleRowTapped(viewModel: ViewModel)
+    {
         /*if (viewModel is ServiceViewModel) {
             val intent = Intent(applicationContext, ServiceDetailActivity::class.java)
             intent.putExtra("peripheral", peripheral)
@@ -46,22 +48,29 @@ class PeripheralDetailActivity : UURecyclerActivity() {
 
     }
 
-    override fun onResume() {
+    override fun onResume()
+    {
         super.onResume()
         refreshUi()
     }
 
-    override fun populateMenu(menuHandler: UUMenuHandler) {
-        if (peripheral.getConnectionState(applicationContext) == UUPeripheral.ConnectionState.Connected) {
+    override fun populateMenu(menuHandler: UUMenuHandler)
+    {
+        if (peripheral.getConnectionState(applicationContext) == UUPeripheral.ConnectionState.Connected)
+        {
             menuHandler.add(R.string.disconnect, this::handleDisconnect)
             menuHandler.add(R.string.discover_services, this::handleDiscoverServices)
-        } else {
+        }
+        else
+        {
             menuHandler.add(R.string.connect, this::handleConnect)
         }
     }
 
-    private fun handleConnect() {
-        peripheral.connect(60000, 10000, {
+    private fun handleConnect()
+    {
+        peripheral.connect(60000, 10000,
+            {
 
             Log.d("LOG", "Peripheral connected")
             uuShowToast("Connected")
@@ -76,7 +85,8 @@ class PeripheralDetailActivity : UURecyclerActivity() {
             })
     }
 
-    private fun handleDiscoverServices() {
+    private fun handleDiscoverServices()
+    {
         peripheral.discoverServices(60000)
         { services, error ->
             uuShowToast("Found ${services?.size ?: 0} services")
@@ -85,11 +95,13 @@ class PeripheralDetailActivity : UURecyclerActivity() {
         }
     }
 
-    private fun handleDisconnect() {
+    private fun handleDisconnect()
+    {
         peripheral.disconnect(null)
     }
 
-    private fun refreshUi() {
+    private fun refreshUi()
+    {
         UUThread.runOnMainThread()
         {
             val tmp = ArrayList<ViewModel>()

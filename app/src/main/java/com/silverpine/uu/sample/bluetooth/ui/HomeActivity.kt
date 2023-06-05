@@ -93,7 +93,7 @@ class HomeActivity: UURecyclerActivity()
     private fun gotoPeripheralServices(peripheral: UUPeripheral)
     {
         val intent = Intent(applicationContext, PeripheralDetailActivity::class.java)
-        //intent.extras?.putParcelable("peripheral", peripheral)
+        intent.putExtra("peripheral", peripheral)
         startActivity(intent)
     }
 

@@ -9,8 +9,11 @@ import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.content.Context
-import androidx.annotation.VisibleForTesting
+import android.os.Parcel
+import android.os.Parcelable
 import com.silverpine.uu.core.UUError
+import com.silverpine.uu.core.uuSerializeParcel
+import com.silverpine.uu.core.uuSubData
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.core.uuUtf8
 import com.silverpine.uu.logging.UULog
@@ -21,7 +24,7 @@ import java.util.Objects
 /**
  * Wrapper class around a BTLE scanning result.
  */
-class UUPeripheral //: Parcelable
+class UUPeripheral() : Parcelable
 {
     object Defaults
     {
@@ -91,11 +94,8 @@ class UUPeripheral //: Parcelable
     private var bluetoothGatt: BluetoothGatt? = null
     var negotiatedMtuSize: Int? = null
 
-    @VisibleForTesting
-    constructor() {
-    }
 
-    constructor(device: BluetoothDevice, rssi: Int, scanRecord: ByteArray?) {
+    constructor(device: BluetoothDevice, rssi: Int, scanRecord: ByteArray?) : this() {
         firstAdvertisementTime = 0
         totalBeaconCount = 0
         updateAdvertisement(device, rssi, scanRecord)
@@ -483,8 +483,8 @@ class UUPeripheral //: Parcelable
         var index = 0
         while (index < data.size)
         {
-            val subData = data.slice(IntRange(index, index + length)).toByteArray()
-            val hexChunk = subData.uuToHex()
+            val subData = data.uuSubData(index, length)
+            val hexChunk = subData?.uuToHex() ?: continue
             if (hexChunk.isNotEmpty())
             {
                 serviceUuids.add(hexChunk)
@@ -601,10 +601,11 @@ class UUPeripheral //: Parcelable
         // Fill in derived data from scan record
         parseScanRecord();
     }*/
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Parcelable
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    /*override fun describeContents(): Int
+    override fun describeContents(): Int
     {
         return 0
     }
@@ -612,8 +613,7 @@ class UUPeripheral //: Parcelable
     override fun writeToParcel(dest: Parcel, flags: Int)
     {
         dest.writeParcelable(device, flags)
-        val deviceBytes: ByteArray = UUParcel.serializeParcel(device)
-        val deviceHex: String = UUString.byteToHex(deviceBytes)
+
         if (scanRecord != null)
         {
             dest.writeByte(1.toByte())
@@ -631,25 +631,25 @@ class UUPeripheral //: Parcelable
         dest.writeLong(totalBeaconCount)
     }
 
-    protected constructor(`in`: Parcel)
+    constructor(parcel: Parcel) : this()
     {
-        device = `in`.readParcelable(BluetoothDevice::class.java.classLoader)
-        if (`in`.readByte().toInt() == 1)
+        device = parcel.readParcelable(BluetoothDevice::class.java.classLoader)
+        if (parcel.readByte().toInt() == 1)
         {
-            val scanRecordLength = `in`.readInt()
+            val scanRecordLength = parcel.readInt()
             scanRecord = ByteArray(scanRecordLength)
-            `in`.readByteArray(scanRecord!!)
+            parcel.readByteArray(scanRecord!!)
         }
 
-        rssi = `in`.readInt()
-        lastRssiUpdateTime = `in`.readLong()
-        firstAdvertisementTime = `in`.readLong()
-        lastAdvertisementTime = `in`.readLong()
-        totalBeaconCount = `in`.readLong()
+        rssi = parcel.readInt()
+        lastRssiUpdateTime = parcel.readLong()
+        firstAdvertisementTime = parcel.readLong()
+        lastAdvertisementTime = parcel.readLong()
+        totalBeaconCount = parcel.readLong()
 
         // Fill in derived data from scan record
         parseScanRecord()
-    }*/
+    }
 
     private fun acquireExistingGatt()
     {
@@ -678,7 +678,23 @@ class UUPeripheral //: Parcelable
         }
     }
 
-    companion object {
+    /*override fun writeToParcel(parcel: Parcel, flags: Int)
+    {
+        parcel.writeParcelable(device, flags)
+        parcel.writeByteArray(manufacturingData)
+        parcel.writeByteArray(flags)
+        parcel.writeString(localName)
+        parcel.writeLong(totalBeaconCount)
+        parcel.writeValue(negotiatedMtuSize)
+    }
+
+    override fun describeContents(): Int
+    {
+        return 0
+    }*/
+
+    companion object CREATOR : Parcelable.Creator<UUPeripheral>
+    {
         private val LOGGING_ENABLED = BuildConfig.DEBUG
         private const val DATA_TYPE_FLAGS: Byte = 0x01
         private const val DATA_TYPE_INCOMPLETE_LIST_OF_16_BIT_SERVICE_CLASS_UUIDS: Byte = 0x02
@@ -694,15 +710,12 @@ class UUPeripheral //: Parcelable
         private const val BLE_PACKET_SIZE_MAX = 512
         private const val BLE_PACKET_OVERHEAD = 3
 
-        /*
-        val CREATOR: Parcelable.Creator<UUPeripheral> = object : Parcelable.Creator<UUPeripheral?> {
-            override fun createFromParcel(`in`: Parcel): UUPeripheral? {
-                return UUPeripheral(`in`)
-            }
+        override fun createFromParcel(parcel: Parcel): UUPeripheral {
+            return UUPeripheral(parcel)
+        }
 
-            override fun newArray(size: Int): Array<UUPeripheral?> {
-                return arrayOfNulls(size)
-            }
-        }*/
+        override fun newArray(size: Int): Array<UUPeripheral?> {
+            return arrayOfNulls(size)
+        }
     }
 }

@@ -38,14 +38,14 @@ class PeripheralDetailActivity : UURecyclerActivity()
 
     override fun handleRowTapped(viewModel: ViewModel)
     {
-        /*if (viewModel is ServiceViewModel) {
+        if (viewModel is ServiceViewModel)
+        {
             val intent = Intent(applicationContext, ServiceDetailActivity::class.java)
             intent.putExtra("peripheral", peripheral)
             intent.putExtra("service", viewModel.model)
             intent.putExtra("serviceUuid", viewModel.model.uuid.toString())
             startActivity(intent)
-        }*/
-
+        }
     }
 
     override fun onResume()

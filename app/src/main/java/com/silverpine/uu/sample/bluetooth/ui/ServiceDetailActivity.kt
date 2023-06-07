@@ -26,7 +26,7 @@ class ServiceDetailActivity: UURecyclerActivity()
     {
         super.onCreate(savedInstanceState)
 
-        //peripheral = intent.uuRequireParcelable("peripheral")
+        peripheral = intent.uuRequireParcelable("peripheral")
         service = intent.uuRequireService(peripheral,"serviceUuid")
         title = peripheral.name
     }

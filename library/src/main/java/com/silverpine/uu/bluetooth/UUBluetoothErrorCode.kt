@@ -50,18 +50,26 @@ enum class UUBluetoothErrorCode(val rawValue: Int)
     val errorDescription: String?
         get()
         {
-            val ctx = requireApplicationContext()
-            val rez = ctx.resources
+            try {
 
-            return when (this)
+
+                val ctx = requireApplicationContext()
+                val rez = ctx.resources
+
+                return when (this)
+                {
+                    Timeout -> rez.getString(R.string.error_description_timeout)
+                    NotConnected -> rez.getString(R.string.error_description_not_connected)
+                    OperationFailed -> rez.getString(R.string.error_description_operation_failed)
+                    ConnectionFailed -> rez.getString(R.string.error_description_connection_failed)
+                    Disconnected -> rez.getString(R.string.error_description_disconnected)
+                    PreconditionFailed -> rez.getString(R.string.error_description_precondition_failed)
+                    else -> null
+                }
+            }
+            catch (ex: Exception)
             {
-                Timeout -> rez.getString(R.string.error_description_timeout)
-                NotConnected -> rez.getString(R.string.error_description_not_connected)
-                OperationFailed -> rez.getString(R.string.error_description_operation_failed)
-                ConnectionFailed -> rez.getString(R.string.error_description_connection_failed)
-                Disconnected -> rez.getString(R.string.error_description_disconnected)
-                PreconditionFailed -> rez.getString(R.string.error_description_precondition_failed)
-                else -> null
+                return this.toString()
             }
         }
 }

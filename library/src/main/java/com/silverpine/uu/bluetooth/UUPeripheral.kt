@@ -24,7 +24,7 @@ import java.util.Objects
 /**
  * Wrapper class around a BTLE scanning result.
  */
-class UUPeripheral() : Parcelable
+open class UUPeripheral() : Parcelable
 {
     object Defaults
     {
@@ -111,7 +111,7 @@ class UUPeripheral() : Parcelable
     val address: String?
         get() = device!!.address
 
-    val name: String?
+    open val name: String?
         @SuppressLint("MissingPermission")
         get() = localName ?: device?.name
 
@@ -494,7 +494,7 @@ class UUPeripheral() : Parcelable
         }
     }
 
-    protected fun parseManufacturingData(manufacturingData: ByteArray)
+    open fun parseManufacturingData(manufacturingData: ByteArray)
     {
         // Default does nothing
     }

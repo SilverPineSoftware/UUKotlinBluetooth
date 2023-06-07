@@ -1250,7 +1250,7 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
     }
 
     companion object {
-        private val LOGGING_ENABLED = BuildConfig.DEBUG
+        private val LOGGING_ENABLED = true //BuildConfig.DEBUG
 
         // Internal Constants
         private val CONNECT_WATCHDOG_BUCKET = "UUBluetoothConnectWatchdogBucket"

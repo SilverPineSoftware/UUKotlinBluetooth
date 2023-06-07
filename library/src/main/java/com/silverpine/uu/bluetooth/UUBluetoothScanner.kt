@@ -326,7 +326,7 @@ class UUBluetoothScanner<T : UUPeripheral?>(context: Context, factory: UUPeriphe
 
     companion object
     {
-        private val LOGGING_ENABLED = BuildConfig.DEBUG
+        private val LOGGING_ENABLED = true //BuildConfig.DEBUG
         private const val outOfRangeFilterEvaluationFrequencyTimerId =
             "UUBluetoothScanner_outOfRangeFilterEvaluationFrequency"
 

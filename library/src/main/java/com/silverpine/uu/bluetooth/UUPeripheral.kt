@@ -695,7 +695,7 @@ open class UUPeripheral() : Parcelable
 
     companion object CREATOR : Parcelable.Creator<UUPeripheral>
     {
-        private val LOGGING_ENABLED = BuildConfig.DEBUG
+        private val LOGGING_ENABLED = true //BuildConfig.DEBUG
         private const val DATA_TYPE_FLAGS: Byte = 0x01
         private const val DATA_TYPE_INCOMPLETE_LIST_OF_16_BIT_SERVICE_CLASS_UUIDS: Byte = 0x02
         private const val DATA_TYPE_COMPLETE_LIST_OF_16_BIT_SERVICE_CLASS_UUIDS: Byte = 0x03

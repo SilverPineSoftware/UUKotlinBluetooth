@@ -254,7 +254,7 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
                 error: UUError? ->
                 debugLog(
                     "readCharacteristic",
-                    "Read characteristic complete: $peripheral, error: $error, data: ${characteristic1.value.uuToHex()}")
+                    "Read characteristic complete: $peripheral, error: $error, data: ${characteristic1.value?.uuToHex()}")
                 UUTimer.cancelActiveTimer(timerId)
                 removeReadCharacteristicDelegate(characteristic)
                 delegate.invoke(peripheral, characteristic, error)
@@ -301,7 +301,7 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
             ) {
                 debugLog(
                     "readDescriptor",
-                    "Read descriptor complete: $peripheral, error: $error, data: ${descriptor.value.uuToHex()}")
+                    "Read descriptor complete: $peripheral, error: $error, data: ${descriptor.value?.uuToHex()}")
                 removeReadDescriptorDelegate(descriptor)
                 UUTimer.cancelActiveTimer(timerId)
                 delegate.onComplete(peripheral, descriptor, error)
@@ -349,7 +349,7 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
             ) {
                 debugLog(
                     "readDescriptor",
-                    "Write descriptor complete: $peripheral, error: $error, data: ${descriptor.value.uuToHex()}")
+                    "Write descriptor complete: $peripheral, error: $error, data: ${descriptor.value?.uuToHex()}")
                 removeWriteDescriptorDelegate(descriptor)
                 UUTimer.cancelActiveTimer(timerId)
                 delegate.onComplete(peripheral, descriptor, error)
@@ -399,7 +399,7 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
                 error: UUError? ->
                 debugLog(
                     "setNotifyState",
-                    "Set characteristic notify complete: $peripheral, error: $error, data: ${characteristic1.value.uuToHex()}")
+                    "Set characteristic notify complete: $peripheral, error: $error, data: ${characteristic1.value?.uuToHex()}")
                 removeSetNotifyDelegate(characteristic1)
                 UUTimer.cancelActiveTimer(timerId)
                 delegate.invoke(peripheral, characteristic1, error)
@@ -511,7 +511,7 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
 
                 debugLog(
                     "writeCharacteristic",
-                    "Write characteristic complete: $peripheral, error: $error, data: ${characteristic1.value.uuToHex()}")
+                    "Write characteristic complete: $peripheral, error: $error, data: ${characteristic1.value?.uuToHex()}")
                 removeWriteCharacteristicDelegate(characteristic1)
                 UUTimer.cancelActiveTimer(timerId)
                 delegate.invoke(peripheral, characteristic1, error)
@@ -1149,7 +1149,7 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
                 "onCharacteristicRead",
                 "characteristic: " + safeUuidString(characteristic) +
                         ", status: " + statusLog(status) +
-                        ", char.data: ${characteristic.value.uuToHex()}")
+                        ", char.data: ${characteristic.value?.uuToHex()}")
             notifyCharacteristicRead(
                 characteristic,
                 UUBluetoothError.gattStatusError("onCharacteristicRead", status)
@@ -1165,7 +1165,7 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
                 "onCharacteristicWrite",
                 "characteristic: " + safeUuidString(characteristic) +
                         ", status: " + statusLog(status) +
-                        ", char.data: ${characteristic.value.uuToHex()}")
+                        ", char.data: ${characteristic.value?.uuToHex()}")
 
             notifyCharacteristicWritten(
                 characteristic,
@@ -1193,7 +1193,7 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
                 "onDescriptorRead",
                 "descriptor: " + safeUuidString(descriptor) +
                         ", status: " + statusLog(status) +
-                        ", char.data: ${descriptor.value.uuToHex()}")
+                        ", char.data: ${descriptor.value?.uuToHex()}")
             notifyDescriptorRead(
                 descriptor,
                 UUBluetoothError.gattStatusError("onDescriptorRead", status)
@@ -1209,7 +1209,7 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
                 "onDescriptorWrite",
                 "descriptor: " + safeUuidString(descriptor) +
                         ", status: " + statusLog(status) +
-                        ", char.data: ${descriptor.value.uuToHex()}")
+                        ", char.data: ${descriptor.value?.uuToHex()}")
             notifyDescriptorWritten(
                 descriptor,
                 UUBluetoothError.gattStatusError("onDescriptorWrite", status)

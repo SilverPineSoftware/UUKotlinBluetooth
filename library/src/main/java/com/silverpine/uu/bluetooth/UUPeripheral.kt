@@ -248,7 +248,7 @@ open class UUPeripheral() : Parcelable
 
         if (gatt != null)
         {
-            gatt.disconnect(error)
+            gatt.disconnect("peripheral.disconnect", error)
         }
     }
 

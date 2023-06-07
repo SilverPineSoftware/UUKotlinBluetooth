@@ -61,33 +61,39 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
         delegate: UUConnectionDelegate
     ) {
         val timerId = connectWatchdogTimerId()
-        connectionDelegate = object : UUConnectionDelegate {
-            override fun onConnected(peripheral: UUPeripheral) {
+
+        connectionDelegate = object : UUConnectionDelegate
+        {
+            override fun onConnected(peripheral: UUPeripheral)
+            {
                 debugLog("connect", "Connected to: $peripheral")
                 UUTimer.cancelActiveTimer(timerId)
                 disconnectError = null
                 delegate.onConnected(peripheral)
             }
 
-            override fun onDisconnected(peripheral: UUPeripheral, error: UUError?) {
+            override fun onDisconnected(peripheral: UUPeripheral, error: UUError?)
+            {
                 debugLog("connect", "Disconnected from: $peripheral, error: $error")
                 cleanupAfterDisconnect()
                 delegate.onDisconnected(peripheral, error)
             }
         }
-        UUTimer.startTimer(
-            timerId, timeout, peripheral
-        ) { _, _ ->
+
+        UUTimer.startTimer(timerId, timeout, peripheral)
+        { _, _ ->
             debugLog("connect", "Connect timeout: $peripheral")
-            disconnect(UUBluetoothError.timeoutError())
+            disconnect("connect.timeout", UUBluetoothError.timeoutError())
         }
+
         this.disconnectTimeout = disconnectTimeout
-        runOnMainThread {
-            debugLog(
-                "connect",
-                "Connecting to: " + peripheral + ", gattAuto: " + connectGattAutoFlag
-            )
+
+        runOnMainThread()
+        {
+            debugLog("connect", "Connecting to: $peripheral, gattAuto: $connectGattAutoFlag")
+
             disconnectError = UUBluetoothError.connectionFailedError()
+
             bluetoothGatt = peripheral.bluetoothDevice.connectGatt(
                 context,
                 connectGattAutoFlag,
@@ -97,32 +103,34 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
         }
     }
 
-    fun disconnect(error: UUError?) {
+    fun disconnect(fromWhere: String, error: UUError?)
+    {
         disconnectError = error
-        if (disconnectError == null) {
+
+        if (disconnectError == null)
+        {
             disconnectError = UUBluetoothError.success()
         }
+
         val timerId = disconnectWatchdogTimerId()
         val timeout = disconnectTimeout
 
         UUTimer.startTimer(timerId, timeout, peripheral)
         { _, _ ->
 
-            fun onTimer(timer: UUTimer, userInfo: Any?)
-            {
-                debugLog("disconnect", "Disconnect timeout: $peripheral")
-                notifyDisconnected(error)
+            debugLog("disconnect", "Disconnect timeout: $peripheral, from: $fromWhere")
+            notifyDisconnected(error)
 
-                // Just in case the timeout fires and a real disconnect is needed, this is the last
-                // ditch effort to close the connection
-                disconnectGattOnMainThread()
-            }
+            // Just in case the timeout fires and a real disconnect is needed, this is the last
+            // ditch effort to close the connection
+            disconnectGattOnMainThread()
         }
 
         disconnectGattOnMainThread()
     }
 
-    private fun clearDelegates() {
+    private fun clearDelegates()
+    {
         connectionDelegate = null
         serviceDiscoveryDelegate = null
         readRssiDelegate = null
@@ -213,11 +221,10 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
             completion.invoke(peripheral, error)
         }
 
-        UUTimer.startTimer(timerId, timeout, peripheral) { _, _ ->
-            fun onTimer(timer: UUTimer, userInfo: Any?) {
-                debugLog("discoverServices", "Service Discovery timeout: $peripheral")
-                disconnect(UUBluetoothError.timeoutError())
-            }
+        UUTimer.startTimer(timerId, timeout, peripheral)
+        { _, _ ->
+            debugLog("discoverServices", "Service Discovery timeout: $peripheral")
+            disconnect("discoverServices.timeout", UUBluetoothError.timeoutError())
         }
 
         runOnMainThread()
@@ -242,11 +249,9 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
     fun readCharacteristic(
         characteristic: BluetoothGattCharacteristic,
         timeout: Long,
-        delegate: UUCharacteristicDelegate
-    ) {
+        delegate: UUCharacteristicDelegate)
+    {
         val timerId = readCharacteristicWatchdogTimerId(characteristic)
-
-
 
         val readCharacteristicDelegate: UUCharacteristicDelegate =
         { peripheral,
@@ -260,29 +265,31 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
                 delegate.invoke(peripheral, characteristic, error)
 
         }
+
         registerReadCharacteristicDelegate(characteristic, readCharacteristicDelegate)
-        UUTimer.startTimer(timerId, timeout, peripheral) { _,_ ->
-            fun onTimer(timer: UUTimer, userInfo: Any?) {
-                debugLog("readCharacteristic", "Read characteristic timeout: $peripheral")
-                disconnect(UUBluetoothError.timeoutError())
-            }
+
+        UUTimer.startTimer(timerId, timeout, peripheral)
+        { _,_ ->
+            debugLog("readCharacteristic", "Read characteristic timeout: $peripheral")
+            disconnect("readCharacteristic.timeout", UUBluetoothError.timeoutError())
         }
 
         runOnMainThread()
         {
-            if (bluetoothGatt == null) {
+            if (bluetoothGatt == null)
+            {
                 debugLog("readCharacteristic", "bluetoothGatt is null!")
                 notifyCharacteristicRead(characteristic, UUBluetoothError.notConnectedError())
                 return@runOnMainThread
             }
+
             debugLog("readCharacteristic", "characteristic: " + characteristic.uuid)
             val success = bluetoothGatt!!.readCharacteristic(characteristic)
             debugLog("readCharacteristic", "readCharacteristic returned $success")
-            if (!success) {
-                notifyCharacteristicRead(
-                    characteristic,
-                    UUBluetoothError.operationFailedError("readCharacteristic")
-                )
+
+            if (!success)
+            {
+                notifyCharacteristicRead(characteristic, UUBluetoothError.operationFailedError("readCharacteristic"))
             }
         }
     }
@@ -308,11 +315,10 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
             }
         }
         registerReadDescriptorDelegate(descriptor, readDescriptorDelegate)
-        UUTimer.startTimer(timerId, timeout, peripheral) { _, _ ->
-            fun onTimer(timer: UUTimer, userInfo: Any?) {
-                debugLog("readDescriptor", "Read descriptor timeout: $peripheral")
-                disconnect(UUBluetoothError.timeoutError())
-            }
+        UUTimer.startTimer(timerId, timeout, peripheral)
+        { _, _ ->
+            debugLog("readDescriptor", "Read descriptor timeout: $peripheral")
+            disconnect("readDescriptor.timeout", UUBluetoothError.timeoutError())
         }
 
         runOnMainThread()
@@ -357,10 +363,6 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
         }
         registerWriteDescriptorDelegate(descriptor, writeDescriptorDelegate)
         UUTimer.startTimer(timerId, timeout, peripheral) { _, _ ->
-            fun onTimer(timer: UUTimer, userInfo: Any?) {
-                debugLog("writeDescriptor", "Write descriptor timeout: $peripheral")
-                disconnect(UUBluetoothError.timeoutError())
-            }
         }
 
         runOnMainThread()
@@ -406,11 +408,10 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
         }
 
         registerSetNotifyDelegate(characteristic, setNotifyDelegate)
-        UUTimer.startTimer(timerId, timeout, peripheral) { _,_ ->
-            fun onTimer(timer: UUTimer, userInfo: Any?) {
-                debugLog("setNotifyState", "Set notify state timeout: $peripheral")
-                disconnect(UUBluetoothError.timeoutError())
-            }
+        UUTimer.startTimer(timerId, timeout, peripheral)
+        { _,_ ->
+            debugLog("setNotifyState", "Set notify state timeout: $peripheral")
+            disconnect("setNotifyState.timeout", UUBluetoothError.timeoutError())
         }
 
         val start = System.currentTimeMillis()
@@ -518,11 +519,10 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
         }
 
         registerWriteCharacteristicDelegate(characteristic, writeCharacteristicDelegate)
-        UUTimer.startTimer(timerId, timeout, peripheral) { _,_ ->
-            fun onTimer(timer: UUTimer, userInfo: Any?) {
-                debugLog("writeCharacteristic", "Write characteristic timeout: $peripheral")
-                disconnect(UUBluetoothError.timeoutError())
-            }
+        UUTimer.startTimer(timerId, timeout, peripheral)
+        { _,_ ->
+            debugLog("writeCharacteristic", "Write characteristic timeout: $peripheral")
+            disconnect("writeCharacteristic.timeout", UUBluetoothError.timeoutError())
         }
 
         runOnMainThread()
@@ -569,11 +569,10 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
             completion.invoke(peripheral, error)
         }
 
-        UUTimer.startTimer(timerId, timeout, peripheral) { _, _ ->
-            fun onTimer(timer: UUTimer, userInfo: Any?) {
-                debugLog("readRssi", "Read RSSI timeout: $peripheral")
-                notifyReadRssiComplete(UUBluetoothError.timeoutError())
-            }
+        UUTimer.startTimer(timerId, timeout, peripheral)
+        { _, _ ->
+            debugLog("readRssi", "Read RSSI timeout: $peripheral")
+            notifyReadRssiComplete(UUBluetoothError.timeoutError())
         }
 
         runOnMainThread()
@@ -621,47 +620,51 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
             }
             if (pollDelegate != null) {
                 UUTimer.startTimer(timerId, interval, peripheral) { _,_ ->
-                    fun onTimer(timer: UUTimer, userInfo: Any?) {
+                    debugLog(
+                        "rssiPolling.timer",
+                        String.format(
+                            Locale.US,
+                            "RSSI Polling timer %s - %s",
+                            peripheral.address,
+                            peripheral.name
+                        )
+                    )
+
+                    val pollingDelegate = pollRssiDelegate
+                    if (pollingDelegate == null)
+                    {
                         debugLog(
                             "rssiPolling.timer",
                             String.format(
                                 Locale.US,
-                                "RSSI Polling timer %s - %s",
+                                "Peripheral %s-%s not polling anymore",
+                                peripheral.address,
+                                peripheral.address
+                            )
+                        )
+                    }
+                    else if (peripheral.getConnectionState(context) === UUPeripheral.ConnectionState.Connected) {
+                        startRssiPolling(context, interval, delegate)
+                    }
+                    else
+                    {
+                        debugLog(
+                            "rssiPolling.timer",
+                            String.format(
+                                Locale.US,
+                                "Peripheral %s-%s is not connected anymore, cannot poll for RSSI",
                                 peripheral.address,
                                 peripheral.name
                             )
                         )
-                        val pollingDelegate = pollRssiDelegate
-                        if (pollingDelegate == null) {
-                            debugLog(
-                                "rssiPolling.timer",
-                                String.format(
-                                    Locale.US,
-                                    "Peripheral %s-%s not polling anymore",
-                                    peripheral.address,
-                                    peripheral.address
-                                )
-                            )
-                        } else if (peripheral.getConnectionState(context) === UUPeripheral.ConnectionState.Connected) {
-                            startRssiPolling(context, interval, delegate)
-                        } else {
-                            debugLog(
-                                "rssiPolling.timer",
-                                String.format(
-                                    Locale.US,
-                                    "Peripheral %s-%s is not connected anymore, cannot poll for RSSI",
-                                    peripheral.address,
-                                    peripheral.name
-                                )
-                            )
-                        }
                     }
                 }
             }
         }
     }
 
-    fun stopRssiPolling() {
+    fun stopRssiPolling()
+    {
         pollRssiDelegate = null
         UUTimer.cancelActiveTimer(pollRssiTimerId())
     }
@@ -669,268 +672,306 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
     val isPollingForRssi: Boolean
         get() = (pollRssiDelegate != null)
 
-    private fun notifyConnectDelegate(delegate: UUConnectionDelegate?) {
-        try {
+    private fun notifyConnectDelegate(delegate: UUConnectionDelegate?)
+    {
+        try
+        {
             delegate?.onConnected((peripheral))
-        } catch (ex: Exception) {
+        }
+        catch (ex: Exception)
+        {
             logException("notifyConnectDelegate", ex)
         }
     }
 
-    private fun notifyDisconnectDelegate(delegate: UUConnectionDelegate?, error: UUError?) {
-        try {
+    private fun notifyDisconnectDelegate(delegate: UUConnectionDelegate?, error: UUError?)
+    {
+        try
+        {
             delegate?.onDisconnected((peripheral), error)
-        } catch (ex: Exception) {
+        }
+        catch (ex: Exception)
+        {
             logException("notifyDisconnectDelegate", ex)
         }
     }
 
-    private fun notifyPeripheralErrorDelegate(
-        delegate: UUPeripheralErrorDelegate?,
-        error: UUError?
-    ) {
-        try {
+    private fun notifyPeripheralErrorDelegate(delegate: UUPeripheralErrorDelegate?, error: UUError?)
+    {
+        try
+        {
             delegate?.invoke(peripheral, error)
-        } catch (ex: Exception) {
+        }
+        catch (ex: Exception)
+        {
             logException("notifyPeripheralErrorDelegate", ex)
         }
     }
 
-    private fun notifyPeripheralDelegate(delegate: UUPeripheralDelegate?) {
-        try {
+    private fun notifyPeripheralDelegate(delegate: UUPeripheralDelegate?)
+    {
+        try
+        {
             delegate?.onComplete((peripheral))
-        } catch (ex: Exception) {
+        }
+        catch (ex: Exception)
+        {
             logException("notifyPeripheralDelegate", ex)
         }
     }
 
-    private fun notifyCharacteristicDelegate(
-        delegate: UUCharacteristicDelegate?,
-        characteristic: BluetoothGattCharacteristic,
-        error: UUError?
-    ) {
-        try {
+    private fun notifyCharacteristicDelegate(delegate: UUCharacteristicDelegate?, characteristic: BluetoothGattCharacteristic, error: UUError?)
+    {
+        try
+        {
             delegate?.invoke((peripheral), characteristic, error)
-        } catch (ex: Exception) {
+        }
+        catch (ex: Exception)
+        {
             logException("notifyCharacteristicDelegate", ex)
         }
     }
 
-    private fun notifyDescriptorDelegate(
-        delegate: UUDescriptorDelegate?,
-        descriptor: BluetoothGattDescriptor,
-        error: UUError?
-    ) {
-        try {
-            delegate?.onComplete((peripheral), descriptor, error)
-        } catch (ex: Exception) {
+    private fun notifyDescriptorDelegate(delegate: UUDescriptorDelegate?, descriptor: BluetoothGattDescriptor, error: UUError?)
+    {
+        try
+        {
+            delegate?.onComplete(peripheral, descriptor, error)
+        }
+        catch (ex: Exception)
+        {
             logException("notifyDescriptorDelegate", ex)
         }
     }
 
-    private fun notifyConnected(fromWhere: String) {
-        try {
+    private fun notifyConnected(fromWhere: String)
+    {
+        try
+        {
             debugLog("notifyConnected", "Notifying connected from: $fromWhere")
-            peripheral!!.setBluetoothGatt(bluetoothGatt)
+            peripheral.setBluetoothGatt(bluetoothGatt)
             val delegate = connectionDelegate
             notifyConnectDelegate(delegate)
-        } catch (ex: Exception) {
+        }
+        catch (ex: Exception)
+        {
             logException("notifyConnected", ex)
         }
     }
 
-    private fun notifyDisconnected(error: UUError?) {
+    private fun notifyDisconnected(error: UUError?)
+    {
         closeGatt()
-        peripheral!!.setBluetoothGatt(null)
+        cancelAllTimers()
+
+        peripheral.setBluetoothGatt(null)
         val delegate = connectionDelegate
         connectionDelegate = null
         notifyDisconnectDelegate(delegate, error)
     }
 
-    private fun notifyServicesDiscovered(error: UUError?) {
+    private fun notifyServicesDiscovered(error: UUError?)
+    {
         val delegate = serviceDiscoveryDelegate
         serviceDiscoveryDelegate = null
         notifyPeripheralErrorDelegate(delegate, error)
     }
 
-    private fun notifyDescriptorWritten(descriptor: BluetoothGattDescriptor, error: UUError?) {
+    private fun notifyDescriptorWritten(descriptor: BluetoothGattDescriptor, error: UUError?)
+    {
         val delegate = getWriteDescriptorDelegate(descriptor)
         removeWriteDescriptorDelegate(descriptor)
         notifyDescriptorDelegate(delegate, descriptor, error)
     }
 
-    private fun notifyCharacteristicNotifyStateChanged(
-        characteristic: BluetoothGattCharacteristic,
-        error: UUError?
-    ) {
+    private fun notifyCharacteristicNotifyStateChanged(characteristic: BluetoothGattCharacteristic, error: UUError?)
+    {
         val delegate = getSetNotifyDelegate(characteristic)
         removeSetNotifyDelegate(characteristic)
         notifyCharacteristicDelegate(delegate, characteristic, error)
     }
 
-    private fun notifyCharacteristicWritten(
-        characteristic: BluetoothGattCharacteristic,
-        error: UUError?
-    ) {
+    private fun notifyCharacteristicWritten(characteristic: BluetoothGattCharacteristic, error: UUError?)
+    {
         val delegate = getWriteCharacteristicDelegate(characteristic)
         removeWriteCharacteristicDelegate(characteristic)
         notifyCharacteristicDelegate(delegate, characteristic, error)
     }
 
-    private fun notifyCharacteristicRead(
-        characteristic: BluetoothGattCharacteristic,
-        error: UUError?
-    ) {
+    private fun notifyCharacteristicRead(characteristic: BluetoothGattCharacteristic, error: UUError?)
+    {
         val delegate = getReadCharacteristicDelegate(characteristic)
         removeReadCharacteristicDelegate(characteristic)
         notifyCharacteristicDelegate(delegate, characteristic, error)
     }
 
-    private fun notifyCharacteristicChanged(characteristic: BluetoothGattCharacteristic) {
+    private fun notifyCharacteristicChanged(characteristic: BluetoothGattCharacteristic)
+    {
         val delegate = getCharacteristicChangedDelegate(characteristic)
         notifyCharacteristicDelegate(delegate, characteristic, null)
     }
 
-    private fun notifyDescriptorRead(descriptor: BluetoothGattDescriptor, error: UUError?) {
+    private fun notifyDescriptorRead(descriptor: BluetoothGattDescriptor, error: UUError?)
+    {
         val delegate = getReadDescriptorDelegate(descriptor)
         removeReadDescriptorDelegate(descriptor)
         notifyDescriptorDelegate(delegate, descriptor, error)
     }
 
-    private fun notifyReadRssiComplete(error: UUError?) {
+    private fun notifyReadRssiComplete(error: UUError?)
+    {
         val delegate = readRssiDelegate
         readRssiDelegate = null
         notifyPeripheralErrorDelegate(delegate, error)
     }
 
-    private fun notifyReqeustMtuComplete(error: UUError?) {
+    private fun notifyReqeustMtuComplete(error: UUError?)
+    {
         val delegate = requestMtuDelegate
         requestMtuDelegate = null
         notifyPeripheralErrorDelegate(delegate, error)
     }
 
-    private fun notifyBoolResult(delegate: UUPeripheralBoolDelegate?, result: Boolean) {
-        try {
+    private fun notifyBoolResult(delegate: UUPeripheralBoolDelegate?, result: Boolean)
+    {
+        try
+        {
             delegate?.onComplete((peripheral)!!, result)
-        } catch (ex: Exception) {
+        }
+        catch (ex: Exception)
+        {
             logException("notifyBoolResult", ex)
         }
     }
 
-    private fun registerCharacteristicChangedDelegate(
-        characteristic: BluetoothGattCharacteristic,
-        delegate: UUCharacteristicDelegate
-    ) {
+    private fun registerCharacteristicChangedDelegate(characteristic: BluetoothGattCharacteristic, delegate: UUCharacteristicDelegate)
+    {
         characteristicChangedDelegates[safeUuidString(characteristic)] = delegate
     }
 
-    private fun removeCharacteristicChangedDelegate(characteristic: BluetoothGattCharacteristic) {
+    private fun removeCharacteristicChangedDelegate(characteristic: BluetoothGattCharacteristic)
+    {
         characteristicChangedDelegates.remove(safeUuidString(characteristic))
     }
 
-    private fun getCharacteristicChangedDelegate(characteristic: BluetoothGattCharacteristic): UUCharacteristicDelegate? {
+    private fun getCharacteristicChangedDelegate(characteristic: BluetoothGattCharacteristic): UUCharacteristicDelegate?
+    {
         return characteristicChangedDelegates[safeUuidString(characteristic)]
     }
 
-    private fun registerSetNotifyDelegate(
-        characteristic: BluetoothGattCharacteristic,
-        delegate: UUCharacteristicDelegate
-    ) {
+    private fun registerSetNotifyDelegate(characteristic: BluetoothGattCharacteristic, delegate: UUCharacteristicDelegate)
+    {
         setNotifyDelegates[safeUuidString(characteristic)] = delegate
     }
 
-    private fun removeSetNotifyDelegate(characteristic: BluetoothGattCharacteristic) {
+    private fun removeSetNotifyDelegate(characteristic: BluetoothGattCharacteristic)
+    {
         setNotifyDelegates.remove(safeUuidString(characteristic))
     }
 
-    private fun getSetNotifyDelegate(characteristic: BluetoothGattCharacteristic): UUCharacteristicDelegate? {
+    private fun getSetNotifyDelegate(characteristic: BluetoothGattCharacteristic): UUCharacteristicDelegate?
+    {
         return setNotifyDelegates[safeUuidString(characteristic)]
     }
 
-    private fun registerReadCharacteristicDelegate(
-        characteristic: BluetoothGattCharacteristic,
-        delegate: UUCharacteristicDelegate
-    ) {
+    private fun registerReadCharacteristicDelegate(characteristic: BluetoothGattCharacteristic, delegate: UUCharacteristicDelegate)
+    {
         readCharacteristicDelegates[safeUuidString(characteristic)] = delegate
     }
 
-    private fun removeReadCharacteristicDelegate(characteristic: BluetoothGattCharacteristic) {
+    private fun removeReadCharacteristicDelegate(characteristic: BluetoothGattCharacteristic)
+    {
         readCharacteristicDelegates.remove(safeUuidString(characteristic))
     }
 
-    private fun getReadCharacteristicDelegate(characteristic: BluetoothGattCharacteristic): UUCharacteristicDelegate? {
+    private fun getReadCharacteristicDelegate(characteristic: BluetoothGattCharacteristic): UUCharacteristicDelegate?
+    {
         return readCharacteristicDelegates[safeUuidString(characteristic)]
     }
 
-    private fun registerWriteCharacteristicDelegate(
-        characteristic: BluetoothGattCharacteristic,
-        delegate: UUCharacteristicDelegate
-    ) {
+    private fun registerWriteCharacteristicDelegate(characteristic: BluetoothGattCharacteristic, delegate: UUCharacteristicDelegate)
+    {
         writeCharacteristicDelegates[safeUuidString(characteristic)] = delegate
     }
 
-    private fun removeWriteCharacteristicDelegate(characteristic: BluetoothGattCharacteristic) {
+    private fun removeWriteCharacteristicDelegate(characteristic: BluetoothGattCharacteristic)
+    {
         writeCharacteristicDelegates.remove(safeUuidString(characteristic))
     }
 
-    private fun getWriteCharacteristicDelegate(characteristic: BluetoothGattCharacteristic): UUCharacteristicDelegate? {
+    private fun getWriteCharacteristicDelegate(characteristic: BluetoothGattCharacteristic): UUCharacteristicDelegate?
+    {
         return writeCharacteristicDelegates[safeUuidString(characteristic)]
     }
 
-    private fun registerReadDescriptorDelegate(
-        descriptor: BluetoothGattDescriptor,
-        delegate: UUDescriptorDelegate
-    ) {
+    private fun registerReadDescriptorDelegate(descriptor: BluetoothGattDescriptor, delegate: UUDescriptorDelegate)
+    {
         readDescriptorDelegates[safeUuidString(descriptor)] = delegate
     }
 
-    private fun removeReadDescriptorDelegate(descriptor: BluetoothGattDescriptor) {
+    private fun removeReadDescriptorDelegate(descriptor: BluetoothGattDescriptor)
+    {
         readDescriptorDelegates.remove(safeUuidString(descriptor))
     }
 
-    private fun getReadDescriptorDelegate(descriptor: BluetoothGattDescriptor): UUDescriptorDelegate? {
+    private fun getReadDescriptorDelegate(descriptor: BluetoothGattDescriptor): UUDescriptorDelegate?
+    {
         return readDescriptorDelegates[safeUuidString(descriptor)]
     }
 
-    private fun registerWriteDescriptorDelegate(
-        descriptor: BluetoothGattDescriptor,
-        delegate: UUDescriptorDelegate
-    ) {
+    private fun registerWriteDescriptorDelegate(descriptor: BluetoothGattDescriptor, delegate: UUDescriptorDelegate)
+    {
         writeDescriptorDelegates[safeUuidString(descriptor)] = delegate
     }
 
-    private fun removeWriteDescriptorDelegate(descriptor: BluetoothGattDescriptor) {
+    private fun removeWriteDescriptorDelegate(descriptor: BluetoothGattDescriptor)
+    {
         writeDescriptorDelegates.remove(safeUuidString(descriptor))
     }
 
-    private fun getWriteDescriptorDelegate(descriptor: BluetoothGattDescriptor): UUDescriptorDelegate? {
+    private fun getWriteDescriptorDelegate(descriptor: BluetoothGattDescriptor): UUDescriptorDelegate?
+    {
         return writeDescriptorDelegates[safeUuidString(descriptor)]
     }
 
-    private fun safeUuidString(characteristic: BluetoothGattCharacteristic?): String {
-        return if (characteristic != null) {
+    private fun safeUuidString(characteristic: BluetoothGattCharacteristic?): String
+    {
+        return if (characteristic != null)
+        {
             safeUuidString(characteristic.uuid)
-        } else {
+        }
+        else
+        {
             ""
         }
     }
 
-    private fun safeUuidString(descriptor: BluetoothGattDescriptor?): String {
-        return if (descriptor != null) {
+    private fun safeUuidString(descriptor: BluetoothGattDescriptor?): String
+    {
+        return if (descriptor != null)
+        {
             safeUuidString(descriptor.uuid)
-        } else {
+        }
+        else
+        {
             ""
         }
     }
 
-    private fun safeUuidString(uuid: UUID?): String {
+    private fun safeUuidString(uuid: UUID?): String
+    {
         var result: String? = null
-        if (uuid != null) {
+
+        if (uuid != null)
+        {
             result = uuid.toString()
         }
-        if (result == null) {
+
+        if (result == null)
+        {
             result = ""
         }
+
         result = result.lowercase(Locale.getDefault())
         return result
     }
@@ -943,183 +984,225 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
         }
     }
 
-    private fun disconnectGatt() {
-        try {
-            debugLog("disconnectGatt", "Disconnecting from: $peripheral")
-            if (bluetoothGatt != null) {
-                bluetoothGatt!!.disconnect()
-            } else {
-                debugLog("disconnectGatt", "Bluetooth Gatt is null. Unable to disconnect")
-            }
-        } catch (ex: Exception) {
+    private fun disconnectGatt()
+    {
+        try
+        {
+            debugLog("disconnectGatt", "Disconnecting from: $peripheral, bluetoothGatt: $bluetoothGatt")
+            bluetoothGatt?.disconnect()
+        }
+        catch (ex: Exception)
+        {
             logException("disconnectGatt", ex)
         }
     }
 
-    private fun closeGatt() {
-        try {
-            if (bluetoothGatt != null) {
-                bluetoothGatt!!.close()
-            }
-        } catch (ex: Exception) {
+    private fun closeGatt()
+    {
+        try
+        {
+            bluetoothGatt?.close()
+        }
+        catch (ex: Exception)
+        {
             logException("closeGatt", ex)
-        } finally {
+        }
+        finally
+        {
             bluetoothGatt = null
         }
     }
 
-    private fun reconnectGatt() {
-        try {
-            val success = bluetoothGatt!!.connect()
-            debugLog("reconnectGatt", "connect() returned $success")
-        } catch (ex: Exception) {
+    private fun reconnectGatt()
+    {
+        try
+        {
+            bluetoothGatt?.let()
+            {
+                val success = it.connect()
+                debugLog("reconnectGatt", "connect() returned $success")
+            }
+        }
+        catch (ex: Exception)
+        {
             logException("reconnectGatt", ex)
         }
     }
 
-    private fun debugLog(method: String, message: String) {
-        if (LOGGING_ENABLED) {
+    private fun debugLog(method: String, message: String)
+    {
+        if (LOGGING_ENABLED)
+        {
             UULog.d(javaClass, method, message)
         }
     }
 
-    private fun logException(method: String, exception: Throwable) {
-        if (LOGGING_ENABLED) {
+    private fun logException(method: String, exception: Throwable)
+    {
+        if (LOGGING_ENABLED)
+        {
             UULog.d(javaClass, method, "", exception)
         }
     }
 
-    private fun statusLog(status: Int): String {
+    private fun statusLog(status: Int): String
+    {
         return String.format(Locale.US, "%s (%d)", gattStatusToString(status), status)
     }
 
-    private fun formatPeripheralTimerId(bucket: String): String {
-        return String.format(Locale.US, "%s__%s", peripheral!!.address, bucket)
+    private fun formatPeripheralTimerId(bucket: String): String
+    {
+        return String.format(Locale.US, "%s__%s", peripheral.address, bucket)
     }
 
-    private fun formatCharacteristicTimerId(
-        characteristic: BluetoothGattCharacteristic,
-        bucket: String
-    ): String {
+    private fun formatCharacteristicTimerId(characteristic: BluetoothGattCharacteristic, bucket: String): String
+    {
         return String.format(
             Locale.US,
             "%s__ch_%s__%s",
-            peripheral!!.address,
+            peripheral.address,
             safeUuidString(characteristic),
             bucket
         )
     }
 
-    private fun formatDescriptorTimerId(
-        descriptor: BluetoothGattDescriptor,
-        bucket: String
-    ): String {
+    private fun formatDescriptorTimerId(descriptor: BluetoothGattDescriptor, bucket: String): String
+    {
         return String.format(
             Locale.US,
             "%s__de_%s__%s",
-            peripheral!!.address,
+            peripheral.address,
             safeUuidString(descriptor),
             bucket
         )
     }
 
-    private fun connectWatchdogTimerId(): String {
+    private fun connectWatchdogTimerId(): String
+    {
         return formatPeripheralTimerId(CONNECT_WATCHDOG_BUCKET)
     }
 
-    private fun disconnectWatchdogTimerId(): String {
+    private fun disconnectWatchdogTimerId(): String
+    {
         return formatPeripheralTimerId(DISCONNECT_WATCHDOG_BUCKET)
     }
 
-    private fun serviceDiscoveryWatchdogTimerId(): String {
+    private fun serviceDiscoveryWatchdogTimerId(): String
+    {
         return formatPeripheralTimerId(SERVICE_DISCOVERY_WATCHDOG_BUCKET)
     }
 
-    private fun setNotifyStateWatchdogTimerId(characteristic: BluetoothGattCharacteristic): String {
-        return formatCharacteristicTimerId(
-            characteristic,
-            CHARACTERISTIC_NOTIFY_STATE_WATCHDOG_BUCKET
-        )
+    private fun setNotifyStateWatchdogTimerId(characteristic: BluetoothGattCharacteristic): String
+    {
+        return formatCharacteristicTimerId(characteristic, CHARACTERISTIC_NOTIFY_STATE_WATCHDOG_BUCKET)
     }
 
-    private fun readCharacteristicWatchdogTimerId(characteristic: BluetoothGattCharacteristic): String {
+    private fun readCharacteristicWatchdogTimerId(characteristic: BluetoothGattCharacteristic): String
+    {
         return formatCharacteristicTimerId(characteristic, READ_CHARACTERISTIC_WATCHDOG_BUCKET)
     }
 
-    private fun readDescritporWatchdogTimerId(descriptor: BluetoothGattDescriptor): String {
+    private fun readDescritporWatchdogTimerId(descriptor: BluetoothGattDescriptor): String
+    {
         return formatDescriptorTimerId(descriptor, READ_DESCRIPTOR_WATCHDOG_BUCKET)
     }
 
-    private fun writeCharacteristicWatchdogTimerId(characteristic: BluetoothGattCharacteristic): String {
+    private fun writeCharacteristicWatchdogTimerId(characteristic: BluetoothGattCharacteristic): String
+    {
         return formatCharacteristicTimerId(characteristic, WRITE_CHARACTERISTIC_WATCHDOG_BUCKET)
     }
 
-    private fun writeDescriptorWatchdogTimerId(descriptor: BluetoothGattDescriptor): String {
+    private fun writeDescriptorWatchdogTimerId(descriptor: BluetoothGattDescriptor): String
+    {
         return formatDescriptorTimerId(descriptor, WRITE_DESCRIPTOR_WATCHDOG_BUCKET)
     }
 
-    private fun readRssiWatchdogTimerId(): String {
+    private fun readRssiWatchdogTimerId(): String
+    {
         return formatPeripheralTimerId(READ_RSSI_WATCHDOG_BUCKET)
     }
 
-    private fun requestMtuWatchdogTimerId(): String {
+    private fun requestMtuWatchdogTimerId(): String
+    {
         return formatPeripheralTimerId(REQUEST_MTU_WATCHDOG_BUCKET)
     }
 
-    private fun pollRssiTimerId(): String {
+    private fun pollRssiTimerId(): String
+    {
         return formatPeripheralTimerId(POLL_RSSI_BUCKET)
     }
 
-    private fun cleanupAfterDisconnect() {
+    private fun cleanupAfterDisconnect()
+    {
         cancelAllTimers()
         clearDelegates()
     }
 
-    private fun cancelAllTimers() {
-        try {
-            if (peripheral != null) {
-                val list: ArrayList<UUTimer> = UUTimer.listActiveTimers()
-                val prefix = peripheral.address
-                if (prefix != null) {
-                    for (t: UUTimer in list) {
-                        if (t.timerId.startsWith(prefix)) {
-                            debugLog("cancelAllTimers", "Cancelling peripheral timer: " + t.timerId)
-                            t.cancel()
-                        }
+    private fun cancelAllTimers()
+    {
+        try
+        {
+            val list: ArrayList<UUTimer> = UUTimer.listActiveTimers()
+            val prefix = peripheral.address
+            if (prefix != null)
+            {
+                for (t: UUTimer in list)
+                {
+                    if (t.timerId.startsWith(prefix))
+                    {
+                        debugLog("cancelAllTimers", "Cancelling peripheral timer: " + t.timerId)
+                        t.cancel()
+                    }
+                    else
+                    {
+                        debugLog("cancelAllTimers", "Leaving timer alone: " + t.timerId)
                     }
                 }
             }
-        } catch (ex: Exception) {
+        }
+        catch (ex: Exception)
+        {
             logException("cancelAllTimers", ex)
         }
     }
 
-    private inner class UUBluetoothGattCallback() : BluetoothGattCallback() {
-        override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+    private inner class UUBluetoothGattCallback : BluetoothGattCallback()
+    {
+        override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int)
+        {
             debugLog(
                 "onConnectionStateChanged", String.format(
                     Locale.US, "status: %s, newState: %s (%d)",
-                    statusLog(status), connectionStateToString(newState), newState
-                )
-            )
-            if (status == BluetoothGatt.GATT_SUCCESS && newState == BluetoothGatt.STATE_CONNECTED) {
+                    statusLog(status), connectionStateToString(newState), newState))
+
+            if (status == BluetoothGatt.GATT_SUCCESS && newState == BluetoothGatt.STATE_CONNECTED)
+            {
                 notifyConnected("onConnectionStateChange")
-            } else if (newState == BluetoothGatt.STATE_DISCONNECTED) {
+            }
+            else if (newState == BluetoothGatt.STATE_DISCONNECTED)
+            {
                 var err = disconnectError
-                if (err == null) {
+                if (err == null)
+                {
                     err = UUBluetoothError.gattStatusError("onConnectionStateChanged", status)
                 }
-                if (err == null) {
+
+                if (err == null)
+                {
                     err = UUBluetoothError.disconnectedError()
                 }
 
                 // Special case - If an operation has finished with a success error code, then don't
                 // pass it up to the caller.
-                if (err.code == UUBluetoothErrorCode.Success.rawValue) {
+                if (err.code == UUBluetoothErrorCode.Success.rawValue)
+                {
                     err = null
                 }
+
                 notifyDisconnected(err)
-            } else if (status == UUBluetoothConstants.GATT_ERROR) {
+            }
+            else if (status == UUBluetoothConstants.GATT_ERROR)
+            {
                 // Sometimes when attempting a connection, the operation fails with status 133 and state
                 // other than connected.  Through trial and error, calling BluetoothGatt.connect() after
                 // this happens will make the connection happen.
@@ -1127,29 +1210,20 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
             }
         }
 
-        override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
-            debugLog(
-                "onServicesDiscovered",
-                String.format(Locale.US, "status: %s", statusLog(status))
-            )
-            notifyServicesDiscovered(
-                UUBluetoothError.gattStatusError(
-                    "onServicesDiscovered",
-                    status
-                )
-            )
+        override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int)
+        {
+            debugLog("onServicesDiscovered", String.format(Locale.US, "status: %s", statusLog(status)))
+            notifyServicesDiscovered(UUBluetoothError.gattStatusError("onServicesDiscovered", status))
         }
 
-        override fun onCharacteristicRead(
-            gatt: BluetoothGatt,
-            characteristic: BluetoothGattCharacteristic,
-            status: Int
-        ) {
+        override fun onCharacteristicRead(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic, status: Int)
+        {
             debugLog(
                 "onCharacteristicRead",
                 "characteristic: " + safeUuidString(characteristic) +
                         ", status: " + statusLog(status) +
                         ", char.data: ${characteristic.value?.uuToHex()}")
+
             notifyCharacteristicRead(
                 characteristic,
                 UUBluetoothError.gattStatusError("onCharacteristicRead", status)

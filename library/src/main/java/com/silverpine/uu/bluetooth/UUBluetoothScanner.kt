@@ -17,7 +17,6 @@ import com.silverpine.uu.core.UUWorkerThread
 import com.silverpine.uu.logging.UULog
 import java.util.UUID
 
-//@SuppressWarnings("unused")
 @SuppressLint("MissingPermission")
 class UUBluetoothScanner<T : UUPeripheral?>(context: Context, factory: UUPeripheralFactory<T>)
 {

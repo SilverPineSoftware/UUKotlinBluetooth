@@ -12,6 +12,7 @@ import android.content.Context
 import android.os.Parcel
 import android.os.Parcelable
 import com.silverpine.uu.core.UUError
+import com.silverpine.uu.core.uuReadUInt8
 import com.silverpine.uu.core.uuSerializeParcel
 import com.silverpine.uu.core.uuSubData
 import com.silverpine.uu.core.uuToHex
@@ -421,55 +422,60 @@ open class UUPeripheral() : Parcelable
 
     private fun parseScanRecord()
     {
-        if (scanRecord != null)
+        val bytes = scanRecord ?: return
+
+        var index = 0
+        while (index < bytes.size)
         {
-            var index = 0
-            while (index < scanRecord!!.size)
+            val length = bytes.uuReadUInt8(index)
+            if (length == 0)
             {
-                val length = scanRecord!![index]
-                if (length.toInt() == 0) break
-                val dataType = scanRecord!![index + 1]
-                val data = ByteArray(length - 1)
-                System.arraycopy(scanRecord, index + 2, data, 0, data.size)
+                break
+            }
 
-                when (dataType)
+            val dataType = bytes.uuReadUInt8(index + 1)
+
+            val data = ByteArray(length - 1)
+            System.arraycopy(bytes, index + 2, data, 0, data.size)
+
+            when (dataType.toByte())
+            {
+                DATA_TYPE_FLAGS ->
                 {
-                    DATA_TYPE_FLAGS ->
-                    {
-                        parseFlags(data)
-                    }
-
-                    DATA_TYPE_MANUFACTURING_DATA ->
-                    {
-                        manufacturingData = data
-                    }
-
-                    DATA_TYPE_COMPLETE_LOCAL_NAME ->
-                    {
-                        localName = data.uuUtf8()
-                    }
-
-                    DATA_TYPE_INCOMPLETE_LIST_OF_16_BIT_SERVICE_CLASS_UUIDS,
-                    DATA_TYPE_COMPLETE_LIST_OF_16_BIT_SERVICE_CLASS_UUIDS ->
-                    {
-                        parseServiceUuid(data, 2)
-                    }
-
-                    DATA_TYPE_COMPLETE_LIST_OF_128_BIT_SERVICE_CLASS_UUIDS,
-                    DATA_TYPE_INCOMPLETE_LIST_OF_128_BIT_SERVICE_CLASS_UUIDS ->
-                    {
-                        parseServiceUuid(data, 16)
-                    }
+                    parseFlags(data)
                 }
 
-                index += 1 + length
+                DATA_TYPE_MANUFACTURING_DATA ->
+                {
+                    manufacturingData = data
+                }
+
+                DATA_TYPE_COMPLETE_LOCAL_NAME ->
+                {
+                    localName = data.uuUtf8()
+                }
+
+                DATA_TYPE_INCOMPLETE_LIST_OF_16_BIT_SERVICE_CLASS_UUIDS,
+                DATA_TYPE_COMPLETE_LIST_OF_16_BIT_SERVICE_CLASS_UUIDS ->
+                {
+                    parseServiceUuid(data, 2)
+                }
+
+                DATA_TYPE_COMPLETE_LIST_OF_128_BIT_SERVICE_CLASS_UUIDS,
+                DATA_TYPE_INCOMPLETE_LIST_OF_128_BIT_SERVICE_CLASS_UUIDS ->
+                {
+                    parseServiceUuid(data, 16)
+                }
             }
 
-            manufacturingData?.let()
-            {
-                parseManufacturingData(it)
-            }
+            index += 1 + length
         }
+
+        manufacturingData?.let()
+        {
+            parseManufacturingData(it)
+        }
+
     }
 
     private fun parseFlags(data: ByteArray)

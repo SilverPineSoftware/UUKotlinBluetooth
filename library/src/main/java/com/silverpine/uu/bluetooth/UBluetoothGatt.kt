@@ -6,12 +6,14 @@ import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
+import android.bluetooth.BluetoothGattService
 import android.content.Context
 import com.silverpine.uu.bluetooth.UUBluetooth.characteristicPermissionsToString
 import com.silverpine.uu.bluetooth.UUBluetooth.characteristicPropertiesToString
 import com.silverpine.uu.bluetooth.UUBluetooth.connectionStateToString
 import com.silverpine.uu.bluetooth.UUBluetooth.gattStatusToString
 import com.silverpine.uu.bluetooth.UUBluetooth.requireApplicationContext
+import com.silverpine.uu.bluetooth.UUBluetoothError.timeoutError
 import com.silverpine.uu.core.UUError
 import com.silverpine.uu.core.UUThread.runOnMainThread
 import com.silverpine.uu.core.UUTimer
@@ -21,6 +23,11 @@ import com.silverpine.uu.logging.UULog
 import java.util.Locale
 import java.util.UUID
 
+typealias UUCharacteristicDelegate = (UUPeripheral, BluetoothGattCharacteristic, UUError?)->Unit
+typealias UUDescriptorDelegate = (UUPeripheral, BluetoothGattDescriptor, UUError?)->Unit
+typealias UUDiscoverServicesDelegate = (ArrayList<BluetoothGattService>?, UUError?)->Unit
+typealias UUPeripheralDelegate = (UUPeripheral?)->Unit
+typealias UUPeripheralErrorDelegate = (UUPeripheral,UUError?)->Unit
 /**
  * A helpful set of wrapper methods around BluetoothGatt
  */
@@ -49,17 +56,14 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
     val isConnecting: Boolean
         get() = (bluetoothGatt != null && isConnectWatchdogActive)
     private val isConnectWatchdogActive: Boolean
-        private get() {
-            val t: UUTimer? = UUTimer.findActiveTimer(connectWatchdogTimerId())
-            return t != null
-        }
+        get() = (UUTimer.findActiveTimer(connectWatchdogTimerId()) != null)
 
     fun connect(
         connectGattAutoFlag: Boolean,
         timeout: Long,
         disconnectTimeout: Long,
-        delegate: UUConnectionDelegate
-    ) {
+        delegate: UUConnectionDelegate)
+    {
         val timerId = connectWatchdogTimerId()
 
         connectionDelegate = object : UUConnectionDelegate
@@ -185,21 +189,27 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
             completion.invoke(peripheral, error)
         }
 
-        UUTimer.startTimer(timerId, timeout, peripheral) { timer, userInfo ->
-            debugLog("requestMtuSize", "Request MTU Size timeout: " + peripheral)
+        UUTimer.startTimer(timerId, timeout, peripheral)
+        { _, _ ->
+            debugLog("requestMtuSize", "Request MTU Size timeout: $peripheral")
             notifyReqeustMtuComplete(UUBluetoothError.timeoutError())
         }
 
-        runOnMainThread {
-            if (bluetoothGatt == null) {
+        runOnMainThread()
+        {
+            if (bluetoothGatt == null)
+            {
                 debugLog("requestMtuSize", "bluetoothGatt is null!")
                 notifyReqeustMtuComplete(UUBluetoothError.notConnectedError())
                 return@runOnMainThread
             }
+
             debugLog("requestMtuSize", "Reading RSSI for: " + peripheral)
             val ok: Boolean = bluetoothGatt!!.requestMtu(mtuSize)
             debugLog("requestMtuSize", "returnCode: " + ok)
-            if (!ok) {
+
+            if (!ok)
+            {
                 notifyReqeustMtuComplete(UUBluetoothError.operationFailedError("requestMtuSize"))
             }
         }
@@ -207,16 +217,13 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
 
     fun discoverServices(
         timeout: Long,
-        completion: UUPeripheralErrorDelegate
-    ) {
+        completion: UUPeripheralErrorDelegate)
+    {
         val timerId = serviceDiscoveryWatchdogTimerId()
 
         serviceDiscoveryDelegate =
         { peripheral, error ->
-            debugLog(
-                "discoverServices",
-                "Service Discovery complete: $peripheral, error: $error"
-            )
+            debugLog("discoverServices", "Service Discovery complete: $peripheral, error: $error")
             UUTimer.cancelActiveTimer(timerId)
             completion.invoke(peripheral, error)
         }
@@ -229,15 +236,19 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
 
         runOnMainThread()
         {
-            if (bluetoothGatt == null) {
+            if (bluetoothGatt == null)
+            {
                 debugLog("discoverServices", "bluetoothGatt is null!")
                 notifyServicesDiscovered(UUBluetoothError.notConnectedError())
                 return@runOnMainThread
             }
+
             debugLog("discoverServices", "Discovering services for: $peripheral")
             val ok = bluetoothGatt!!.discoverServices()
             debugLog("discoverServices", "returnCode: $ok")
-            if (!ok) {
+
+            if (!ok)
+            {
                 notifyServicesDiscovered(UUBluetoothError.operationFailedError("discoverServices"))
             }
             // else
@@ -300,20 +311,18 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
         delegate: UUDescriptorDelegate
     ) {
         val timerId = readDescritporWatchdogTimerId(descriptor)
-        val readDescriptorDelegate: UUDescriptorDelegate = object : UUDescriptorDelegate {
-            override fun onComplete(
-                peripheral: UUPeripheral,
-                descriptor: BluetoothGattDescriptor,
-                error: UUError?
-            ) {
+        val readDescriptorDelegate: UUDescriptorDelegate =
+        { peripheral: UUPeripheral,
+          descriptor1: BluetoothGattDescriptor,
+          error: UUError? ->
                 debugLog(
                     "readDescriptor",
                     "Read descriptor complete: $peripheral, error: $error, data: ${descriptor.value?.uuToHex()}")
                 removeReadDescriptorDelegate(descriptor)
                 UUTimer.cancelActiveTimer(timerId)
-                delegate.onComplete(peripheral, descriptor, error)
-            }
+                delegate(peripheral, descriptor, error)
         }
+
         registerReadDescriptorDelegate(descriptor, readDescriptorDelegate)
         UUTimer.startTimer(timerId, timeout, peripheral)
         { _, _ ->
@@ -323,19 +332,20 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
 
         runOnMainThread()
         {
-            if (bluetoothGatt == null) {
+            if (bluetoothGatt == null)
+            {
                 debugLog("readDescriptor", "bluetoothGatt is null!")
                 notifyDescriptorRead(descriptor, UUBluetoothError.notConnectedError())
                 return@runOnMainThread
             }
+
             debugLog("readDescriptor", "descriptor: " + descriptor.uuid)
             val success = bluetoothGatt!!.readDescriptor(descriptor)
             debugLog("readDescriptor", "readDescriptor returned $success")
-            if (!success) {
-                notifyDescriptorRead(
-                    descriptor,
-                    UUBluetoothError.operationFailedError("readDescriptor")
-                )
+
+            if (!success)
+            {
+                notifyDescriptorRead(descriptor, UUBluetoothError.operationFailedError("readDescriptor"))
             }
         }
     }
@@ -344,42 +354,45 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
         descriptor: BluetoothGattDescriptor,
         data: ByteArray?,
         timeout: Long,
-        delegate: UUDescriptorDelegate
-    ) {
+        delegate: UUDescriptorDelegate)
+    {
         val timerId = writeDescriptorWatchdogTimerId(descriptor)
-        val writeDescriptorDelegate: UUDescriptorDelegate = object : UUDescriptorDelegate {
-            override fun onComplete(
-                peripheral: UUPeripheral,
-                descriptor: BluetoothGattDescriptor,
-                error: UUError?
-            ) {
-                debugLog(
-                    "readDescriptor",
-                    "Write descriptor complete: $peripheral, error: $error, data: ${descriptor.value?.uuToHex()}")
-                removeWriteDescriptorDelegate(descriptor)
-                UUTimer.cancelActiveTimer(timerId)
-                delegate.onComplete(peripheral, descriptor, error)
-            }
+
+        val writeDescriptorDelegate: UUDescriptorDelegate =
+        { peripheral: UUPeripheral,
+          descriptor1: BluetoothGattDescriptor,
+          error: UUError? ->
+
+            debugLog(
+                "readDescriptor",
+                "Write descriptor complete: $peripheral, error: $error, data: ${descriptor.value?.uuToHex()}")
+            removeWriteDescriptorDelegate(descriptor)
+            UUTimer.cancelActiveTimer(timerId)
+            delegate(peripheral, descriptor, error)
         }
+
         registerWriteDescriptorDelegate(descriptor, writeDescriptorDelegate)
-        UUTimer.startTimer(timerId, timeout, peripheral) { _, _ ->
+        UUTimer.startTimer(timerId, timeout, peripheral)
+        { _, _ ->
+            debugLog("writeDescriptor", "Write descriptor timeout: $peripheral")
+            disconnect("writeDescriptor", timeoutError())
         }
 
         runOnMainThread()
         {
-            if (bluetoothGatt == null) {
+            if (bluetoothGatt == null)
+            {
                 debugLog("writeDescriptor", "bluetoothGatt is null!")
                 notifyDescriptorWritten(descriptor, UUBluetoothError.notConnectedError())
                 return@runOnMainThread
             }
+
             descriptor.value = data
             val success = bluetoothGatt!!.writeDescriptor(descriptor)
             debugLog("writeDescriptor", "writeDescriptor returned $success")
-            if (!success) {
-                notifyDescriptorWritten(
-                    descriptor,
-                    UUBluetoothError.operationFailedError("writeDescriptor")
-                )
+            if (!success)
+            {
+                notifyDescriptorWritten(descriptor, UUBluetoothError.operationFailedError("writeDescriptor"))
             }
             // else
             //
@@ -392,19 +405,20 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
         enabled: Boolean,
         timeout: Long,
         notifyDelegate: UUCharacteristicDelegate?,
-        delegate: UUCharacteristicDelegate
-    ) {
+        delegate: UUCharacteristicDelegate)
+    {
         val timerId = setNotifyStateWatchdogTimerId(characteristic)
         val setNotifyDelegate: UUCharacteristicDelegate =
-        { peripheral: UUPeripheral,
-                characteristic1: BluetoothGattCharacteristic,
-                error: UUError? ->
-                debugLog(
-                    "setNotifyState",
-                    "Set characteristic notify complete: $peripheral, error: $error, data: ${characteristic1.value?.uuToHex()}")
-                removeSetNotifyDelegate(characteristic1)
-                UUTimer.cancelActiveTimer(timerId)
-                delegate.invoke(peripheral, characteristic1, error)
+        {
+            peripheral: UUPeripheral,
+            characteristic1: BluetoothGattCharacteristic,
+            error: UUError? ->
+            debugLog(
+                "setNotifyState",
+                "Set characteristic notify complete: $peripheral, error: $error, data: ${characteristic1.value?.uuToHex()}")
+            removeSetNotifyDelegate(characteristic1)
+            UUTimer.cancelActiveTimer(timerId)
+            delegate.invoke(peripheral, characteristic1, error)
         }
 
         registerSetNotifyDelegate(characteristic, setNotifyDelegate)
@@ -417,53 +431,50 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
         val start = System.currentTimeMillis()
         runOnMainThread()
         {
-            if (bluetoothGatt == null) {
+            if (bluetoothGatt == null)
+            {
                 debugLog("toggleNotifyState", "bluetoothGatt is null!")
-                notifyCharacteristicNotifyStateChanged(
-                    characteristic,
-                    UUBluetoothError.notConnectedError()
-                )
+                notifyCharacteristicNotifyStateChanged(characteristic, UUBluetoothError.notConnectedError())
                 return@runOnMainThread
             }
-            if (enabled && notifyDelegate != null) {
+
+            if (enabled && notifyDelegate != null)
+            {
                 registerCharacteristicChangedDelegate(characteristic, notifyDelegate)
-            } else {
+            }
+            else
+            {
                 removeCharacteristicChangedDelegate(characteristic)
             }
-            debugLog(
-                "toggleNotifyState",
-                "Setting characteristic notify for " + characteristic.uuid.toString()
-            )
+
+            debugLog("toggleNotifyState", "Setting characteristic notify for ${characteristic.uuid}")
+
             val success = bluetoothGatt!!.setCharacteristicNotification(characteristic, enabled)
             debugLog("toggleNotifyState", "setCharacteristicNotification returned $success")
-            if (!success) {
-                notifyCharacteristicNotifyStateChanged(
-                    characteristic,
-                    UUBluetoothError.operationFailedError("setCharacteristicNotification")
-                )
+            if (!success)
+            {
+                notifyCharacteristicNotifyStateChanged(characteristic, UUBluetoothError.operationFailedError("setCharacteristicNotification"))
                 return@runOnMainThread
             }
-            val descriptor =
-                characteristic.getDescriptor(UUBluetoothConstants.Descriptors.CLIENT_CHARACTERISTIC_CONFIGURATION_UUID)
-            if (descriptor == null) {
-                notifyCharacteristicNotifyStateChanged(
-                    characteristic,
-                    UUBluetoothError.operationFailedError("getDescriptor")
-                )
+
+            val descriptor = characteristic.getDescriptor(UUBluetoothConstants.Descriptors.CLIENT_CHARACTERISTIC_CONFIGURATION_UUID)
+            if (descriptor == null)
+            {
+                notifyCharacteristicNotifyStateChanged(characteristic, UUBluetoothError.operationFailedError("getDescriptor"))
                 return@runOnMainThread
             }
-            val data =
-                if (enabled) BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE else BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
+
+            val data = if (enabled) BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE else BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
+
             val timeoutLeft = timeout - (System.currentTimeMillis() - start)
-            writeDescriptor(descriptor, data, timeoutLeft, object : UUDescriptorDelegate {
-                override fun onComplete(
-                    peripheral: UUPeripheral,
-                    descriptor: BluetoothGattDescriptor,
-                    error: UUError?
-                ) {
-                    notifyCharacteristicNotifyStateChanged(characteristic, error)
-                }
-            })
+            writeDescriptor(descriptor, data, timeoutLeft)
+            {
+                peripheral1: UUPeripheral,
+                descriptor1: BluetoothGattDescriptor,
+                error: UUError? ->
+
+                notifyCharacteristicNotifyStateChanged(characteristic, error)
+            }
         }
     }
 
@@ -471,8 +482,8 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
         characteristic: BluetoothGattCharacteristic,
         data: ByteArray,
         timeout: Long,
-        delegate: UUCharacteristicDelegate
-    ) {
+        delegate: UUCharacteristicDelegate)
+    {
         writeCharacteristic(
             characteristic,
             data,
@@ -486,8 +497,8 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
         characteristic: BluetoothGattCharacteristic,
         data: ByteArray,
         timeout: Long,
-        delegate: UUCharacteristicDelegate
-    ) {
+        delegate: UUCharacteristicDelegate)
+    {
         writeCharacteristic(
             characteristic,
             data,
@@ -502,20 +513,21 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
         data: ByteArray,
         timeout: Long,
         writeType: Int,
-        delegate: UUCharacteristicDelegate
-    ) {
+        delegate: UUCharacteristicDelegate)
+    {
         val timerId = writeCharacteristicWatchdogTimerId(characteristic)
         val writeCharacteristicDelegate: UUCharacteristicDelegate =
-        { peripheral: UUPeripheral,
-                characteristic1: BluetoothGattCharacteristic,
-                error: UUError? ->
+        {
+            peripheral: UUPeripheral,
+            characteristic1: BluetoothGattCharacteristic,
+            error: UUError? ->
 
-                debugLog(
-                    "writeCharacteristic",
-                    "Write characteristic complete: $peripheral, error: $error, data: ${characteristic1.value?.uuToHex()}")
-                removeWriteCharacteristicDelegate(characteristic1)
-                UUTimer.cancelActiveTimer(timerId)
-                delegate.invoke(peripheral, characteristic1, error)
+            debugLog(
+                "writeCharacteristic",
+                "Write characteristic complete: $peripheral, error: $error, data: ${characteristic1.value?.uuToHex()}")
+            removeWriteCharacteristicDelegate(characteristic1)
+            UUTimer.cancelActiveTimer(timerId)
+            delegate.invoke(peripheral, characteristic1, error)
         }
 
         registerWriteCharacteristicDelegate(characteristic, writeCharacteristicDelegate)
@@ -527,39 +539,33 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
 
         runOnMainThread()
         {
-            if (bluetoothGatt == null) {
+            if (bluetoothGatt == null)
+            {
                 debugLog("writeCharacteristic", "bluetoothGatt is null!")
                 notifyCharacteristicWritten(characteristic, UUBluetoothError.notConnectedError())
                 return@runOnMainThread
             }
-            debugLog(
-                "writeCharacteristic",
-                "characteristic: " + characteristic.uuid + ", data: ${data.uuToHex()}")
-            debugLog(
-                "writeCharacteristic",
-                "props: " + characteristicPropertiesToString(characteristic.properties) + ", (" + characteristic.properties + ")"
-            )
-            debugLog(
-                "writeCharacteristic",
-                "permissions: " + characteristicPermissionsToString(characteristic.permissions) + ", (" + characteristic.permissions + ")"
-            )
+
+            debugLog("writeCharacteristic", "characteristic: ${characteristic.uuid}, data: ${data.uuToHex()}")
+            debugLog("writeCharacteristic", "props: ${characteristicPropertiesToString(characteristic.properties)}, (${characteristic.properties})")
+            debugLog("writeCharacteristic", "permissions: ${characteristicPermissionsToString(characteristic.permissions)}, (${characteristic.permissions}")
+
             characteristic.value = data
             characteristic.writeType = writeType
             val success = bluetoothGatt!!.writeCharacteristic(characteristic)
             debugLog("writeCharacteristic", "writeCharacteristic returned $success")
-            if (!success) {
-                notifyCharacteristicWritten(
-                    characteristic,
-                    UUBluetoothError.operationFailedError("writeCharacteristic")
-                )
+
+            if (!success)
+            {
+                notifyCharacteristicWritten(characteristic, UUBluetoothError.operationFailedError("writeCharacteristic"))
             }
         }
     }
 
     fun readRssi(
         timeout: Long,
-        completion: UUPeripheralErrorDelegate
-    ) {
+        completion: UUPeripheralErrorDelegate)
+    {
         val timerId = readRssiWatchdogTimerId()
 
         readRssiDelegate =
@@ -712,7 +718,7 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
     {
         try
         {
-            delegate?.onComplete((peripheral))
+            delegate?.invoke(peripheral)
         }
         catch (ex: Exception)
         {
@@ -724,7 +730,7 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
     {
         try
         {
-            delegate?.invoke((peripheral), characteristic, error)
+            delegate?.invoke(peripheral, characteristic, error)
         }
         catch (ex: Exception)
         {
@@ -736,7 +742,7 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
     {
         try
         {
-            delegate?.onComplete(peripheral, descriptor, error)
+            delegate?.invoke(peripheral, descriptor, error)
         }
         catch (ex: Exception)
         {

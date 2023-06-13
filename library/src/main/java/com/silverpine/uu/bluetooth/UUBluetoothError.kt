@@ -2,6 +2,7 @@ package com.silverpine.uu.bluetooth
 
 import android.bluetooth.BluetoothGatt
 import com.silverpine.uu.core.UUError
+import java.util.UUID
 
 /**
  * Container class for UUBluetooth errors
@@ -91,6 +92,17 @@ internal object UUBluetoothError
     {
         val err = makeError(UUBluetoothErrorCode.OperationFailed)
         err.addUserInfo(USER_INFO_KEY_METHOD_NAME, method)
+        return err
+    }
+
+    /**
+     * Error returned when a required characteristic is missing.
+     */
+    fun missingRequiredCharacteristic(characteristic: UUID): UUError
+    {
+        val err = makeError(UUBluetoothErrorCode.OperationFailed)
+        err.addUserInfo(USER_INFO_KEY_METHOD_NAME, "requireDiscoveredCharacteristic")
+        err.addUserInfo("Missing Characteristic", characteristic.toString())
         return err
     }
 

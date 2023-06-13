@@ -2,6 +2,7 @@ package com.silverpine.uu.bluetooth
 
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattService
+import com.silverpine.uu.bluetooth.UUBluetoothError.missingRequiredCharacteristic
 import com.silverpine.uu.bluetooth.UUBluetoothError.operationFailedError
 import com.silverpine.uu.core.UUError
 import com.silverpine.uu.core.uuReadInt16
@@ -71,7 +72,7 @@ abstract class UUPeripheralOperation<T : UUPeripheral?>(protected val peripheral
             return
         }
 
-        completion.invoke(discovered)
+        completion(discovered)
     }
 
     fun requireDiscoveredCharacteristic(uuid: UUID, completion: (BluetoothGattCharacteristic)->Unit)
@@ -79,12 +80,12 @@ abstract class UUPeripheralOperation<T : UUPeripheral?>(protected val peripheral
         val discovered = findDiscoveredCharacteristic(uuid)
         if (discovered == null)
         {
-            val err = operationFailedError("requireDiscoveredCharacteristic")
+            val err = missingRequiredCharacteristic(uuid)
             end(err)
             return
         }
 
-        completion.invoke(discovered)
+        completion(discovered)
     }
 
     fun write(data: ByteArray, toCharacteristic: UUID, completion: ()->Unit)
@@ -100,7 +101,7 @@ abstract class UUPeripheralOperation<T : UUPeripheral?>(protected val peripheral
                     return@writeCharacteristic
                 }
 
-                completion.invoke()
+                completion()
             }
         }
     }
@@ -118,7 +119,7 @@ abstract class UUPeripheralOperation<T : UUPeripheral?>(protected val peripheral
                     return@writeCharacteristicWithoutResponse
                 }
 
-                completion.invoke()
+                completion()
             }
         }
     }
@@ -136,7 +137,7 @@ abstract class UUPeripheralOperation<T : UUPeripheral?>(protected val peripheral
                     return@readCharacteristic
                 }
 
-                completion.invoke(characteristic.value)
+                completion(characteristic.value)
             }
         }
     }
@@ -157,7 +158,7 @@ abstract class UUPeripheralOperation<T : UUPeripheral?>(protected val peripheral
                 result = String(data, charset)
             }
 
-            completion.invoke(result)
+            completion(result)
         }
     }
 
@@ -176,7 +177,7 @@ abstract class UUPeripheralOperation<T : UUPeripheral?>(protected val peripheral
                 result = data.uuReadUInt8(0)
             }
 
-            completion.invoke(result)
+            completion(result)
         }
     }
 
@@ -192,7 +193,7 @@ abstract class UUPeripheralOperation<T : UUPeripheral?>(protected val peripheral
                 result = data.uuReadUInt16(byteOrder, 0)
             }
 
-            completion.invoke(result)
+            completion(result)
         }
     }
 
@@ -208,7 +209,7 @@ abstract class UUPeripheralOperation<T : UUPeripheral?>(protected val peripheral
                 result = data.uuReadUInt32(byteOrder, 0)
             }
 
-            completion.invoke(result)
+            completion(result)
         }
     }
 
@@ -224,7 +225,7 @@ abstract class UUPeripheralOperation<T : UUPeripheral?>(protected val peripheral
                 result = data.uuReadUInt64(byteOrder, 0)
             }
 
-            completion.invoke(result)
+            completion(result)
         }
     }
 
@@ -240,7 +241,7 @@ abstract class UUPeripheralOperation<T : UUPeripheral?>(protected val peripheral
                 result = data.uuReadInt8(0)
             }
 
-            completion.invoke(result)
+            completion(result)
         }
     }
 
@@ -256,7 +257,7 @@ abstract class UUPeripheralOperation<T : UUPeripheral?>(protected val peripheral
                 result = data.uuReadInt16(byteOrder, 0)
             }
 
-            completion.invoke(result)
+            completion(result)
         }
     }
 
@@ -272,7 +273,7 @@ abstract class UUPeripheralOperation<T : UUPeripheral?>(protected val peripheral
                 result = data.uuReadInt32(byteOrder, 0)
             }
 
-            completion.invoke(result)
+            completion(result)
         }
     }
 
@@ -288,7 +289,7 @@ abstract class UUPeripheralOperation<T : UUPeripheral?>(protected val peripheral
                 result = data.uuReadInt64(byteOrder, 0)
             }
 
-            completion.invoke(result)
+            completion(result)
         }
     }
 
@@ -456,7 +457,7 @@ abstract class UUPeripheralOperation<T : UUPeripheral?>(protected val peripheral
                         end(error)
                         return@setNotifyState
                     }
-                    dataChanged.invoke(characteristic1.value)
+                    dataChanged(characteristic1.value)
                 }) { peripheral: UUPeripheral?, characteristic12: BluetoothGattCharacteristic?, error: UUError? ->
                 if (error != null) {
                     end(error)

@@ -1,7 +1,5 @@
 package com.silverpine.uu.bluetooth
 
-import com.silverpine.uu.bluetooth.UUBluetooth.requireApplicationContext
-
 /**
  * UUBluetooth error codes.
  */
@@ -47,29 +45,18 @@ enum class UUBluetoothErrorCode(val rawValue: Int)
      *
      * @return a developer friendly error description
      */
-    val errorDescription: String?
+    val errorDescription: String
         get()
         {
-            try {
-
-
-                val ctx = requireApplicationContext()
-                val rez = ctx.resources
-
-                return when (this)
-                {
-                    Timeout -> rez.getString(R.string.error_description_timeout)
-                    NotConnected -> rez.getString(R.string.error_description_not_connected)
-                    OperationFailed -> rez.getString(R.string.error_description_operation_failed)
-                    ConnectionFailed -> rez.getString(R.string.error_description_connection_failed)
-                    Disconnected -> rez.getString(R.string.error_description_disconnected)
-                    PreconditionFailed -> rez.getString(R.string.error_description_precondition_failed)
-                    else -> null
-                }
-            }
-            catch (ex: Exception)
+            return when (this)
             {
-                return this.toString()
+                Timeout -> "The operation timed out."
+                NotConnected -> "The BluetoothDevice is not connected."
+                OperationFailed -> "The operation failed."
+                ConnectionFailed -> "The connection attempt failed."
+                Disconnected -> "The peripheral was disconnected."
+                PreconditionFailed -> "Unable to perform the operation."
+                else -> this.toString()
             }
         }
 }

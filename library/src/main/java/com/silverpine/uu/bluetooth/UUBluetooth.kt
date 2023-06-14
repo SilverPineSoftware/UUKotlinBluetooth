@@ -458,12 +458,12 @@ object UUBluetooth
 
     fun requireApplicationContext(): Context
     {
-        if (UUBluetooth.applicationContext == null)
+        if (applicationContext == null)
         {
             throw RuntimeException("applicationContext is null. Must call UUBluetooth.init(Context) on app startup.")
         }
 
-        return UUBluetooth.applicationContext!!
+        return applicationContext!!
     }
 
     val isBluetoothLeSupported: Boolean

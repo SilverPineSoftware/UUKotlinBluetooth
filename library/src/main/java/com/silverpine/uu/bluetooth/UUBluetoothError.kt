@@ -15,6 +15,8 @@ internal object UUBluetoothError
     private const val USER_INFO_KEY_METHOD_NAME = "methodName"
     private const val USER_INFO_KEY_MESSAGE = "message"
     private const val USER_INFO_KEY_GATT_STATUS = "gattStatus"
+    private const val USER_INFO_KEY_MISSING_CHARACTERISTIC = "missingCharacteristic"
+
     private const val DOMAIN = "UUBluetoothError"
 
     /**
@@ -102,7 +104,8 @@ internal object UUBluetoothError
     {
         val err = makeError(UUBluetoothErrorCode.OperationFailed)
         err.addUserInfo(USER_INFO_KEY_METHOD_NAME, "requireDiscoveredCharacteristic")
-        err.addUserInfo("Missing Characteristic", characteristic.toString())
+        err.addUserInfo(USER_INFO_KEY_MISSING_CHARACTERISTIC, characteristic.toString())
+        err.errorDescription = "Missing required characteristic $characteristic"
         return err
     }
 

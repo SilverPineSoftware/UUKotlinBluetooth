@@ -222,6 +222,11 @@ object UUBluetooth
         } else "Unknown"
     }
 
+    fun addBluetoothSpecName(uuid: UUID, name: String)
+    {
+        UUBluetoothConstants.BLUETOOTH_SPEC_NAMES[uuid] = name
+    }
+
     /**
      * Formats a string with human friendly properties of BluetoothGattCharacteristics
      *

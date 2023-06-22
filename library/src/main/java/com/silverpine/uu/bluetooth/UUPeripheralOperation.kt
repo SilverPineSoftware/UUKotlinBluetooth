@@ -28,8 +28,8 @@ import java.util.UUID
 abstract class UUPeripheralOperation<T : UUPeripheral?>(protected val peripheral: T)
 {
     private var operationCallback: ((UUError?)->Unit)? = null
-    private val discoveredServices = ArrayList<BluetoothGattService>()
-    private val discoveredCharacteristics = ArrayList<BluetoothGattCharacteristic>()
+    val discoveredServices = ArrayList<BluetoothGattService>()
+    val discoveredCharacteristics = ArrayList<BluetoothGattCharacteristic>()
     private val servicesNeedingCharacteristicDiscovery = ArrayList<BluetoothGattService>()
     var connectTimeout = UUPeripheral.Defaults.ConnectTimeout.toLong()
     var disconnectTimeout = UUPeripheral.Defaults.DisconnectTimeout.toLong()

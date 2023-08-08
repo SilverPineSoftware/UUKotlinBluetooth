@@ -11,9 +11,9 @@ import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.os.ParcelUuid
-import com.silverpine.uu.core.UUThread.runOnMainThread
 import com.silverpine.uu.core.UUTimer
 import com.silverpine.uu.core.UUWorkerThread
+import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.logging.UULog
 import java.util.UUID
 
@@ -39,9 +39,9 @@ class UUBluetoothScanner<T : UUPeripheral?>(context: Context, factory: UUPeriphe
         serviceUuidList: Array<UUID>?,
         filters: ArrayList<UUPeripheralFilter<T>>?,
         outOfRangeFilters: ArrayList<UUOutOfRangePeripheralFilter<T>>?,
-        callback: ((ArrayList<T>)->Unit)
-    ) {
-        runOnMainThread()
+        callback: ((ArrayList<T>)->Unit))
+    {
+        uuDispatchMain()
         {
             scanFilters = filters
             outOfRangeScanFilters = outOfRangeFilters
@@ -53,14 +53,16 @@ class UUBluetoothScanner<T : UUPeripheral?>(context: Context, factory: UUPeriphe
     }
 
     @Synchronized
-    private fun clearIgnoredDevices() {
+    private fun clearIgnoredDevices()
+    {
         ignoredDevices.clear()
     }
 
-    fun stopScanning() {
+    fun stopScanning()
+    {
         isScanning = false
         stopOutOfRangeEvaluationTimer()
-        runOnMainThread()
+        uuDispatchMain()
         {
             stopScan()
         }

@@ -16,7 +16,7 @@ import com.silverpine.uu.bluetooth.UUOutOfRangePeripheralFilter
 import com.silverpine.uu.bluetooth.UUPeripheral
 import com.silverpine.uu.bluetooth.UUPeripheralFactory
 import com.silverpine.uu.bluetooth.UUPeripheralFilter
-import com.silverpine.uu.core.UUThread
+import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.sample.bluetooth.BR
 import com.silverpine.uu.sample.bluetooth.R
 import com.silverpine.uu.sample.bluetooth.operations.ReadDeviceInfoOperation
@@ -105,7 +105,7 @@ class HomeActivity: UURecyclerActivity()
         op.start()
         { err ->
 
-            UUThread.runOnMainThread()
+            uuDispatchMain()
             {
                 if (err != null)
                 {
@@ -162,7 +162,7 @@ class HomeActivity: UURecyclerActivity()
             val timeSinceLastUpdate = System.currentTimeMillis() - this.lastUpdate
             if (timeSinceLastUpdate > 300)
             {
-                UUThread.runOnMainThread()
+                uuDispatchMain()
                 {
                     Log.d(TAG, "Updating devices, ${list.size} nearby")
                     val tmp = ArrayList<ViewModel>()
@@ -357,7 +357,7 @@ class HomeActivity: UURecyclerActivity()
     {
         override fun checkPeripheralRange(peripheral: UUPeripheral): UUOutOfRangePeripheralFilter.Result
         {
-            if (peripheral.timeSinceLastUpdate > 500)
+            if (peripheral.timeSinceLastUpdate > 2000)
             {
                 return UUOutOfRangePeripheralFilter.Result.OutOfRange
             }

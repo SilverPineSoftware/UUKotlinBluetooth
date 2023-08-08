@@ -15,8 +15,8 @@ import com.silverpine.uu.bluetooth.UUBluetooth.gattStatusToString
 import com.silverpine.uu.bluetooth.UUBluetooth.requireApplicationContext
 import com.silverpine.uu.bluetooth.UUBluetoothError.timeoutError
 import com.silverpine.uu.core.UUError
-import com.silverpine.uu.core.UUThread.runOnMainThread
 import com.silverpine.uu.core.UUTimer
+import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.core.uuIsNotEmpty
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.logging.UULog
@@ -92,7 +92,7 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
 
         this.disconnectTimeout = disconnectTimeout
 
-        runOnMainThread()
+        uuDispatchMain()
         {
             debugLog("connect", "Connecting to: $peripheral, gattAuto: $connectGattAutoFlag")
 
@@ -170,7 +170,7 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
 
     fun requestHighPriority(delegate: UUPeripheralBoolDelegate)
     {
-        runOnMainThread()
+        uuDispatchMain()
         {
             val result = requestHighPriority()
             notifyBoolResult(delegate, result)
@@ -195,13 +195,13 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
             notifyReqeustMtuComplete(UUBluetoothError.timeoutError())
         }
 
-        runOnMainThread()
+        uuDispatchMain()
         {
             if (bluetoothGatt == null)
             {
                 debugLog("requestMtuSize", "bluetoothGatt is null!")
                 notifyReqeustMtuComplete(UUBluetoothError.notConnectedError())
-                return@runOnMainThread
+                return@uuDispatchMain
             }
 
             debugLog("requestMtuSize", "Reading RSSI for: " + peripheral)
@@ -234,13 +234,13 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
             disconnect("discoverServices.timeout", UUBluetoothError.timeoutError())
         }
 
-        runOnMainThread()
+        uuDispatchMain()
         {
             if (bluetoothGatt == null)
             {
                 debugLog("discoverServices", "bluetoothGatt is null!")
                 notifyServicesDiscovered(UUBluetoothError.notConnectedError())
-                return@runOnMainThread
+                return@uuDispatchMain
             }
 
             debugLog("discoverServices", "Discovering services for: $peripheral")
@@ -285,13 +285,13 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
             disconnect("readCharacteristic.timeout", UUBluetoothError.timeoutError())
         }
 
-        runOnMainThread()
+        uuDispatchMain()
         {
             if (bluetoothGatt == null)
             {
                 debugLog("readCharacteristic", "bluetoothGatt is null!")
                 notifyCharacteristicRead(characteristic, UUBluetoothError.notConnectedError())
-                return@runOnMainThread
+                return@uuDispatchMain
             }
 
             debugLog("readCharacteristic", "characteristic: " + characteristic.uuid)
@@ -330,13 +330,13 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
             disconnect("readDescriptor.timeout", UUBluetoothError.timeoutError())
         }
 
-        runOnMainThread()
+        uuDispatchMain()
         {
             if (bluetoothGatt == null)
             {
                 debugLog("readDescriptor", "bluetoothGatt is null!")
                 notifyDescriptorRead(descriptor, UUBluetoothError.notConnectedError())
-                return@runOnMainThread
+                return@uuDispatchMain
             }
 
             debugLog("readDescriptor", "descriptor: " + descriptor.uuid)
@@ -378,13 +378,13 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
             disconnect("writeDescriptor", timeoutError())
         }
 
-        runOnMainThread()
+        uuDispatchMain()
         {
             if (bluetoothGatt == null)
             {
                 debugLog("writeDescriptor", "bluetoothGatt is null!")
                 notifyDescriptorWritten(descriptor, UUBluetoothError.notConnectedError())
-                return@runOnMainThread
+                return@uuDispatchMain
             }
 
             descriptor.value = data
@@ -429,13 +429,13 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
         }
 
         val start = System.currentTimeMillis()
-        runOnMainThread()
+        uuDispatchMain()
         {
             if (bluetoothGatt == null)
             {
                 debugLog("toggleNotifyState", "bluetoothGatt is null!")
                 notifyCharacteristicNotifyStateChanged(characteristic, UUBluetoothError.notConnectedError())
-                return@runOnMainThread
+                return@uuDispatchMain
             }
 
             if (enabled && notifyDelegate != null)
@@ -454,14 +454,14 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
             if (!success)
             {
                 notifyCharacteristicNotifyStateChanged(characteristic, UUBluetoothError.operationFailedError("setCharacteristicNotification"))
-                return@runOnMainThread
+                return@uuDispatchMain
             }
 
             val descriptor = characteristic.getDescriptor(UUBluetoothConstants.Descriptors.CLIENT_CHARACTERISTIC_CONFIGURATION_UUID)
             if (descriptor == null)
             {
                 notifyCharacteristicNotifyStateChanged(characteristic, UUBluetoothError.operationFailedError("getDescriptor"))
-                return@runOnMainThread
+                return@uuDispatchMain
             }
 
             val data = if (enabled) BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE else BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
@@ -537,13 +537,13 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
             disconnect("writeCharacteristic.timeout", UUBluetoothError.timeoutError())
         }
 
-        runOnMainThread()
+        uuDispatchMain()
         {
             if (bluetoothGatt == null)
             {
                 debugLog("writeCharacteristic", "bluetoothGatt is null!")
                 notifyCharacteristicWritten(characteristic, UUBluetoothError.notConnectedError())
-                return@runOnMainThread
+                return@uuDispatchMain
             }
 
             debugLog("writeCharacteristic", "characteristic: ${characteristic.uuid}, data: ${data.uuToHex()}")
@@ -581,12 +581,12 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
             notifyReadRssiComplete(UUBluetoothError.timeoutError())
         }
 
-        runOnMainThread()
+        uuDispatchMain()
         {
             if (bluetoothGatt == null) {
                 debugLog("readRssi", "bluetoothGatt is null!")
                 notifyReadRssiComplete(UUBluetoothError.notConnectedError())
-                return@runOnMainThread
+                return@uuDispatchMain
             }
             debugLog("readRssi", "Reading RSSI for: $peripheral")
             val ok = bluetoothGatt!!.readRemoteRssi()
@@ -984,7 +984,7 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
 
     private fun disconnectGattOnMainThread()
     {
-        runOnMainThread()
+        uuDispatchMain()
         {
             disconnectGatt()
         }

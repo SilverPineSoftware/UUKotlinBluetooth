@@ -6,7 +6,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.recyclerview.widget.RecyclerView
 import com.silverpine.uu.bluetooth.UUPeripheral
-import com.silverpine.uu.core.UUThread
+import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.sample.bluetooth.BR
 import com.silverpine.uu.sample.bluetooth.R
 import com.silverpine.uu.sample.bluetooth.viewmodel.LabelValueViewModel
@@ -102,7 +102,7 @@ class PeripheralDetailActivity : UURecyclerActivity()
 
     private fun refreshUi()
     {
-        UUThread.runOnMainThread()
+        uuDispatchMain()
         {
             val tmp = ArrayList<ViewModel>()
             tmp.add(SectionHeaderViewModel(R.string.info))

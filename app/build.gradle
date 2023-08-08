@@ -43,9 +43,7 @@ dependencies {
     implementation 'androidx.core:core-ktx:1.10.1'
 
     implementation "com.silverpine.uu:uu-core-ktx:${uu_core_version}"
-    //implementation 'com.silverpine.uu:uu-ux-ktx:0.0.4.35-develop-SNAPSHOT'
-    implementation 'com.silverpine.uu:uu-ux-ktx:0.0.4-DEV-004'
-
+    implementation 'com.silverpine.uu:uu-ux-ktx:0.0.4.40-develop-SNAPSHOT'
 
     implementation project(':library')
 

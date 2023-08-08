@@ -9,7 +9,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.silverpine.uu.bluetooth.UUBluetooth
 import com.silverpine.uu.bluetooth.UUPeripheral
-import com.silverpine.uu.core.UUThread
+import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.core.uuToHexData
 import com.silverpine.uu.sample.bluetooth.R
@@ -83,7 +83,7 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: B
         peripheral.readCharacteristic(model, 60000)
         { p, updatedCharacteristic, error ->
 
-            UUThread.runOnMainThread()
+            uuDispatchMain()
             {
                 refreshData()
             }
@@ -102,7 +102,7 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: B
                 //        ", data: " + UUString.byteToHex(characteristic.value) +
                 //      ", error: " + error)
 
-                UUThread.runOnMainThread()
+                uuDispatchMain()
                 {
                     refreshData()
                 }
@@ -112,7 +112,7 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: B
             //        ", error: " + error))
             //UUListView.reloadRow(listView, position)
 
-            UUThread.runOnMainThread()
+            uuDispatchMain()
             {
                 refreshData()
             }
@@ -131,7 +131,7 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: B
             peripheral.writeCharacteristic(model, tx!!, 10000)
             { p, c, e ->
 
-                UUThread.runOnMainThread()
+                uuDispatchMain()
                 {
                     refreshData()
                 }
@@ -151,7 +151,7 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: B
             peripheral.writeCharacteristicWithoutResponse(model, tx!!, 10000)
             { p, c, e ->
 
-                UUThread.runOnMainThread()
+                uuDispatchMain()
                 {
                     refreshData()
                 }

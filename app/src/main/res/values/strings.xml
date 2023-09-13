@@ -51,5 +51,10 @@
     <string name="utf8">utf8</string>
     <string name="mtu_size_label">MTU Size:</string>
 
+    <string name="listen">Listen</string>
+    <string name="advertise">Advertise</string>
+    <string name="ping">Ping</string>
+    <string name="open_l2cap_server">Start L2Cap Server</string>
+    <string name="open_l2cap_client">Start L2Cap Client</string>
 
 </resources>

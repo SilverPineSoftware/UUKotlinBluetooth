@@ -8,12 +8,16 @@ import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
+import android.bluetooth.BluetoothServerSocket
+import android.bluetooth.BluetoothSocket
 import android.content.Context
+import android.os.Build
 import android.os.Parcel
 import android.os.Parcelable
+import androidx.annotation.RequiresApi
+import androidx.annotation.RequiresPermission
 import com.silverpine.uu.core.UUError
 import com.silverpine.uu.core.uuReadUInt8
-import com.silverpine.uu.core.uuSerializeParcel
 import com.silverpine.uu.core.uuSubData
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.core.uuUtf8
@@ -110,7 +114,7 @@ open class UUPeripheral() : Parcelable
         get() = (device)!!
 
     val address: String?
-        get() = device!!.address
+        get() = device?.address
 
     open val name: String?
         @SuppressLint("MissingPermission")
@@ -506,6 +510,24 @@ open class UUPeripheral() : Parcelable
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
+    // L2Cap Support
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    @RequiresPermission(value = "android.permission.BLUETOOTH_CONNECT")
+    open fun connectL2Cap(psm: Int, secure: Boolean): BluetoothSocket
+    {
+        return if (secure)
+        {
+            bluetoothDevice.createL2capChannel(psm)
+        }
+        else
+        {
+            bluetoothDevice.createInsecureL2capChannel(psm)
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
     // System.Object overrides
     ////////////////////////////////////////////////////////////////////////////////////////////////
     override fun toString(): String
@@ -522,26 +544,25 @@ open class UUPeripheral() : Parcelable
         }
     }
 
-    override fun equals(o: Any?): Boolean
+    override fun equals(other: Any?): Boolean
     {
-        if (this === o)
+        if (this === other)
         {
             return true
         }
 
-        if (o !is UUPeripheral)
+        if (other !is UUPeripheral)
         {
             return false
         }
 
-        val that = o
-        return ((((rssi == that.rssi) && lastRssiUpdateTime == that.lastRssiUpdateTime) && firstAdvertisementTime == that.firstAdvertisementTime) && lastAdvertisementTime == that.lastAdvertisementTime) && totalBeaconCount == that.totalBeaconCount &&
-                (device == that.device) &&
-                Arrays.equals(scanRecord, that.scanRecord) &&
-                Arrays.equals(manufacturingData, that.manufacturingData) &&
-                Arrays.equals(flags, that.flags) &&
-                (localName == that.localName) && serviceUuids == that.serviceUuids &&
-                (bluetoothGatt == that.bluetoothGatt)
+        return ((((rssi == other.rssi) && lastRssiUpdateTime == other.lastRssiUpdateTime) && firstAdvertisementTime == other.firstAdvertisementTime) && lastAdvertisementTime == other.lastAdvertisementTime) && totalBeaconCount == other.totalBeaconCount &&
+                (device == other.device) &&
+                Arrays.equals(scanRecord, other.scanRecord) &&
+                Arrays.equals(manufacturingData, other.manufacturingData) &&
+                Arrays.equals(flags, other.flags) &&
+                (localName == other.localName) && serviceUuids == other.serviceUuids &&
+                (bluetoothGatt == other.bluetoothGatt)
     }
 
     override fun hashCode(): Int

@@ -28,6 +28,8 @@ typealias UUDescriptorDelegate = (UUPeripheral, BluetoothGattDescriptor, UUError
 typealias UUDiscoverServicesDelegate = (ArrayList<BluetoothGattService>?, UUError?)->Unit
 typealias UUPeripheralDelegate = (UUPeripheral?)->Unit
 typealias UUPeripheralErrorDelegate = (UUPeripheral,UUError?)->Unit
+typealias UUDataDelegate = (ByteArray)->Unit
+
 /**
  * A helpful set of wrapper methods around BluetoothGatt
  */

@@ -16,10 +16,13 @@ import com.silverpine.uu.bluetooth.UUOutOfRangePeripheralFilter
 import com.silverpine.uu.bluetooth.UUPeripheral
 import com.silverpine.uu.bluetooth.UUPeripheralFactory
 import com.silverpine.uu.bluetooth.UUPeripheralFilter
+import com.silverpine.uu.core.UUDate
 import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.sample.bluetooth.BR
 import com.silverpine.uu.sample.bluetooth.R
 import com.silverpine.uu.sample.bluetooth.operations.ReadDeviceInfoOperation
+import com.silverpine.uu.sample.bluetooth.ui.l2cap.L2CapClientActivity
+import com.silverpine.uu.sample.bluetooth.ui.l2cap.L2CapServerActivity
 import com.silverpine.uu.sample.bluetooth.viewmodel.UUPeripheralViewModel
 import com.silverpine.uu.ux.UUMenuHandler
 import com.silverpine.uu.ux.UUPermissions
@@ -50,8 +53,6 @@ class HomeActivity: UURecyclerActivity()
                 return UUPeripheral(device, rssi, scanRecord)
             }
         })
-
-        //scanner = UUBluetoothScanner(applicationContext) { device, rssi, scanRecord -> UUPeripheral(device, rssi, scanRecord) }
     }
 
     override fun setupAdapter(recyclerView: RecyclerView)
@@ -72,6 +73,7 @@ class HomeActivity: UURecyclerActivity()
             val actions = ArrayList<Pair<String, Runnable>>()
             actions.add(Pair("View Services", Runnable { gotoPeripheralServices(peripheral) }))
             actions.add(Pair("Read Info", Runnable { readDeviceInfo(peripheral) }))
+            actions.add(Pair("Start L2Cap Client", Runnable { openL2CapClient(peripheral) }))
 
             val items = arrayOfNulls<String>(actions.size)
             for (i in items.indices)
@@ -148,6 +150,8 @@ class HomeActivity: UURecyclerActivity()
         {
             menuHandler.addAction(R.string.scan, this::startScanning)
         }
+
+        menuHandler.add(R.string.open_l2cap_server, this::openL2CapServer)
     }
 
     private fun startScanning()
@@ -183,6 +187,19 @@ class HomeActivity: UURecyclerActivity()
 
         scanner.stopScanning()
         invalidateOptionsMenu()
+    }
+
+    private fun openL2CapServer()
+    {
+        val intent = Intent(applicationContext, L2CapServerActivity::class.java)
+        startActivity(intent)
+    }
+
+    private fun openL2CapClient(peripheral: UUPeripheral)
+    {
+        val intent = Intent(applicationContext, L2CapClientActivity::class.java)
+        intent.putExtra("peripheral", peripheral)
+        startActivity(intent)
     }
 
     companion object
@@ -357,13 +374,13 @@ class HomeActivity: UURecyclerActivity()
     {
         override fun checkPeripheralRange(peripheral: UUPeripheral): UUOutOfRangePeripheralFilter.Result
         {
-            if (peripheral.timeSinceLastUpdate > 2000)
+            return if (peripheral.timeSinceLastUpdate > (UUDate.MILLIS_IN_ONE_SECOND * 20))
             {
-                return UUOutOfRangePeripheralFilter.Result.OutOfRange
+                UUOutOfRangePeripheralFilter.Result.OutOfRange
             }
             else
             {
-                return UUOutOfRangePeripheralFilter.Result.InRange
+                UUOutOfRangePeripheralFilter.Result.InRange
             }
         }
     }

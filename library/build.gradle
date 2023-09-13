@@ -17,10 +17,9 @@ ext {
 apply from: "../uu-build-common.gradle"
 
 android {
-    compileSdkVersion target_sdk
-
     defaultConfig {
         minSdkVersion min_sdk
+        compileSdk target_sdk
         targetSdkVersion target_sdk
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -42,9 +41,9 @@ android {
 
 dependencies {
 
-    implementation 'androidx.annotation:annotation:1.6.0'
+    implementation 'androidx.annotation:annotation:1.7.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'androidx.core:core-ktx:1.10.1'
+    implementation 'androidx.core:core-ktx:1.12.0'
 
     implementation "com.silverpine.uu:uu-core-ktx:${uu_core_version}"
 

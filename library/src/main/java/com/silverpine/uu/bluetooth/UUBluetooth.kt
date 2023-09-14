@@ -504,6 +504,10 @@ object UUBluetooth
         return null
     }
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // L2Cap Support
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
     @RequiresApi(Build.VERSION_CODES.Q)
     @RequiresPermission(value = "android.permission.BLUETOOTH_CONNECT")
     fun listenForL2CapConnection(secure: Boolean): BluetoothServerSocket

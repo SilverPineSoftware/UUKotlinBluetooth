@@ -737,12 +737,14 @@ open class UUPeripheral() : Parcelable
         private const val BLE_PACKET_SIZE_MAX = 512
         private const val BLE_PACKET_OVERHEAD = 3
 
-        override fun createFromParcel(parcel: Parcel): UUPeripheral {
+        override fun createFromParcel(parcel: Parcel): UUPeripheral
+        {
             return UUPeripheral(parcel)
         }
 
-        override fun newArray(size: Int): Array<UUPeripheral?> {
-            return arrayOfNulls(size)
+        override fun newArray(size: Int): Array<UUPeripheral>
+        {
+            return newArray(size)
         }
     }
 }

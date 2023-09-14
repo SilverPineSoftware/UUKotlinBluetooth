@@ -25,7 +25,7 @@ import java.util.UUID
 
 typealias UUCharacteristicDelegate = (UUPeripheral, BluetoothGattCharacteristic, UUError?)->Unit
 typealias UUDescriptorDelegate = (UUPeripheral, BluetoothGattDescriptor, UUError?)->Unit
-typealias UUDiscoverServicesDelegate = (ArrayList<BluetoothGattService>?, UUError?)->Unit
+typealias UUDiscoverServicesDelegate = (ArrayList<BluetoothGattService>, UUError?)->Unit
 typealias UUPeripheralDelegate = (UUPeripheral?)->Unit
 typealias UUPeripheralErrorDelegate = (UUPeripheral,UUError?)->Unit
 typealias UUDataDelegate = (ByteArray)->Unit

@@ -18,6 +18,7 @@ import com.silverpine.uu.bluetooth.UUPeripheralFactory
 import com.silverpine.uu.bluetooth.UUPeripheralFilter
 import com.silverpine.uu.core.UUDate
 import com.silverpine.uu.core.uuDispatchMain
+import com.silverpine.uu.logging.UULog
 import com.silverpine.uu.sample.bluetooth.BR
 import com.silverpine.uu.sample.bluetooth.R
 import com.silverpine.uu.sample.bluetooth.operations.ReadDeviceInfoOperation
@@ -142,6 +143,8 @@ class HomeActivity: UURecyclerActivity()
 
     override fun populateMenu(menuHandler: UUMenuHandler)
     {
+        UULog.d(javaClass, "populateMenu", "isScanning: ${scanner.isScanning}")
+
         if (scanner.isScanning)
         {
             menuHandler.addAction(R.string.stop, this::stopScanning)

@@ -190,6 +190,7 @@ class UUL2CapChannel(private val peripheral: UUPeripheral)
 
     fun read(
         timeout: Long,
+        expectedBytes: Int? = null,
         completion: (ByteArray?, UUError?)->Unit)
     {
         workerThread.post()
@@ -217,7 +218,7 @@ class UUL2CapChannel(private val peripheral: UUPeripheral)
 
             val timerId = timerId(TimerBuckets.ReadWatchdog)
 
-            val readThread = ReadThread(inputStream)
+            val readThread = ReadThread(inputStream, expectedBytes)
             { rx, err ->
                 UUTimer.cancelActiveTimer(timerId)
                 notifyReadComplete(rx,err, completion)
@@ -235,6 +236,26 @@ class UUL2CapChannel(private val peripheral: UUPeripheral)
             }
 
             readThread.start()
+        }
+    }
+
+    fun sendCommand(
+        command: ByteArray,
+        sendTimeout: Long,
+        receiveTimeout: Long,
+        expectedBytes: Int,
+        completion: (ByteArray?, UUError?)->Unit)
+    {
+        write(command, sendTimeout)
+        { txErr ->
+
+            if (txErr != null)
+            {
+                completion(null, txErr)
+                return@write
+            }
+
+            read(receiveTimeout, expectedBytes, completion)
         }
     }
 
@@ -298,6 +319,7 @@ class UUL2CapChannel(private val peripheral: UUPeripheral)
 
     inner class ReadThread(
         private val inputStream: InputStream,
+        private val expectedBytes: Int?,
         private val completion: (ByteArray?, UUError?)->Unit): Thread("BluetoothSocketReadThread")
     {
         private var interrupted: Boolean = false
@@ -312,6 +334,7 @@ class UUL2CapChannel(private val peripheral: UUPeripheral)
             try
             {
                 var bytesRead: Int
+                var totalBytesRead = 0
 
                 sleepUntilDataAvailable()
 
@@ -327,6 +350,15 @@ class UUL2CapChannel(private val peripheral: UUPeripheral)
                     if (bytesRead > 0)
                     {
                         bos.write(rxChunk, 0, bytesRead)
+                    }
+
+                    totalBytesRead += bytesRead
+                    if (expectedBytes != null)
+                    {
+                        if (totalBytesRead >= expectedBytes)
+                        {
+                            break
+                        }
                     }
                 }
 

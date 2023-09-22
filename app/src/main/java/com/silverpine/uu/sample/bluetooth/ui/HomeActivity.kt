@@ -30,6 +30,7 @@ import com.silverpine.uu.ux.UUPermissions
 import com.silverpine.uu.ux.UURecyclerActivity
 import com.silverpine.uu.ux.uuOpenSystemSettings
 import com.silverpine.uu.ux.uuPrompt
+import java.util.Comparator
 
 class HomeActivity: UURecyclerActivity()
 {
@@ -83,8 +84,10 @@ class HomeActivity: UURecyclerActivity()
             }
             builder.setCancelable(true)
 
-            builder.setItems(items) { dialog, which ->
-                if (which >= 0 && which < actions.size) {
+            builder.setItems(items)
+            { _, which ->
+                if (which >= 0 && which < actions.size)
+                {
                     actions[which].second.run()
                 }
             }
@@ -163,7 +166,15 @@ class HomeActivity: UURecyclerActivity()
 
         adapter.update(listOf())
 
-        scanner.startScanning(null, arrayListOf(PeripheralFilter()), arrayListOf(OutOfRangeFilter()))
+        val filters: ArrayList<UUPeripheralFilter<UUPeripheral>> = arrayListOf()
+        filters.add(RequireMinimumRssiPeripheralFilter(-70))
+        //filters.add(RequireNoNamePeripheralFilter())
+        filters.add(RequireNamePeripheralFilter())
+
+        val outOfRangeFilters: ArrayList<UUOutOfRangePeripheralFilter<UUPeripheral>> = arrayListOf()
+        outOfRangeFilters.add(OutOfRangeFilter())
+
+        scanner.startScanning(null, filters, outOfRangeFilters)
         { list ->
 
             val timeSinceLastUpdate = System.currentTimeMillis() - this.lastUpdate
@@ -173,7 +184,9 @@ class HomeActivity: UURecyclerActivity()
                 {
                     Log.d(TAG, "Updating devices, ${list.size} nearby")
                     val tmp = ArrayList<ViewModel>()
-                    tmp.addAll(list.map { UUPeripheralViewModel(it, applicationContext) })
+                    val vmList = list.map { UUPeripheralViewModel(it, applicationContext) }
+                    sortPeripherals(vmList)
+                    tmp.addAll(vmList)
                     adapter.update(tmp)
 
                     lastUpdate = System.currentTimeMillis()
@@ -182,6 +195,66 @@ class HomeActivity: UURecyclerActivity()
         }
 
         invalidateOptionsMenu()
+    }
+
+    private fun sortPeripherals(list: List<UUPeripheralViewModel>)
+    {
+        list.sortedWith(sortByLastRssi(true))
+        //list.sortedWith(sortByMacAddress()) // sortByLastRssiUpdateTime(true))
+
+        UULog.d(javaClass, "sortPeripherals", "There are ${list.size} nearby peripherals")
+    }
+
+    private fun sortByLastRssi(strongestFirst: Boolean): Comparator<in UUPeripheralViewModel>
+    {
+        return Comparator()
+        { lhs: UUPeripheralViewModel, rhs: UUPeripheralViewModel ->
+
+            val lhsValue = lhs.model.rssi
+            val rhsValue = rhs.model.rssi
+
+            if (lhsValue > rhsValue)
+            {
+                return@Comparator (if (strongestFirst) 1 else -1)
+            }
+            else if (lhsValue < rhsValue)
+            {
+                return@Comparator (if (strongestFirst) -1 else 1)
+            }
+            0
+        }
+    }
+
+    private fun sortByLastRssiUpdateTime(oldestFirst: Boolean): Comparator<in UUPeripheralViewModel>
+    {
+        return Comparator()
+        { lhs: UUPeripheralViewModel, rhs: UUPeripheralViewModel ->
+
+            val lhsValue = lhs.model.lastRssiUpdateTime
+            val rhsValue = rhs.model.lastRssiUpdateTime
+
+            if (lhsValue > rhsValue)
+            {
+                return@Comparator (if (oldestFirst) 1 else -1)
+            }
+            else if (lhsValue < rhsValue)
+            {
+                return@Comparator (if (oldestFirst) -1 else 1)
+            }
+            0
+        }
+    }
+
+    private fun sortByMacAddress(): Comparator<in UUPeripheralViewModel>
+    {
+        return Comparator()
+        { lhs: UUPeripheralViewModel, rhs: UUPeripheralViewModel ->
+
+            val lhsValue = lhs.model.address ?: ""
+            val rhsValue = rhs.model.address ?: ""
+
+            lhsValue.compareTo(rhsValue)
+        }
     }
 
     private fun stopScanning()
@@ -360,7 +433,7 @@ class HomeActivity: UURecyclerActivity()
             permissions.asList().toTypedArray(), grantResults)
     }
 
-    inner class PeripheralFilter: UUPeripheralFilter<UUPeripheral>
+    inner class RequireNamePeripheralFilter: UUPeripheralFilter<UUPeripheral>
     {
         override fun shouldDiscoverPeripheral(peripheral: UUPeripheral): UUPeripheralFilter.Result
         {
@@ -369,7 +442,33 @@ class HomeActivity: UURecyclerActivity()
                 return UUPeripheralFilter.Result.IgnoreForever
             }
 
-            return UUPeripheralFilter.Result.Discover;
+            return UUPeripheralFilter.Result.Discover
+        }
+    }
+
+    inner class RequireNoNamePeripheralFilter: UUPeripheralFilter<UUPeripheral>
+    {
+        override fun shouldDiscoverPeripheral(peripheral: UUPeripheral): UUPeripheralFilter.Result
+        {
+            if (peripheral.name == null)
+            {
+                return UUPeripheralFilter.Result.Discover
+            }
+
+            return UUPeripheralFilter.Result.IgnoreForever
+        }
+    }
+
+    inner class RequireMinimumRssiPeripheralFilter(private val rssi: Int): UUPeripheralFilter<UUPeripheral>
+    {
+        override fun shouldDiscoverPeripheral(peripheral: UUPeripheral): UUPeripheralFilter.Result
+        {
+            if (peripheral.rssi >= rssi)
+            {
+                return UUPeripheralFilter.Result.Discover
+            }
+
+            return UUPeripheralFilter.Result.IgnoreOnce
         }
     }
 
@@ -377,7 +476,7 @@ class HomeActivity: UURecyclerActivity()
     {
         override fun checkPeripheralRange(peripheral: UUPeripheral): UUOutOfRangePeripheralFilter.Result
         {
-            return if (peripheral.timeSinceLastUpdate > (UUDate.MILLIS_IN_ONE_SECOND * 20))
+            return if (peripheral.timeSinceLastUpdate > (UUDate.MILLIS_IN_ONE_SECOND * 200))
             {
                 UUOutOfRangePeripheralFilter.Result.OutOfRange
             }

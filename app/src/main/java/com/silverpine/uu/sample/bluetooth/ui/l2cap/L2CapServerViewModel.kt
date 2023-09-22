@@ -5,31 +5,58 @@ import android.bluetooth.BluetoothServerSocket
 import android.bluetooth.BluetoothSocket
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.annotation.StringRes
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.silverpine.uu.bluetooth.UUBluetooth
 import com.silverpine.uu.bluetooth.UUBluetoothAdvertiser
+import com.silverpine.uu.core.UUResources
 import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.core.uuSubData
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.logging.UULog
 import java.util.UUID
 
-@RequiresApi(Build.VERSION_CODES.Q)
 class L2CapServerViewModel: ViewModel()
 {
     private var _output: MutableLiveData<String> = MutableLiveData("")
     val output: LiveData<String> = _output
 
-    private var echoServer = BleEchoServer()
+    private val echoServer: BleEchoServer? by lazy {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+        {
+            val server = BleEchoServer()
+
+            server.onPsmChanged =
+            { psm ->
+                advertise(psm)
+            }
+
+            server.onLog = this::appendOutput
+
+            server
+        }
+        else
+        {
+            null
+        }
+    }
+
     private var advertiser = UUBluetoothAdvertiser(UUBluetooth.requireApplicationContext())
 
     var checkPermissions: ((()->Unit)->Unit) = { }
 
     fun reset()
     {
-        _output.value = "Tap Listen to begin"
+        if (echoServer == null)
+        {
+            appendOutput("This device does not support L2Cap")
+        }
+        else
+        {
+            appendOutput("Tap Listen to begin")
+        }
     }
 
     private fun advertise(psm: Int)
@@ -60,14 +87,15 @@ class L2CapServerViewModel: ViewModel()
 
     fun onStartListening()
     {
-        echoServer.onPsmChanged =
-        { psm ->
-            advertise(psm)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+        {
+            echoServer?.start(false)
         }
+    }
 
-        echoServer.onLog = this::appendOutput
-
-        echoServer.start(false)
+    private fun appendOutput(@StringRes resourceId: Int)
+    {
+        appendOutput(UUResources.getString(resourceId))
     }
 
     private fun appendOutput(line: String)
@@ -75,6 +103,7 @@ class L2CapServerViewModel: ViewModel()
         uuDispatchMain()
         {
             _output.value += "\n$line"
+            UULog.d(javaClass, "output", line)
         }
     }
 }

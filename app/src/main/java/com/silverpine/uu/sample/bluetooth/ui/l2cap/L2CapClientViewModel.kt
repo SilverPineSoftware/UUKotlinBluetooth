@@ -1,17 +1,17 @@
 package com.silverpine.uu.sample.bluetooth.ui.l2cap
 
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothSocket
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.silverpine.uu.bluetooth.UUL2CapChannel
 import com.silverpine.uu.bluetooth.UUPeripheral
 import com.silverpine.uu.core.uuDispatchMain
-import com.silverpine.uu.core.uuSubData
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.core.uuToHexData
+import com.silverpine.uu.logging.UULog
 
 @SuppressLint("MissingPermission")
 @RequiresApi(Build.VERSION_CODES.Q)
@@ -21,11 +21,12 @@ class L2CapClientViewModel: ViewModel()
     val output: LiveData<String> = _output
 
     private lateinit var peripheral: UUPeripheral
-    private var bluetoothSocket: BluetoothSocket? = null
+    private lateinit var channel: UUL2CapChannel
 
     fun update(peripheral: UUPeripheral)
     {
         this.peripheral = peripheral
+        this.channel = UUL2CapChannel(peripheral)
         appendOutput("Tap Connect to begin")
     }
 
@@ -34,38 +35,33 @@ class L2CapClientViewModel: ViewModel()
         appendOutput("Getting L2Cap Socket")
 
         val psm = peripheral.name?.replace("L2CapServer-", "")?.toInt() ?: 0
-        appendOutput("Connecting to PSM $psm")
-        bluetoothSocket = peripheral.connectL2Cap(psm, false)
-
-        appendOutput("Starting L2Cap Connection")
-
-        try
-        {
-            bluetoothSocket?.connect()
-        }
-        catch (ex: Exception)
-        {
-            appendOutput("Connection Failed: $ex")
-            bluetoothSocket = null
+        val secure = false
+        val timeout = 10000L
+        appendOutput("Starting L2CapChannel to PSM $psm, secure: $secure, timeout: $timeout")
+        channel.connect(psm, secure, timeout)
+        { err ->
+            appendOutput("Connection Complete, Error: $err")
         }
     }
 
     fun onPing()
     {
-        val tx = "57575757"
-        appendOutput("TX: $tx")
-        bluetoothSocket?.outputStream?.write(tx.uuToHexData())
+        val tx = "57575757".uuToHexData() ?: return
 
-        val available = bluetoothSocket?.inputStream?.available()
-        appendOutput("There are $available bytes to read.")
+        appendOutput("TX: ${tx.uuToHex()}")
 
-        val rxBuffer = ByteArray(1024)
-        val bytesRead = bluetoothSocket?.inputStream?.read(rxBuffer, 0, rxBuffer.size) ?: 0
+        appendOutput("Writing data...")
+        channel.write(tx, 10000L)
+        { txErr ->
+            appendOutput("TX Complete, err: $txErr")
 
-        appendOutput("Read $bytesRead bytes")
+            appendOutput("Reading data...")
+            channel.read(10000L)
+            { rx, rxErr ->
 
-        val rx = rxBuffer.uuSubData(0, bytesRead)
-        appendOutput("RX: ${rx?.uuToHex()}")
+                appendOutput("RX Complete, ${rx?.uuToHex()}, err: $rxErr")
+            }
+        }
     }
 
     private fun appendOutput(line: String)
@@ -73,6 +69,7 @@ class L2CapClientViewModel: ViewModel()
         uuDispatchMain()
         {
             _output.value += "\n$line"
+            UULog.d(javaClass, "outputLog", line)
         }
     }
 }

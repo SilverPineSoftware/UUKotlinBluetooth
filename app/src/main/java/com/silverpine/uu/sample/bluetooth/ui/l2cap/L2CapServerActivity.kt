@@ -12,7 +12,6 @@ import com.silverpine.uu.ux.UUPermissions
 
 class L2CapServerActivity : AppCompatActivity()
 {
-    @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?)
     {
         super.onCreate(savedInstanceState)
@@ -38,13 +37,19 @@ class L2CapServerActivity : AppCompatActivity()
             permissions.asList().toTypedArray(), grantResults)
     }
 
-    @RequiresApi(Build.VERSION_CODES.S)
     private fun checkPermissions(completion: ()->Unit)
     {
-        UUPermissions.requestPermissions(this, Manifest.permission.BLUETOOTH_ADVERTISE, 9509)
-        { permission, granted ->
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+        {
+            UUPermissions.requestPermissions(this, Manifest.permission.BLUETOOTH_ADVERTISE, 9509)
+            { permission, granted ->
 
-            UULog.d(javaClass, "checkPermissions", "$permission: $granted")
+                UULog.d(javaClass, "checkPermissions", "$permission: $granted")
+                completion()
+            }
+        }
+        else
+        {
             completion()
         }
     }

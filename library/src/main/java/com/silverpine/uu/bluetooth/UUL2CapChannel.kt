@@ -34,6 +34,12 @@ class UUL2CapChannel(private val peripheral: UUPeripheral)
     private val workerThread = UUWorkerThread("UUL2CapChannel_${peripheral.address}")
     private var socket: BluetoothSocket? = null
 
+    val isConnected: Boolean
+        get()
+        {
+            return (socket?.isConnected == true)
+        }
+
     fun connect(
         psm: Int,
         secure: Boolean,
@@ -294,6 +300,8 @@ class UUL2CapChannel(private val peripheral: UUPeripheral)
         private val inputStream: InputStream,
         private val completion: (ByteArray?, UUError?)->Unit): Thread("BluetoothSocketReadThread")
     {
+        private var interrupted: Boolean = false
+
         override fun run()
         {
             val rxChunk = ByteArray(1024)
@@ -305,13 +313,9 @@ class UUL2CapChannel(private val peripheral: UUPeripheral)
             {
                 var bytesRead: Int
 
-                do
-                {
-                    uuSleep("read.run", 10L)
-                }
-                while (inputStream.available() == 0)
+                sleepUntilDataAvailable()
 
-                while (inputStream.available() > 0)
+                while (!interrupted && inputStream.available() > 0)
                 {
                     bytesRead = inputStream.read(rxChunk, 0, rxChunk.size)
 
@@ -346,10 +350,20 @@ class UUL2CapChannel(private val peripheral: UUPeripheral)
             completion(rx, err)
         }
 
+        private fun sleepUntilDataAvailable()
+        {
+            do
+            {
+                uuSleep("sleepUntilDataAvailable", 10L)
+            }
+            while (!interrupted && inputStream.available() == 0)
+        }
+
         fun uuInterrupt()
         {
             try
             {
+                interrupted = true
                 interrupt()
             }
             catch (ex: Exception)

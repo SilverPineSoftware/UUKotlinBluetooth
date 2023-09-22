@@ -510,24 +510,6 @@ open class UUPeripheral() : Parcelable
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    // L2Cap Support
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    @RequiresApi(Build.VERSION_CODES.Q)
-    @RequiresPermission(value = "android.permission.BLUETOOTH_CONNECT")
-    open fun connectL2Cap(psm: Int, secure: Boolean): BluetoothSocket
-    {
-        return if (secure)
-        {
-            bluetoothDevice.createL2capChannel(psm)
-        }
-        else
-        {
-            bluetoothDevice.createInsecureL2capChannel(psm)
-        }
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
     // System.Object overrides
     ////////////////////////////////////////////////////////////////////////////////////////////////
     override fun toString(): String

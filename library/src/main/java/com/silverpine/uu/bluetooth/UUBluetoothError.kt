@@ -125,7 +125,7 @@ internal object UUBluetoothError
 
     /**
      * Wrapper method to return an underlying Bluetooth method failure.  This is returned when
-     * a method returns false or null or othe error condition.
+     * a method returns false or null or other error condition.
      *
      * @param caughtException the exception that caused this error
      *

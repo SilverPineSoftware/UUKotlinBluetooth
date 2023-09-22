@@ -16,13 +16,11 @@ import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.core.uuSubData
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.logging.UULog
+import com.silverpine.uu.sample.bluetooth.ui.UUMenuItem
 import java.util.UUID
 
-class L2CapServerViewModel: ViewModel()
+class L2CapServerViewModel: L2CapBaseViewModel()
 {
-    private var _output: MutableLiveData<String> = MutableLiveData("")
-    val output: LiveData<String> = _output
-
     private val echoServer: BleEchoServer? by lazy {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
         {
@@ -57,6 +55,8 @@ class L2CapServerViewModel: ViewModel()
         {
             appendOutput("Tap Listen to begin")
         }
+
+        updateMenu()
     }
 
     private fun advertise(psm: Int)
@@ -85,7 +85,7 @@ class L2CapServerViewModel: ViewModel()
         }
     }
 
-    fun onStartListening()
+    fun onStart()
     {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
         {
@@ -93,18 +93,13 @@ class L2CapServerViewModel: ViewModel()
         }
     }
 
-    private fun appendOutput(@StringRes resourceId: Int)
+    override fun buildMenu(): ArrayList<UUMenuItem>
     {
-        appendOutput(UUResources.getString(resourceId))
-    }
+        val list = ArrayList<UUMenuItem>()
 
-    private fun appendOutput(line: String)
-    {
-        uuDispatchMain()
-        {
-            _output.value += "\n$line"
-            UULog.d(javaClass, "output", line)
-        }
+        list.add(UUMenuItem("Start", this::onStart))
+
+        return list
     }
 }
 

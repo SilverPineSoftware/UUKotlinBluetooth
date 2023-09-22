@@ -37,7 +37,6 @@ class L2CapClientActivity : AppCompatActivity()
             menuViewModels.clear()
             menuViewModels.addAll(it)
             invalidateMenu()
-            //invalidateOptionsMenu()
         }
 
         val peripheral: UUPeripheral = intent.uuRequireParcelable("peripheral")
@@ -45,26 +44,9 @@ class L2CapClientActivity : AppCompatActivity()
         title = "L2Cap Client"
     }
 
-    /*override fun populateMenu(menuHandler: UUMenuHandler)
-    {
-        UULog.d(javaClass, "populateMenu", "isScanning: ${scanner.isScanning}")
-
-        if (scanner.isScanning)
-        {
-            menuHandler.addAction(R.string.stop, this::stopScanning)
-        }
-        else
-        {
-            menuHandler.addAction(R.string.scan, this::startScanning)
-        }
-
-        menuHandler.add(R.string.open_l2cap_server, this::openL2CapServer)
-    }*/
-
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // UUMenuHandler
     ////////////////////////////////////////////////////////////////////////////////////////////////
-
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean
     {
@@ -74,23 +56,14 @@ class L2CapClientActivity : AppCompatActivity()
 
     override fun onPrepareOptionsMenu(menu: Menu?): Boolean
     {
-        menu?.let()
-        {
-            it.clear()
+        menu?.clear()
 
-            populateMenu(menuHandler)
-            return true
-        }
-
-        return super.onPrepareOptionsMenu(menu)
-    }
-
-    open fun populateMenu(menuHandler: UUMenuHandler)
-    {
         menuViewModels.forEach()
         { mi ->
             menuHandler.add(mi.title, mi.action)
         }
+
+        return super.onPrepareOptionsMenu(menu)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean

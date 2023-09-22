@@ -3,29 +3,17 @@ package com.silverpine.uu.sample.bluetooth.ui.l2cap
 import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import com.silverpine.uu.bluetooth.UUL2CapChannel
 import com.silverpine.uu.bluetooth.UUPeripheral
-import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.core.uuToHex
-import com.silverpine.uu.core.uuToHexData
 import com.silverpine.uu.core.uuWriteInt32
-import com.silverpine.uu.logging.UULog
 import com.silverpine.uu.sample.bluetooth.ui.UUMenuItem
 import java.nio.ByteOrder
 
 @SuppressLint("MissingPermission")
 @RequiresApi(Build.VERSION_CODES.Q)
-class L2CapClientViewModel: ViewModel()
+class L2CapClientViewModel: L2CapBaseViewModel()
 {
-    private var _output: MutableLiveData<String> = MutableLiveData("")
-    val output: LiveData<String> = _output
-
-    private var _menuItems: MutableLiveData<ArrayList<UUMenuItem>> = MutableLiveData()
-    val menuItems: LiveData<ArrayList<UUMenuItem>> = _menuItems
-
     private lateinit var peripheral: UUPeripheral
     private lateinit var channel: UUL2CapChannel
     private var pingCount: Int = 0
@@ -86,7 +74,7 @@ class L2CapClientViewModel: ViewModel()
         }
     }
 
-    private fun updateMenu()
+    override fun buildMenu(): ArrayList<UUMenuItem>
     {
         val list = ArrayList<UUMenuItem>()
 
@@ -100,18 +88,6 @@ class L2CapClientViewModel: ViewModel()
             list.add(UUMenuItem("Connect", this::onConnect))
         }
 
-        uuDispatchMain()
-        {
-            _menuItems.value = list
-        }
-    }
-
-    private fun appendOutput(line: String)
-    {
-        uuDispatchMain()
-        {
-            _output.value += "\n$line"
-            UULog.d(javaClass, "outputLog", line)
-        }
+        return list
     }
 }

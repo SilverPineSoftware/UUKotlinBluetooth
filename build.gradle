@@ -7,7 +7,8 @@ plugins {
 
 ext["min_sdk"] = 26
 ext["target_sdk"] = 34
-ext["uu_core_version"] = '0.0.6.39-develop-SNAPSHOT'
-ext["uu_test_version"] = '0.0.1.6-develop-SNAPSHOT'
+ext["uu_core_version"] = '0.0.6.42-develop-SNAPSHOT'
+ext["uu_ux_version"] = '0.0.4.53-develop-SNAPSHOT'
+ext["uu_test_version"] = '0.0.1.7-develop-SNAPSHOT'
 
 apply from: "./publish-common.gradle"

@@ -651,7 +651,8 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
                             )
                         )
                     }
-                    else if (peripheral.getConnectionState(context) === UUPeripheral.ConnectionState.Connected) {
+                    else if (peripheral.connectionState == UUPeripheral.ConnectionState.Connected)
+                    {
                         startRssiPolling(context, interval, delegate)
                     }
                     else

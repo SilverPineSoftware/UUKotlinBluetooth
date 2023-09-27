@@ -177,26 +177,30 @@ open class UUPeripheral() : Parcelable
         return totalBeaconCount.toDouble() / timeSinceFirstBeacon.toDouble() * 1000.0f
     }
 
-    @SuppressLint("MissingPermission")
-    fun getConnectionState(context: Context): ConnectionState
-    {
-        val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-        var state = bluetoothManager.getConnectionState(device, BluetoothProfile.GATT)
-        debugLog("getConnectionState", "Actual connection state is: $state (${ConnectionState.fromProfileConnectionState(state)})")
-        val gatt = UUBluetoothGatt.gattForPeripheral(this)
-        if (gatt != null)
+    val connectionState: ConnectionState
+        @SuppressLint("MissingPermission")
+        get()
         {
-            if (state != BluetoothProfile.STATE_CONNECTING && gatt.isConnecting)
+            val bluetoothManager = UUBluetooth.requireApplicationContext().getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+            var state = bluetoothManager.getConnectionState(device, BluetoothProfile.GATT)
+            debugLog("getConnectionState", "Actual connection state is: $state (${ConnectionState.fromProfileConnectionState(state)})")
+            val gatt = UUBluetoothGatt.gattForPeripheral(this)
+
+            if (gatt != null)
             {
-                debugLog("getConnectionState", "Forcing state to connecting")
-                state = BluetoothProfile.STATE_CONNECTING
-            } else if (state != BluetoothProfile.STATE_DISCONNECTED && gatt.bluetoothGatt == null) {
-                debugLog("getConnectionState", "Forcing state to disconnected")
-                state = BluetoothProfile.STATE_DISCONNECTED
+                if (state != BluetoothProfile.STATE_CONNECTING && gatt.isConnecting)
+                {
+                    debugLog("getConnectionState", "Forcing state to connecting")
+                    state = BluetoothProfile.STATE_CONNECTING
+                }
+                else if (state != BluetoothProfile.STATE_DISCONNECTED && gatt.bluetoothGatt == null)
+                {
+                    debugLog("getConnectionState", "Forcing state to disconnected")
+                    state = BluetoothProfile.STATE_DISCONNECTED
+                }
             }
+            return ConnectionState.fromProfileConnectionState(state)
         }
-        return ConnectionState.fromProfileConnectionState(state)
-    }
 
     fun setBluetoothGatt(gatt: BluetoothGatt?)
     {

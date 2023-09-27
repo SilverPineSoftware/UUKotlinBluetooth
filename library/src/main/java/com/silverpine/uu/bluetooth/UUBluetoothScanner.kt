@@ -330,13 +330,13 @@ class UUBluetoothScanner<T : UUPeripheral>(context: Context, factory: UUPeripher
         for (filter in scanFilters)
         {
             val result = filter.shouldDiscoverPeripheral(peripheral)
-            if (result === UUPeripheralFilter.Result.IgnoreForever)
+            if (result == UUPeripheralFilter.Result.IgnoreForever)
             {
                 ignoreDevice(peripheral.bluetoothDevice)
                 return false
             }
 
-            if (result === UUPeripheralFilter.Result.IgnoreOnce)
+            if (result == UUPeripheralFilter.Result.IgnoreOnce)
             {
                 return false
             }
@@ -373,7 +373,8 @@ class UUBluetoothScanner<T : UUPeripheral>(context: Context, factory: UUPeripher
                     var outOfRange = false
                     for (filter in outOfRangeScanFilters)
                     {
-                        if (filter.checkPeripheralRange(peripheral) === UUOutOfRangePeripheralFilter.Result.OutOfRange) {
+                        if (filter.checkPeripheralRange(peripheral) == UUOutOfRangePeripheralFilter.Result.OutOfRange)
+                        {
                             outOfRange = true
                             didChange = true
                             break

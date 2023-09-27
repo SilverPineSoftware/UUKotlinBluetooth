@@ -5,13 +5,12 @@ import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import com.silverpine.uu.logging.UULog
 import com.silverpine.uu.sample.bluetooth.databinding.ActivityL2CapServerBinding
-import com.silverpine.uu.sample.bluetooth.ui.UUMenuItem
 import com.silverpine.uu.ux.UUMenuHandler
+import com.silverpine.uu.ux.UUMenuItem
 import com.silverpine.uu.ux.UUPermissions
 
 class L2CapServerActivity : AppCompatActivity()

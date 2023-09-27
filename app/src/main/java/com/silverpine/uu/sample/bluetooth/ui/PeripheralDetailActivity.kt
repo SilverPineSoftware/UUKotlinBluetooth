@@ -56,7 +56,7 @@ class PeripheralDetailActivity : UURecyclerActivity()
 
     override fun populateMenu(menuHandler: UUMenuHandler)
     {
-        if (peripheral.getConnectionState(applicationContext) == UUPeripheral.ConnectionState.Connected)
+        if (peripheral.connectionState == UUPeripheral.ConnectionState.Connected)
         {
             menuHandler.add(R.string.disconnect, this::handleDisconnect)
             menuHandler.add(R.string.discover_services, this::handleDiscoverServices)
@@ -108,7 +108,7 @@ class PeripheralDetailActivity : UURecyclerActivity()
             tmp.add(SectionHeaderViewModel(R.string.info))
             tmp.add(LabelValueViewModel(R.string.address_label.load(), peripheral.address))
             tmp.add(LabelValueViewModel(R.string.name_label.load(), peripheral.name))
-            tmp.add(LabelValueViewModel(R.string.state_label.load(), peripheral.getConnectionState(applicationContext).name))
+            tmp.add(LabelValueViewModel(R.string.state_label.load(), peripheral.connectionState.name))
             tmp.add(LabelValueViewModel(R.string.rssi_label.load(), "${peripheral.rssi}"))
             tmp.add(LabelValueViewModel(R.string.mtu_size_label.load(), "${peripheral.negotiatedMtuSize}"))
 

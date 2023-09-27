@@ -8,7 +8,7 @@ import com.silverpine.uu.bluetooth.UUPeripheral
 import com.silverpine.uu.core.UURandom
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.core.uuWriteInt32
-import com.silverpine.uu.sample.bluetooth.ui.UUMenuItem
+import com.silverpine.uu.ux.UUMenuItem
 import java.nio.ByteOrder
 
 @SuppressLint("MissingPermission")

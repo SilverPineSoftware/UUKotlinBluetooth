@@ -5,18 +5,13 @@ import android.bluetooth.BluetoothServerSocket
 import android.bluetooth.BluetoothSocket
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.annotation.StringRes
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import com.silverpine.uu.bluetooth.UUBluetooth
 import com.silverpine.uu.bluetooth.UUBluetoothAdvertiser
-import com.silverpine.uu.core.UUResources
 import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.core.uuSubData
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.logging.UULog
-import com.silverpine.uu.sample.bluetooth.ui.UUMenuItem
+import com.silverpine.uu.ux.UUMenuItem
 import java.util.UUID
 
 class L2CapServerViewModel: L2CapBaseViewModel()

@@ -1,34 +1,28 @@
-package com.silverpine.uu.sample.bluetooth.ui.l2cap
+package com.silverpine.uu.sample.bluetooth.ui
 
-import android.os.Build
-import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.ViewModelProvider
-import com.silverpine.uu.bluetooth.UUPeripheral
-import com.silverpine.uu.sample.bluetooth.databinding.ActivityL2CapClientBinding
+import androidx.databinding.ViewDataBinding
+import com.silverpine.uu.sample.bluetooth.BR
+import com.silverpine.uu.sample.bluetooth.viewmodel.BaseViewModel
 import com.silverpine.uu.ux.UUMenuHandler
 import com.silverpine.uu.ux.UUMenuItem
-import com.silverpine.uu.ux.uuRequireParcelable
+import com.silverpine.uu.ux.uuShowAlertDialog
+import com.silverpine.uu.ux.uuStartActivity
 
-class L2CapClientActivity : AppCompatActivity()
+open class BaseActivity : AppCompatActivity()
 {
-    private lateinit var viewModel: L2CapClientViewModel
     private lateinit var menuHandler: UUMenuHandler
     private var menuViewModels: ArrayList<UUMenuItem> = arrayListOf()
 
-    @RequiresApi(Build.VERSION_CODES.Q)
-    override fun onCreate(savedInstanceState: Bundle?)
+    open fun setupViewModel(viewModel: BaseViewModel, binding: ViewDataBinding)
     {
-        super.onCreate(savedInstanceState)
-
-        viewModel = ViewModelProvider(this)[L2CapClientViewModel::class.java]
-        val binding = ActivityL2CapClientBinding.inflate(layoutInflater)
-        binding.vm = viewModel
+        binding.setVariable(BR.vm, viewModel)
         binding.lifecycleOwner = this
         setContentView(binding.root)
+        viewModel.gotoActivity = this::uuStartActivity
+        viewModel.showAlertDialog = this::uuShowAlertDialog
 
         viewModel.menuItems.observe(this)
         {
@@ -36,10 +30,6 @@ class L2CapClientActivity : AppCompatActivity()
             menuViewModels.addAll(it)
             invalidateMenu()
         }
-
-        val peripheral: UUPeripheral = intent.uuRequireParcelable("peripheral")
-        viewModel.update(peripheral)
-        title = "L2Cap Client"
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -58,7 +48,15 @@ class L2CapClientActivity : AppCompatActivity()
 
         menuViewModels.forEach()
         { mi ->
-            menuHandler.add(mi.title, mi.action)
+
+            if (mi.isAction)
+            {
+                menuHandler.addAction(mi.title, mi.action)
+            }
+            else
+            {
+                menuHandler.add(mi.title, mi.action)
+            }
         }
 
         return super.onPrepareOptionsMenu(menu)

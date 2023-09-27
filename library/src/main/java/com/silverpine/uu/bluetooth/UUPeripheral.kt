@@ -8,14 +8,9 @@ import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
-import android.bluetooth.BluetoothServerSocket
-import android.bluetooth.BluetoothSocket
 import android.content.Context
-import android.os.Build
 import android.os.Parcel
 import android.os.Parcelable
-import androidx.annotation.RequiresApi
-import androidx.annotation.RequiresPermission
 import com.silverpine.uu.core.UUError
 import com.silverpine.uu.core.uuReadUInt8
 import com.silverpine.uu.core.uuSubData
@@ -232,20 +227,22 @@ open class UUPeripheral() : Parcelable
     fun connect(
         connectTimeout: Long,
         disconnectTimeout: Long,
-        connected: Runnable,
+        connected: ()->Unit,
         disconnected: (UUError?)->Unit
     ) {
         val gatt = UUBluetoothGatt.gattForPeripheral(this)
-        if (gatt != null) {
+        if (gatt != null)
+        {
             gatt.connect(false, connectTimeout, disconnectTimeout, object : UUConnectionDelegate
             {
-                override fun onConnected(peripheral: UUPeripheral) {
-                    connected.run()
+                override fun onConnected(peripheral: UUPeripheral)
+                {
+                    connected()
                 }
 
                 override fun onDisconnected(peripheral: UUPeripheral, error: UUError?)
                 {
-                    disconnected.invoke(error)
+                    disconnected(error)
                 }
             })
         }

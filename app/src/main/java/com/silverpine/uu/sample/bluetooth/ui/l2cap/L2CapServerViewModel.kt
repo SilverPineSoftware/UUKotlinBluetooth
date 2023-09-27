@@ -1,12 +1,17 @@
 package com.silverpine.uu.sample.bluetooth.ui.l2cap
 
+import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattService
 import android.os.Build
 import com.silverpine.uu.bluetooth.UUBluetooth
 import com.silverpine.uu.bluetooth.UUBluetoothAdvertiser
 import com.silverpine.uu.bluetooth.UUL2CapServer
 import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.core.uuToHex
+import com.silverpine.uu.core.uuWriteInt32
+import com.silverpine.uu.core.uuWriteUInt8
 import com.silverpine.uu.ux.UUMenuItem
+import java.nio.ByteOrder
 import java.util.UUID
 
 class L2CapServerViewModel: L2CapBaseViewModel()
@@ -35,6 +40,7 @@ class L2CapServerViewModel: L2CapBaseViewModel()
     }
 
     private var advertiser = UUBluetoothAdvertiser(UUBluetooth.requireApplicationContext())
+    private val secure: Boolean = false
 
     var checkPermissions: ((()->Unit)->Unit) = { }
 
@@ -67,7 +73,37 @@ class L2CapServerViewModel: L2CapBaseViewModel()
                         appendOutput("Starting BLE advertising")
 
                         advertiser.stop()
-                        advertiser.start(UUID.randomUUID(), "L2CapServer-$psm", 160)
+                        advertiser.start(L2CapConstants.UU_L2CAP_SERVICE_UUID, "L2CapServer-$psm", 160)
+                        advertiser.clearServices()
+
+                        val service = BluetoothGattService(L2CapConstants.UU_L2CAP_SERVICE_UUID, BluetoothGattService.SERVICE_TYPE_PRIMARY)
+                        val psmCharacteristic = BluetoothGattCharacteristic(L2CapConstants.UU_L2CAP_PSM_CHARACTERISTIC_UUID, BluetoothGattCharacteristic.PROPERTY_READ, BluetoothGattCharacteristic.PERMISSION_READ)
+                        var result = service.addCharacteristic(psmCharacteristic)
+
+                        if (result)
+                        {
+                            advertiser.registerCharacteristicReadDelegate(L2CapConstants.UU_L2CAP_PSM_CHARACTERISTIC_UUID)
+                            {
+                                val buffer = ByteArray(Int.SIZE_BYTES)
+                                buffer.uuWriteInt32(ByteOrder.LITTLE_ENDIAN, 0, psm)
+                                buffer
+                            }
+
+                            val channelEncryptedCharacteristic = BluetoothGattCharacteristic(L2CapConstants.UU_L2CAP_CHANNEL_ENCRYPTED_CHARACTERISTIC_UUID, BluetoothGattCharacteristic.PROPERTY_READ, BluetoothGattCharacteristic.PERMISSION_READ)
+                            result = service.addCharacteristic(channelEncryptedCharacteristic)
+                            if (result)
+                            {
+                                advertiser.registerCharacteristicReadDelegate(L2CapConstants.UU_L2CAP_CHANNEL_ENCRYPTED_CHARACTERISTIC_UUID)
+                                {
+                                    val buffer = ByteArray(1)
+                                    buffer.uuWriteUInt8(0, if (secure) { 1 } else { 0 })
+                                    buffer
+                                }
+
+                                appendOutput("GATT server configured")
+                                advertiser.addService(service)
+                            }
+                        }
                     }
                 }
                 catch (ex: Exception)
@@ -82,7 +118,7 @@ class L2CapServerViewModel: L2CapBaseViewModel()
     {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
         {
-            echoServer?.start(false)
+            echoServer?.start(secure)
             { psm, error ->
 
                 if (error != null)
@@ -134,102 +170,3 @@ class L2CapServerViewModel: L2CapBaseViewModel()
         return list
     }
 }
-
-
-/*
-
-@RequiresApi(Build.VERSION_CODES.Q)
-@SuppressLint("MissingPermission")
-class BleEchoServer
-{
-    private lateinit var bluetoothServerSocket: BluetoothServerSocket
-    private lateinit var thread: BleThread
-    private val connectionThreads: ArrayList<BleConnectionThread> = arrayListOf()
-
-    var onPsmChanged: (Int)->Unit = { }
-    var onLog: (String)->Unit = { }
-
-    fun start(secure: Boolean)
-    {
-        thread = BleThread(secure)
-        thread.start()
-    }
-
-    private fun log(method: String, message: String)
-    {
-        UULog.d(javaClass, method, message)
-        onLog(message)
-    }
-
-    private fun log(method: String, exception: Exception)
-    {
-        UULog.d(javaClass, method, "", exception)
-        onLog("Caught Exception in $method: $exception")
-    }
-
-    inner class BleThread(private val secure: Boolean): Thread("BleEchoServer")
-    {
-        override fun run()
-        {
-            try
-            {
-                log("run", "Getting L2Cap Server socket")
-
-                bluetoothServerSocket = UUBluetooth.listenForL2CapConnection(secure)
-                onPsmChanged(bluetoothServerSocket.psm)
-
-                while (true)
-                {
-                    log("run", "Listening for incoming L2Cap connections, PSM: ${bluetoothServerSocket.psm}")
-                    val socket = bluetoothServerSocket.accept()
-
-                    val thread = BleConnectionThread(socket)
-                    thread.start()
-                }
-            }
-            catch (ex: Exception)
-            {
-                log( "run", ex)
-            }
-        }
-    }
-
-    inner class BleConnectionThread(private val socket: BluetoothSocket): Thread("BleConnectionThread")
-    {
-        override fun run()
-        {
-            try
-            {
-                synchronized(connectionThreads)
-                {
-                    connectionThreads.add(this)
-                }
-
-                while (true)
-                {
-                    log( "handleConnection", "Waiting for incoming data")
-                    val rxBuffer = ByteArray(1024)
-                    val bytesRead = socket.inputStream?.read(rxBuffer, 0, rxBuffer.size) ?: 0
-
-                    log( "handleConnection", "Got $bytesRead bytes.")
-                    val rx = rxBuffer.uuSubData(0, bytesRead)
-                    log( "handleConnection", "RX: ${rx?.uuToHex()}")
-
-                    log( "handleConnection", "Echoing bytes back to sender")
-                    socket.outputStream?.write(rx)
-                }
-            }
-            catch (ex: Exception)
-            {
-                log( "run", ex)
-            }
-            finally
-            {
-                synchronized(connectionThreads)
-                {
-                    connectionThreads.remove(this)
-                }
-            }
-        }
-    }
-}*/

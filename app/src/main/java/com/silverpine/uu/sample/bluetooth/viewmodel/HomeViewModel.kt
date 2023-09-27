@@ -60,11 +60,11 @@ class HomeViewModel: RecyclerViewModel()
         //adapter.update(listOf())
 
         val filters: ArrayList<UUPeripheralFilter<UUPeripheral>> = arrayListOf()
-        //filters.add(RequireMinimumRssiPeripheralFilter(-70))
+        filters.add(RequireMinimumRssiPeripheralFilter(-70))
         //filters.add(RequireManufacturingDataPeripheralFilter())
         //filters.add(IgnoreAppleBeaconsPeripheralFilter())
         //filters.add(RequireNoNamePeripheralFilter())
-        //filters.add(RequireNamePeripheralFilter())
+        filters.add(RequireNamePeripheralFilter())
 
         val outOfRangeFilters: ArrayList<UUOutOfRangePeripheralFilter<UUPeripheral>> = arrayListOf()
         outOfRangeFilters.add(OutOfRangeFilter())

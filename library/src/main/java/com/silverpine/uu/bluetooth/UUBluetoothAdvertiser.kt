@@ -3,6 +3,7 @@ package com.silverpine.uu.bluetooth
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattServer
@@ -30,7 +31,8 @@ class UUBluetoothAdvertiser(context: Context)
     private val advertiser: BluetoothLeAdvertiser
     private val advertisingSetCallback: AdvertisingSetCallback = InnerAdvertiseSetCallback()
     private val gattServer: BluetoothGattServer
-    private val characteristicDataDelegates: HashMap<String, UUDataDelegate> = hashMapOf()
+    private val characteristicReadDelegates: HashMap<String, ()->ByteArray> = hashMapOf()
+    private val characteristicWriteDelegates: HashMap<String, (ByteArray)->Unit> = hashMapOf()
 
     init
     {
@@ -120,7 +122,7 @@ class UUBluetoothAdvertiser(context: Context)
         }
     }
 
-    private fun clearServices()
+    fun clearServices()
     {
         try
         {
@@ -135,15 +137,35 @@ class UUBluetoothAdvertiser(context: Context)
         }
     }
 
+    fun addService(service: BluetoothGattService)
+    {
+        try
+        {
+            val result = gattServer.addService(service)
+
+            if (LOGGING_ENABLED)
+            {
+                debugLog("addService", "gattServer.addService returned: $result")
+            }
+        }
+        catch (ex: Exception)
+        {
+            if (LOGGING_ENABLED)
+            {
+                debugLog("addService", ex)
+            }
+        }
+    }
+
     fun registerCharacteristic(
         serviceUuid: UUID,
         characteristicUuid: UUID,
-        delegate: UUDataDelegate)
+        delegate: (ByteArray)->Unit)
     {
         try
         {
             clearServices()
-            registerCharacteristicDataReceivedDelegate(characteristicUuid, delegate)
+            registerCharacteristicWriteDelegate(characteristicUuid, delegate)
 
             val service = BluetoothGattService(serviceUuid, BluetoothGattService.SERVICE_TYPE_PRIMARY)
             val properties = BluetoothGattCharacteristic.PROPERTY_WRITE or BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE
@@ -175,14 +197,24 @@ class UUBluetoothAdvertiser(context: Context)
         }
     }
 
-    private fun registerCharacteristicDataReceivedDelegate(characteristicUuid: UUID, delegate: UUDataDelegate)
+    fun registerCharacteristicReadDelegate(characteristicUuid: UUID, delegate: ()->ByteArray)
     {
-        characteristicDataDelegates[characteristicUuid.toString().lowercase(Locale.getDefault())] = delegate
+        characteristicReadDelegates[characteristicUuid.toString().lowercase(Locale.getDefault())] = delegate
     }
 
-    private fun getCharacteristicDataReceivedDelegate(characteristic: BluetoothGattCharacteristic): UUDataDelegate?
+    private fun getCharacteristicReadDelegate(characteristic: BluetoothGattCharacteristic): (()->ByteArray)?
     {
-        return characteristicDataDelegates[characteristic.uuid.toString().lowercase(Locale.getDefault())]
+        return characteristicReadDelegates[characteristic.uuid.toString().lowercase(Locale.getDefault())]
+    }
+
+    fun registerCharacteristicWriteDelegate(characteristicUuid: UUID, delegate: (ByteArray)->Unit)
+    {
+        characteristicWriteDelegates[characteristicUuid.toString().lowercase(Locale.getDefault())] = delegate
+    }
+
+    private fun getCharacteristicWriteDelegate(characteristic: BluetoothGattCharacteristic): ((ByteArray)->Unit)?
+    {
+        return characteristicWriteDelegates[characteristic.uuid.toString().lowercase(Locale.getDefault())]
     }
 
     private fun setLocalDeviceName(friendlyName: String, completion: (Boolean)->Unit)
@@ -307,6 +339,26 @@ class UUBluetoothAdvertiser(context: Context)
 
     private inner class InnerGattServerCallback : BluetoothGattServerCallback()
     {
+        private fun sendResponse(
+            device: BluetoothDevice,
+            requestId: Int,
+            offset: Int,
+            status: Int,
+            response: ByteArray?)
+        {
+            try
+            {
+                gattServer.sendResponse(device, requestId, status, offset, response)
+            }
+            catch (ex: Exception)
+            {
+                if (LOGGING_ENABLED)
+                {
+                    debugLog("sendResponse", ex)
+                }
+            }
+        }
+
         override fun onCharacteristicReadRequest(
             device: BluetoothDevice,
             requestId: Int,
@@ -322,6 +374,27 @@ class UUBluetoothAdvertiser(context: Context)
                             ", characteristic: " + characteristic.uuid.toString()
                 )
             }
+
+            var response: ByteArray?
+            var status = BluetoothGatt.GATT_SUCCESS
+
+            try
+            {
+                val delegate = getCharacteristicReadDelegate(characteristic)
+                response = delegate?.invoke()
+            }
+            catch (ex: Exception)
+            {
+                status = BluetoothGatt.GATT_FAILURE
+                response = null
+
+                if (LOGGING_ENABLED)
+                {
+                    debugLog("onCharacteristicReadRequest", ex)
+                }
+            }
+
+            sendResponse(device, requestId, offset, status, response)
         }
 
         override fun onCharacteristicWriteRequest(
@@ -346,18 +419,25 @@ class UUBluetoothAdvertiser(context: Context)
                 )
             }
 
+            var response: ByteArray?
+            var status = BluetoothGatt.GATT_SUCCESS
+
             try
             {
-                val delegate = getCharacteristicDataReceivedDelegate(characteristic)
+                val delegate = getCharacteristicWriteDelegate(characteristic)
                 delegate?.invoke(value)
             }
             catch (ex: Exception)
             {
+                status = BluetoothGatt.GATT_FAILURE
+
                 if (LOGGING_ENABLED)
                 {
                     debugLog("onCharacteristicWriteRequest", ex)
                 }
             }
+
+            sendResponse(device, requestId, offset, status, value)
         }
 
         override fun onConnectionStateChange(device: BluetoothDevice, status: Int, newState: Int) {

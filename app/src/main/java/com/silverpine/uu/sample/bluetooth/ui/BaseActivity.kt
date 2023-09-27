@@ -4,6 +4,7 @@ import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.ViewDataBinding
+import com.silverpine.uu.logging.UULog
 import com.silverpine.uu.sample.bluetooth.BR
 import com.silverpine.uu.sample.bluetooth.viewmodel.BaseViewModel
 import com.silverpine.uu.ux.UUMenuHandler
@@ -26,6 +27,7 @@ open class BaseActivity : AppCompatActivity()
 
         viewModel.menuItems.observe(this)
         {
+            UULog.d(javaClass, "setupViewModel", "Menu items have changed")
             menuViewModels.clear()
             menuViewModels.addAll(it)
             invalidateMenu()

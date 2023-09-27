@@ -27,7 +27,7 @@ open class BaseViewModel: ViewModel()
         }
     }
 
-    protected open fun buildMenu(): ArrayList<UUMenuItem>
+    open fun buildMenu(): ArrayList<UUMenuItem>
     {
         return arrayListOf()
     }

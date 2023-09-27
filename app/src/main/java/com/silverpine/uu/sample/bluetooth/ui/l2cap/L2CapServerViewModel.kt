@@ -1,32 +1,30 @@
 package com.silverpine.uu.sample.bluetooth.ui.l2cap
 
-import android.annotation.SuppressLint
-import android.bluetooth.BluetoothServerSocket
-import android.bluetooth.BluetoothSocket
 import android.os.Build
-import androidx.annotation.RequiresApi
 import com.silverpine.uu.bluetooth.UUBluetooth
 import com.silverpine.uu.bluetooth.UUBluetoothAdvertiser
+import com.silverpine.uu.bluetooth.UUL2CapServer
 import com.silverpine.uu.core.uuDispatchMain
-import com.silverpine.uu.core.uuSubData
 import com.silverpine.uu.core.uuToHex
-import com.silverpine.uu.logging.UULog
 import com.silverpine.uu.ux.UUMenuItem
 import java.util.UUID
 
 class L2CapServerViewModel: L2CapBaseViewModel()
 {
-    private val echoServer: BleEchoServer? by lazy {
+    private val echoServer: UUL2CapServer? by lazy()
+    {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
         {
-            val server = BleEchoServer()
+            val server = UUL2CapServer()
+            server.dataReceived =
+            { rx ->
 
-            server.onPsmChanged =
-            { psm ->
-                advertise(psm)
+                appendOutput("Received ${rx.size} bytes")
+                appendOutput("RX: ${rx.uuToHex()}")
+
+                appendOutput("TX: ${rx.uuToHex()}")
+                rx
             }
-
-            server.onLog = this::appendOutput
 
             server
         }
@@ -48,7 +46,7 @@ class L2CapServerViewModel: L2CapBaseViewModel()
         }
         else
         {
-            appendOutput("Tap Listen to begin")
+            appendOutput("Tap Start to begin")
         }
 
         updateMenu()
@@ -80,11 +78,37 @@ class L2CapServerViewModel: L2CapBaseViewModel()
         }
     }
 
-    fun onStart()
+    private fun onStart()
     {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
         {
             echoServer?.start(false)
+            { psm, error ->
+
+                if (error != null)
+                {
+                    appendOutput("start failed with an error: $error")
+                    return@start
+                }
+
+                appendOutput("Server started, PSM: $psm")
+                psm?.let()
+                { actualPsm ->
+                    advertise(actualPsm)
+                }
+
+                updateMenu()
+            }
+        }
+    }
+
+    private fun onStop()
+    {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+        {
+            appendOutput("Stopping server")
+            echoServer?.stop()
+            updateMenu()
         }
     }
 
@@ -92,11 +116,27 @@ class L2CapServerViewModel: L2CapBaseViewModel()
     {
         val list = ArrayList<UUMenuItem>()
 
-        list.add(UUMenuItem("Start", this::onStart))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+        {
+            echoServer?.let()
+            { server ->
+                if (server.isRunning)
+                {
+                    list.add(UUMenuItem("Stop", this::onStop))
+                }
+                else
+                {
+                    list.add(UUMenuItem("Start", this::onStart))
+                }
+            }
+        }
 
         return list
     }
 }
+
+
+/*
 
 @RequiresApi(Build.VERSION_CODES.Q)
 @SuppressLint("MissingPermission")
@@ -192,4 +232,4 @@ class BleEchoServer
             }
         }
     }
-}
+}*/

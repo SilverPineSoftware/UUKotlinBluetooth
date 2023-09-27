@@ -8,11 +8,8 @@ import com.silverpine.uu.core.UUError
 import com.silverpine.uu.core.UUTimer
 import com.silverpine.uu.core.UUWorkerThread
 import com.silverpine.uu.core.uuSafeClose
-import com.silverpine.uu.core.uuSleep
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.logging.UULog
-import java.io.ByteArrayOutputStream
-import java.io.InputStream
 import java.util.Locale
 
 @RequiresApi(Build.VERSION_CODES.Q)
@@ -218,10 +215,11 @@ class UUL2CapChannel(private val peripheral: UUPeripheral)
 
             val timerId = timerId(TimerBuckets.ReadWatchdog)
 
-            val readThread = ReadThread(inputStream, expectedBytes)
+            val readThread = UUStreamReadThread("UUL2CapChannelReadThread", 1024, inputStream, expectedBytes)
             { rx, err ->
                 UUTimer.cancelActiveTimer(timerId)
                 notifyReadComplete(rx,err, completion)
+                false
             }
 
             UUTimer.startTimer(timerId, timeout, null)
@@ -314,97 +312,6 @@ class UUL2CapChannel(private val peripheral: UUPeripheral)
         if (LOGGING_ENABLED)
         {
             UULog.d(javaClass, method, "", exception)
-        }
-    }
-
-    inner class ReadThread(
-        private val inputStream: InputStream,
-        private val expectedBytes: Int?,
-        private val completion: (ByteArray?, UUError?)->Unit): Thread("BluetoothSocketReadThread")
-    {
-        private var interrupted: Boolean = false
-
-        override fun run()
-        {
-            val rxChunk = ByteArray(1024)
-            val bos = ByteArrayOutputStream()
-            var rx: ByteArray? = null
-            var err: UUError? = null
-
-            try
-            {
-                var bytesRead: Int
-                var totalBytesRead = 0
-
-                sleepUntilDataAvailable()
-
-                while (!interrupted && inputStream.available() > 0)
-                {
-                    bytesRead = inputStream.read(rxChunk, 0, rxChunk.size)
-
-                    if (LOGGING_ENABLED)
-                    {
-                        debugLog("read.run", "Read Chunk: $bytesRead")
-                    }
-
-                    if (bytesRead > 0)
-                    {
-                        bos.write(rxChunk, 0, bytesRead)
-                    }
-
-                    totalBytesRead += bytesRead
-                    if (expectedBytes != null)
-                    {
-                        if (totalBytesRead >= expectedBytes)
-                        {
-                            break
-                        }
-                    }
-                }
-
-                rx = bos.toByteArray()
-
-                if (LOGGING_ENABLED)
-                {
-                    debugLog("read", "RX: ${rx.uuToHex()}")
-                }
-            }
-            catch (ex: Exception)
-            {
-                err = UUBluetoothError.operationFailedError(ex)
-
-                if (LOGGING_ENABLED)
-                {
-                    logException("read", ex)
-                }
-            }
-
-            completion(rx, err)
-        }
-
-        private fun sleepUntilDataAvailable()
-        {
-            do
-            {
-                uuSleep("sleepUntilDataAvailable", 10L)
-            }
-            while (!interrupted && inputStream.available() == 0)
-        }
-
-        fun uuInterrupt()
-        {
-            try
-            {
-                interrupted = true
-                interrupt()
-            }
-            catch (ex: Exception)
-            {
-                if (LOGGING_ENABLED)
-                {
-                    logException("uuInterrupt", ex)
-                }
-            }
         }
     }
 }

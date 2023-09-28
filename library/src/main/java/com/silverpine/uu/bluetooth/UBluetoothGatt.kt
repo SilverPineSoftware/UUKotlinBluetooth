@@ -25,9 +25,11 @@ import java.util.UUID
 
 typealias UUCharacteristicDelegate = (UUPeripheral, BluetoothGattCharacteristic, UUError?)->Unit
 typealias UUDescriptorDelegate = (UUPeripheral, BluetoothGattDescriptor, UUError?)->Unit
-typealias UUDiscoverServicesDelegate = (ArrayList<BluetoothGattService>?, UUError?)->Unit
+typealias UUDiscoverServicesDelegate = (ArrayList<BluetoothGattService>, UUError?)->Unit
 typealias UUPeripheralDelegate = (UUPeripheral?)->Unit
 typealias UUPeripheralErrorDelegate = (UUPeripheral,UUError?)->Unit
+typealias UUDataDelegate = (ByteArray)->Unit
+
 /**
  * A helpful set of wrapper methods around BluetoothGatt
  */
@@ -649,7 +651,8 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
                             )
                         )
                     }
-                    else if (peripheral.getConnectionState(context) === UUPeripheral.ConnectionState.Connected) {
+                    else if (peripheral.connectionState == UUPeripheral.ConnectionState.Connected)
+                    {
                         startRssiPolling(context, interval, delegate)
                     }
                     else

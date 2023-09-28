@@ -2,14 +2,20 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application
+        android:name=".App"
         android:allowBackup="true"
         android:fullBackupOnly="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:name=".App"
         android:theme="@style/Theme.UUKotlinBluetooth">
+        <activity
+            android:name=".ui.l2cap.L2CapServerActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.l2cap.L2CapClientActivity"
+            android:exported="false" />
         <activity
             android:name=".ui.PeripheralDetailActivity"
             android:exported="false" />
@@ -21,6 +27,7 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>

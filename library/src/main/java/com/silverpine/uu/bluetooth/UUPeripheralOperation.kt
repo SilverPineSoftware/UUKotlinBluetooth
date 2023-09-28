@@ -25,7 +25,7 @@ import java.nio.ByteOrder
 import java.nio.charset.Charset
 import java.util.UUID
 
-abstract class UUPeripheralOperation<T : UUPeripheral?>(protected val peripheral: T)
+abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral: T)
 {
     private var operationCallback: ((UUError?)->Unit)? = null
     val discoveredServices = ArrayList<BluetoothGattService>()
@@ -39,27 +39,12 @@ abstract class UUPeripheralOperation<T : UUPeripheral?>(protected val peripheral
 
     fun findDiscoveredService(uuid: UUID): BluetoothGattService?
     {
-        for (service in discoveredServices)
-        {
-            if (service.uuid == uuid) {
-                return service
-            }
-        }
-
-        return null
+        return discoveredServices.firstOrNull { it.uuid == uuid }
     }
 
     fun findDiscoveredCharacteristic(uuid: UUID): BluetoothGattCharacteristic?
     {
-        for (characteristic in discoveredCharacteristics)
-        {
-            if (characteristic.uuid == uuid)
-            {
-                return characteristic
-            }
-        }
-
-        return null
+        return discoveredCharacteristics.firstOrNull { it.uuid == uuid }
     }
 
     fun requireDiscoveredService(uuid: UUID, completion: (BluetoothGattService)->Unit)
@@ -93,8 +78,8 @@ abstract class UUPeripheralOperation<T : UUPeripheral?>(protected val peripheral
         requireDiscoveredCharacteristic(toCharacteristic)
         { characteristic ->
 
-            peripheral!!.writeCharacteristic(characteristic, data, writeTimeout)
-            { peripheral1: UUPeripheral?, characteristic1: BluetoothGattCharacteristic?, error: UUError? ->
+            peripheral.writeCharacteristic(characteristic, data, writeTimeout)
+            { _, _, error: UUError? ->
                 if (error != null)
                 {
                     end(error)
@@ -110,8 +95,8 @@ abstract class UUPeripheralOperation<T : UUPeripheral?>(protected val peripheral
     {
         requireDiscoveredCharacteristic(toCharacteristic)
         { characteristic ->
-            peripheral!!.writeCharacteristicWithoutResponse(characteristic, data, writeTimeout)
-            { peripheral1: UUPeripheral?, characteristic1: BluetoothGattCharacteristic?, error: UUError? ->
+            peripheral.writeCharacteristicWithoutResponse(characteristic, data, writeTimeout)
+            { _, _, error: UUError? ->
 
                 if (error != null)
                 {
@@ -128,8 +113,8 @@ abstract class UUPeripheralOperation<T : UUPeripheral?>(protected val peripheral
     {
         requireDiscoveredCharacteristic(fromCharacteristic)
         { characteristic ->
-            peripheral!!.readCharacteristic(characteristic, readTimeout)
-            { peripheral1: UUPeripheral?, characteristic1: BluetoothGattCharacteristic?, error: UUError? ->
+            peripheral.readCharacteristic(characteristic, readTimeout)
+            { _, _, error: UUError? ->
 
                 if (error != null)
                 {
@@ -142,11 +127,7 @@ abstract class UUPeripheralOperation<T : UUPeripheral?>(protected val peripheral
         }
     }
 
-    fun readString(
-        fromCharacteristic: UUID,
-        charset: Charset,
-        completion: (String?)->Unit
-    )
+    fun readString(fromCharacteristic: UUID, charset: Charset, completion: (String?)->Unit)
     {
         read(fromCharacteristic)
         { data ->
@@ -363,7 +344,7 @@ abstract class UUPeripheralOperation<T : UUPeripheral?>(protected val peripheral
     fun start(completion: (UUError?)->Unit)
     {
         operationCallback = completion
-        peripheral!!.connect(connectTimeout, disconnectTimeout,
+        peripheral.connect(connectTimeout, disconnectTimeout,
             { handleConnected() }) { disconnectError: UUError? ->
             handleDisconnection(
                 disconnectError
@@ -374,14 +355,14 @@ abstract class UUPeripheralOperation<T : UUPeripheral?>(protected val peripheral
     fun end(error: UUError?)
     {
         //debug(javaClass, "end", "**** Ending Operation with error: " + UUString.safeToString(error))
-        peripheral!!.disconnect(error)
+        peripheral.disconnect(error)
     }
 
     abstract fun execute(completion: (UUError?)->Unit)
 
     private fun handleConnected()
     {
-        peripheral?.discoverServices(serviceDiscoveryTimeout)
+        peripheral.discoverServices(serviceDiscoveryTimeout)
         { services, error ->
 
             if (error != null)
@@ -394,7 +375,6 @@ abstract class UUPeripheralOperation<T : UUPeripheral?>(protected val peripheral
             discoveredCharacteristics.clear()
             servicesNeedingCharacteristicDiscovery.clear()
 
-            val services: List<BluetoothGattService> = peripheral.discoveredServices()
             if (services.isEmpty())
             {
                 val err = operationFailedError("No Services Found")
@@ -430,10 +410,10 @@ abstract class UUPeripheralOperation<T : UUPeripheral?>(protected val peripheral
         }
     }
 
-    private fun discoverCharacteristics(service: BluetoothGattService, completion: Runnable)
+    private fun discoverCharacteristics(service: BluetoothGattService, completion: ()->Unit)
     {
         discoveredCharacteristics.addAll(service.characteristics)
-        completion.run()
+        completion()
     }
 
     private fun handleCharacteristicDiscoveryFinished()
@@ -444,44 +424,48 @@ abstract class UUPeripheralOperation<T : UUPeripheral?>(protected val peripheral
         }
     }
 
-    fun startListeningForDataChanges(
-        characteristicUuid: UUID,
-        dataChanged: (ByteArray?)->Unit,
-        completion: Runnable
-    ) {
+    fun startListeningForDataChanges(characteristicUuid: UUID, dataChanged: (ByteArray?)->Unit, completion: ()->Unit)
+    {
         requireDiscoveredCharacteristic(characteristicUuid)
         { characteristic ->
-            peripheral!!.setNotifyState(characteristic, true, readTimeout,
-                { peripheral: UUPeripheral?, characteristic1: BluetoothGattCharacteristic, error: UUError? ->
-                    if (error != null) {
+
+            peripheral.setNotifyState(characteristic, true, readTimeout,
+                { _, characteristic1: BluetoothGattCharacteristic, error: UUError? ->
+                    if (error != null)
+                    {
                         end(error)
                         return@setNotifyState
                     }
+
                     dataChanged(characteristic1.value)
-                }) { peripheral: UUPeripheral?, characteristic12: BluetoothGattCharacteristic?, error: UUError? ->
-                if (error != null) {
-                    end(error)
-                    return@setNotifyState
+                })
+                { _, _, error: UUError? ->
+
+                    if (error != null)
+                    {
+                        end(error)
+                        return@setNotifyState
+                    }
+
+                    completion()
                 }
-                completion.run()
-            }
         }
     }
 
-    fun stopListeningForDataChanges(characteristicUuid: UUID, completion: Runnable)
+    fun stopListeningForDataChanges(characteristicUuid: UUID, completion: ()->Unit)
     {
-        requireDiscoveredCharacteristic(characteristicUuid) { characteristic ->
-            peripheral!!.setNotifyState(
-                characteristic,
-                false,
-                readTimeout,
-                null
-            ) { peripheral1: UUPeripheral?, characteristic1: BluetoothGattCharacteristic?, error: UUError? ->
-                if (error != null) {
+        requireDiscoveredCharacteristic(characteristicUuid)
+        { characteristic ->
+            peripheral.setNotifyState(characteristic, false, readTimeout, null)
+            { _, _, error: UUError? ->
+
+                if (error != null)
+                {
                     end(error)
                     return@setNotifyState
                 }
-                completion.run()
+
+                completion()
             }
         }
     }

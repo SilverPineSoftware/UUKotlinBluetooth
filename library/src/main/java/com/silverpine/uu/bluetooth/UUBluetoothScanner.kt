@@ -18,17 +18,17 @@ import com.silverpine.uu.logging.UULog
 import java.util.UUID
 
 @SuppressLint("MissingPermission")
-class UUBluetoothScanner<T : UUPeripheral?>(context: Context, factory: UUPeripheralFactory<T>)
+class UUBluetoothScanner<T : UUPeripheral>(context: Context, factory: UUPeripheralFactory<T>)
 {
     private val bluetoothAdapter: BluetoothAdapter
     private var bluetoothLeScanner: BluetoothLeScanner? = null
     private var scanCallback: ScanCallback? = null
-    private val scanThread: UUWorkerThread
+    private val scanThread = UUWorkerThread("UUBluetoothScanner")
     var isScanning = false
         private set
 
-    private var scanFilters: ArrayList<UUPeripheralFilter<T>>? = null
-    private var outOfRangeScanFilters: ArrayList<UUOutOfRangePeripheralFilter<T>>? = null
+    private var scanFilters: ArrayList<UUPeripheralFilter<T>> = arrayListOf()
+    private var outOfRangeScanFilters: ArrayList<UUOutOfRangePeripheralFilter<T>> = arrayListOf()
     private val peripheralFactory: UUPeripheralFactory<T>
     private val ignoredDevices = HashMap<String, Boolean>()
     private val nearbyPeripherals = HashMap<String, T>()
@@ -41,13 +41,25 @@ class UUBluetoothScanner<T : UUPeripheral?>(context: Context, factory: UUPeriphe
         outOfRangeFilters: ArrayList<UUOutOfRangePeripheralFilter<T>>?,
         callback: ((ArrayList<T>)->Unit))
     {
+        scanFilters.clear()
+        filters?.let()
+        {
+            scanFilters.addAll(it)
+        }
+
+        outOfRangeScanFilters.clear()
+        outOfRangeFilters?.let()
+        {
+            outOfRangeScanFilters.addAll(it)
+        }
+
+        isScanning = true
+        clearIgnoredDevices()
+        nearbyPeripheralCallback = callback
+
         uuDispatchMain()
         {
-            scanFilters = filters
-            outOfRangeScanFilters = outOfRangeFilters
-            isScanning = true
-            clearIgnoredDevices()
-            nearbyPeripheralCallback = callback
+
             startScan(serviceUuidList)
         }
     }
@@ -68,17 +80,23 @@ class UUBluetoothScanner<T : UUPeripheral?>(context: Context, factory: UUPeriphe
         }
     }
 
-    private fun startScan(serviceUuidList: Array<UUID>?) {
+    private fun startScan(serviceUuidList: Array<UUID>?)
+    {
         stopScan()
-        try {
+
+        try
+        {
             val filters = ArrayList<ScanFilter>()
-            if (serviceUuidList != null) {
-                for (uuid in serviceUuidList) {
+            if (serviceUuidList != null)
+            {
+                for (uuid in serviceUuidList)
+                {
                     val fb = ScanFilter.Builder()
                     fb.setServiceUuid(ParcelUuid(uuid))
                     filters.add(fb.build())
                 }
             }
+
             val builder = ScanSettings.Builder()
             builder.setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
             builder.setMatchMode(ScanSettings.MATCH_MODE_STICKY)
@@ -87,9 +105,13 @@ class UUBluetoothScanner<T : UUPeripheral?>(context: Context, factory: UUPeriphe
             builder.setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
             val settings = builder.build()
             bluetoothLeScanner = bluetoothAdapter.bluetoothLeScanner
-            if (scanCallback == null) {
-                scanCallback = object : ScanCallback() {
-                    override fun onScanResult(callbackType: Int, result: ScanResult) {
+
+            if (scanCallback == null)
+            {
+                scanCallback = object : ScanCallback()
+                {
+                    override fun onScanResult(callbackType: Int, result: ScanResult)
+                    {
                         //debugLog("startScan.onScanResult", "callbackType: " + callbackType + ", result: " + result.toString());
                         handleScanResult(result)
                     }
@@ -99,12 +121,12 @@ class UUBluetoothScanner<T : UUPeripheral?>(context: Context, factory: UUPeriphe
                      *
                      * @param results List of scan results that are previously scanned.
                      */
-                    override fun onBatchScanResults(results: List<ScanResult>) {
-                        debugLog(
-                            "startScan.onBatchScanResults",
-                            "There are " + results.size + " batched results"
-                        )
-                        for (sr in results) {
+                    override fun onBatchScanResults(results: List<ScanResult>)
+                    {
+                        debugLog("startScan.onBatchScanResults", "There are " + results.size + " batched results")
+
+                        for (sr in results)
+                        {
                             debugLog("startScan.onBatchScanResults", results.toString())
                             handleScanResult(sr)
                         }
@@ -115,31 +137,38 @@ class UUBluetoothScanner<T : UUPeripheral?>(context: Context, factory: UUPeriphe
                      *
                      * @param errorCode Error code (one of SCAN_FAILED_*) for scan failure.
                      */
-                    override fun onScanFailed(errorCode: Int) {
-                        debugLog(
-                            "startScan.onScanFailed",
-                            "errorCode: $errorCode"
-                        )
+                    override fun onScanFailed(errorCode: Int)
+                    {
+                        debugLog("startScan.onScanFailed", "errorCode: $errorCode")
                     }
                 }
             }
+
             bluetoothLeScanner!!.startScan(filters, settings, scanCallback)
             startOutOfRangeEvaluationTimer()
-        } catch (ex: Exception) {
+        }
+        catch (ex: Exception)
+        {
             debugLog("startScan", ex)
         }
     }
 
-    private fun handleScanResult(scanResult: ScanResult) {
-        try {
-            if (!isScanning) {
+    private fun handleScanResult(scanResult: ScanResult)
+    {
+        try
+        {
+            if (!isScanning)
+            {
                 //debugLog("handleScanResult", "Not scanning, ignoring advertisement from " + scanResult.getDevice().getAddress());
                 return
             }
-            if (isIgnored(scanResult)) {
+
+            if (isIgnored(scanResult))
+            {
                 //debugLog("handleScanResult", "Ignoring advertisement from " + scanResult.getDevice().getAddress());
                 return
             }
+
             scanThread.post()
             {
                 val peripheral = createPeripheral(scanResult)
@@ -150,36 +179,48 @@ class UUBluetoothScanner<T : UUPeripheral?>(context: Context, factory: UUPeriphe
                     }
                 }
             }
-        } catch (ex: Exception) {
+        }
+        catch (ex: Exception)
+        {
             debugLog("handleScanResult", ex)
         }
     }
 
-    private fun createPeripheral(scanResult: ScanResult): T? {
-        return try {
+    private fun createPeripheral(scanResult: ScanResult): T?
+    {
+        return try
+        {
             peripheralFactory.createPeripheral(
                 scanResult.device,
                 scanResult.rssi,
                 safeGetScanRecord(scanResult)
             )
-        } catch (ex: Exception) {
+        }
+        catch (ex: Exception)
+        {
             debugLog("createPeripheral", ex)
             null
         }
     }
 
-    private fun safeGetScanRecord(result: ScanResult?): ByteArray? {
-        if (result != null) {
+    private fun safeGetScanRecord(result: ScanResult?): ByteArray?
+    {
+        if (result != null)
+        {
             val sr = result.scanRecord
-            if (sr != null) {
+            if (sr != null)
+            {
                 return sr.bytes
             }
         }
+
         return null
     }
 
-    private fun handlePeripheralFound(peripheral: T) {
-        if (!isScanning) {
+    private fun handlePeripheralFound(peripheral: T)
+    {
+        if (!isScanning)
+        {
             debugLog(
                 "handlePeripheralFound",
                 "Not scanning anymore, throwing away scan result from: $peripheral"
@@ -187,27 +228,41 @@ class UUBluetoothScanner<T : UUPeripheral?>(context: Context, factory: UUPeriphe
             safeEndAllScanning()
             return
         }
-        val address: String? = peripheral?.address
-        if (address == null) {
+
+        val address: String? = peripheral.address
+        if (address == null)
+        {
             debugLog("handlePeripheralFound", "Peripheral has a null address, throwing it out.")
             return
         }
+
         debugLog(
             "handlePeripheralFound",
             "Peripheral Found: $peripheral"
         )
-        nearbyPeripherals[address] = peripheral
+
+        synchronized(nearbyPeripherals)
+        {
+            nearbyPeripherals[address] = peripheral
+        }
+
         val sorted = sortedPeripherals()
         nearbyPeripheralCallback?.invoke(sorted)
     }
 
-    private fun sortedPeripherals(): ArrayList<T> {
-        val list = ArrayList(nearbyPeripherals.values)
+    private fun sortedPeripherals(): ArrayList<T>
+    {
+        val list: ArrayList<T>
+        synchronized(nearbyPeripherals)
+        {
+            list = ArrayList(nearbyPeripherals.values)
+        }
+
         list.sortWith()
         { lhs: T, rhs: T ->
 
-            val lhsRssi = lhs?.rssi ?: 0
-            val rhsRssi = rhs?.rssi ?: 0
+            val lhsRssi = lhs.rssi
+            val rhsRssi = rhs.rssi
 
             if (lhsRssi > rhsRssi)
             {
@@ -222,101 +277,131 @@ class UUBluetoothScanner<T : UUPeripheral?>(context: Context, factory: UUPeriphe
         return list
     }
 
-    private fun stopScan() {
-        try {
-            if (bluetoothLeScanner != null && scanCallback != null) {
+    private fun stopScan()
+    {
+        try
+        {
+            if (bluetoothLeScanner != null && scanCallback != null)
+            {
                 bluetoothLeScanner!!.stopScan(scanCallback)
             }
-        } catch (ex: Exception) {
+        }
+        catch (ex: Exception)
+        {
             debugLog("stopScan", ex)
         }
     }
 
-    private fun safeEndAllScanning() {
-        //stopLegacyScan();
+    private fun safeEndAllScanning()
+    {
         stopScan()
     }
 
     @Synchronized
-    private fun isIgnored(device: BluetoothDevice?): Boolean {
+    private fun isIgnored(device: BluetoothDevice?): Boolean
+    {
         return device == null || ignoredDevices.containsKey(device.address)
     }
 
-    private fun isIgnored(scanResult: ScanResult?): Boolean {
+    private fun isIgnored(scanResult: ScanResult?): Boolean
+    {
         return scanResult == null || isIgnored(scanResult.device)
     }
 
     @Synchronized
-    fun ignoreDevice(device: BluetoothDevice) {
+    fun ignoreDevice(device: BluetoothDevice)
+    {
         ignoredDevices[device.address] = java.lang.Boolean.TRUE
     }
 
     @Synchronized
-    fun clearIgnoreList() {
+    fun clearIgnoreList()
+    {
         ignoredDevices.clear()
     }
 
-    private fun shouldDiscoverPeripheral(peripheral: T?): Boolean {
-        if (peripheral == null) {
+    private fun shouldDiscoverPeripheral(peripheral: T?): Boolean
+    {
+        if (peripheral == null)
+        {
             return false
         }
-        if (scanFilters != null) {
-            for (filter in scanFilters!!) {
-                val result: UUPeripheralFilter.Result? = filter.shouldDiscoverPeripheral(peripheral)
-                if (result === UUPeripheralFilter.Result.IgnoreForever) {
-                    ignoreDevice(peripheral.bluetoothDevice)
-                    return false
-                }
-                if (result === UUPeripheralFilter.Result.IgnoreOnce) {
-                    return false
-                }
+
+        for (filter in scanFilters)
+        {
+            val result = filter.shouldDiscoverPeripheral(peripheral)
+            if (result == UUPeripheralFilter.Result.IgnoreForever)
+            {
+                ignoreDevice(peripheral.bluetoothDevice)
+                return false
+            }
+
+            if (result == UUPeripheralFilter.Result.IgnoreOnce)
+            {
+                return false
             }
         }
+
         return true
     }
 
-    init {
-        val bluetoothManager =
-            context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+    init
+    {
+        val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothAdapter = bluetoothManager.adapter
-        scanThread = UUWorkerThread("UUBluetoothScanner")
         peripheralFactory = factory
     }
 
-    private fun startOutOfRangeEvaluationTimer() {
+    private fun startOutOfRangeEvaluationTimer()
+    {
         stopOutOfRangeEvaluationTimer()
         val t = UUTimer(
             outOfRangeFilterEvaluationFrequencyTimerId,
             outOfRangeFilterEvaluationFrequency,
             true,
             null
-        ) { timer: UUTimer?, userInfo: Any? ->
-            synchronized(nearbyPeripherals) {
+        )
+        { _, _ ->
+
+            synchronized(nearbyPeripherals)
+            {
                 var didChange = false
                 val keep = ArrayList<T>()
-                for (peripheral in nearbyPeripherals.values) {
+
+                for (peripheral in nearbyPeripherals.values)
+                {
                     var outOfRange = false
-                    for (filter in outOfRangeScanFilters!!) {
-                        if (filter.checkPeripheralRange(peripheral) === UUOutOfRangePeripheralFilter.Result.OutOfRange) {
+                    for (filter in outOfRangeScanFilters)
+                    {
+                        if (filter.checkPeripheralRange(peripheral) == UUOutOfRangePeripheralFilter.Result.OutOfRange)
+                        {
                             outOfRange = true
                             didChange = true
                             break
                         }
                     }
-                    if (!outOfRange) {
+
+                    if (!outOfRange)
+                    {
                         keep.add(peripheral)
                     }
                 }
+
                 nearbyPeripherals.clear()
-                for (peripheral in keep) {
-                    nearbyPeripherals[peripheral?.address!!] = peripheral
+
+                for (peripheral in keep)
+                {
+                    nearbyPeripherals[peripheral.address!!] = peripheral
                 }
-                if (didChange) {
+
+                if (didChange)
+                {
                     val sorted = sortedPeripherals()
                     nearbyPeripheralCallback?.invoke(sorted)
                 }
             }
         }
+
         t.start()
     }
 
@@ -328,10 +413,7 @@ class UUBluetoothScanner<T : UUPeripheral?>(context: Context, factory: UUPeriphe
     companion object
     {
         private val LOGGING_ENABLED = true //BuildConfig.DEBUG
-        private const val outOfRangeFilterEvaluationFrequencyTimerId =
-            "UUBluetoothScanner_outOfRangeFilterEvaluationFrequency"
-
-
+        private const val outOfRangeFilterEvaluationFrequencyTimerId = "UUBluetoothScanner_outOfRangeFilterEvaluationFrequency"
     }
 
     private fun debugLog(method: String, message: String)

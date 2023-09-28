@@ -1,0 +1,321 @@
+package com.silverpine.uu.sample.bluetooth.viewmodel
+
+import android.os.Bundle
+import androidx.lifecycle.ViewModel
+import com.silverpine.uu.bluetooth.UUBluetooth
+import com.silverpine.uu.bluetooth.UUBluetoothScanner
+import com.silverpine.uu.bluetooth.UUDefaultPeripheralFactory
+import com.silverpine.uu.bluetooth.UUOutOfRangePeripheralFilter
+import com.silverpine.uu.bluetooth.UUPeripheral
+import com.silverpine.uu.bluetooth.UUPeripheralFilter
+import com.silverpine.uu.core.UUDate
+import com.silverpine.uu.core.uuDispatchMain
+import com.silverpine.uu.core.uuReadUInt8
+import com.silverpine.uu.logging.UULog
+import com.silverpine.uu.sample.bluetooth.R
+import com.silverpine.uu.sample.bluetooth.operations.ReadDeviceInfoOperation
+import com.silverpine.uu.sample.bluetooth.ui.PeripheralDetailActivity
+import com.silverpine.uu.sample.bluetooth.ui.l2cap.L2CapClientActivity
+import com.silverpine.uu.sample.bluetooth.ui.l2cap.L2CapServerActivity
+import com.silverpine.uu.ux.UUAlertDialog
+import com.silverpine.uu.ux.UUButton
+import com.silverpine.uu.ux.UUMenuItem
+
+class HomeViewModel: RecyclerViewModel()
+{
+    private val scanner: UUBluetoothScanner<UUPeripheral> = UUBluetoothScanner(UUBluetooth.requireApplicationContext(), UUDefaultPeripheralFactory())
+
+    private var lastUpdate: Long = 0
+
+    fun reset()
+    {
+        stopScanning()
+        updateMenu()
+    }
+
+
+    override fun buildMenu(): ArrayList<UUMenuItem>
+    {
+        val list = ArrayList<UUMenuItem>()
+
+        if (scanner.isScanning)
+        {
+            list.add(UUMenuItem(R.string.stop, this::stopScanning, true))
+        }
+        else
+        {
+            list.add(UUMenuItem(R.string.scan, this::startScanning, true))
+        }
+
+        list.add(UUMenuItem(R.string.open_l2cap_server, this::openL2CapServer))
+
+        return list
+    }
+
+
+    private fun startScanning()
+    {
+        //Log.d(TAG, "startScanning")
+
+        //adapter.update(listOf())
+
+        val filters: ArrayList<UUPeripheralFilter<UUPeripheral>> = arrayListOf()
+        filters.add(RequireMinimumRssiPeripheralFilter(-70))
+        //filters.add(RequireManufacturingDataPeripheralFilter())
+        //filters.add(IgnoreAppleBeaconsPeripheralFilter())
+        //filters.add(RequireNoNamePeripheralFilter())
+        filters.add(RequireNamePeripheralFilter())
+
+        val outOfRangeFilters: ArrayList<UUOutOfRangePeripheralFilter<UUPeripheral>> = arrayListOf()
+        outOfRangeFilters.add(OutOfRangeFilter())
+
+        scanner.startScanning(null, filters, outOfRangeFilters)
+        { list ->
+
+            val timeSinceLastUpdate = System.currentTimeMillis() - this.lastUpdate
+            if (timeSinceLastUpdate > 300)
+            {
+                uuDispatchMain()
+                {
+                    val tmp = ArrayList<ViewModel>()
+                    val vmList = list.map()
+                    {
+                        val vm = UUPeripheralViewModel(it)
+                        vm.onClick = this::onPeripheralTapped
+                        vm
+                    }
+
+                    sortPeripherals(vmList)
+                    tmp.addAll(vmList)
+                    updateData(tmp)
+
+                    lastUpdate = System.currentTimeMillis()
+                }
+            }
+        }
+
+        updateMenu()
+    }
+
+    private fun onPeripheralTapped(peripheral: UUPeripheral)
+    {
+        val items: ArrayList<UUButton> = ArrayList()
+        items.add(UUButton("View Services") { gotoPeripheralServices(peripheral) })
+        items.add(UUButton("Read Info") { readDeviceInfo(peripheral) })
+        items.add(UUButton("Start L2Cap Client") { gotoL2CapClient(peripheral) })
+
+        val dlg = UUAlertDialog()
+        dlg.title = "Choose an action for ${peripheral.name} - ${peripheral.address}"
+        dlg.items = items
+
+        showAlertDialog(dlg)
+    }
+
+    private fun gotoPeripheralServices(peripheral: UUPeripheral)
+    {
+        val args = Bundle()
+        args.putParcelable("peripheral", peripheral)
+
+        gotoActivity(PeripheralDetailActivity::class.java, args)
+    }
+
+    private fun gotoL2CapClient(peripheral: UUPeripheral)
+    {
+        val args = Bundle()
+        args.putParcelable("peripheral", peripheral)
+
+        gotoActivity(L2CapClientActivity::class.java, args)
+    }
+
+    private var readDeviceInfoOperation: ReadDeviceInfoOperation? = null
+    private fun readDeviceInfo(peripheral: UUPeripheral)
+    {
+        val op = ReadDeviceInfoOperation(peripheral)
+        readDeviceInfoOperation = op
+        op.start()
+        { err ->
+
+            uuDispatchMain()
+            {
+                if (err != null)
+                {
+                    val dlg = UUAlertDialog()
+                    dlg.title = "Read Device Info"
+                    dlg.message = "Error: $err"
+                    dlg.positiveButton = UUButton("OK")
+                    {
+
+                    }
+
+                    showAlertDialog(dlg)
+                }
+                else
+                {
+                    val dlg = UUAlertDialog()
+                    dlg.title = "Read Device Info"
+                    dlg.message = "Name: ${op.deviceName}\nMfg: ${op.mfgName}"
+                    dlg.positiveButton = UUButton("OK")
+                    {
+
+                    }
+
+                    showAlertDialog(dlg)
+                }
+            }
+        }
+    }
+
+    private fun sortPeripherals(list: List<UUPeripheralViewModel>)
+    {
+        list.sortedWith(sortByLastRssi(true))
+        //list.sortedWith(sortByMacAddress()) // sortByLastRssiUpdateTime(true))
+
+        UULog.d(javaClass, "sortPeripherals", "There are ${list.size} nearby peripherals")
+    }
+
+    private fun sortByLastRssi(strongestFirst: Boolean): java.util.Comparator<in UUPeripheralViewModel>
+    {
+        return Comparator()
+        { lhs: UUPeripheralViewModel, rhs: UUPeripheralViewModel ->
+
+            val lhsValue = lhs.model.rssi
+            val rhsValue = rhs.model.rssi
+
+            if (lhsValue > rhsValue)
+            {
+                return@Comparator (if (strongestFirst) 1 else -1)
+            }
+            else if (lhsValue < rhsValue)
+            {
+                return@Comparator (if (strongestFirst) -1 else 1)
+            }
+            0
+        }
+    }
+
+    private fun sortByLastRssiUpdateTime(oldestFirst: Boolean): java.util.Comparator<in UUPeripheralViewModel>
+    {
+        return Comparator()
+        { lhs: UUPeripheralViewModel, rhs: UUPeripheralViewModel ->
+
+            val lhsValue = lhs.model.lastRssiUpdateTime
+            val rhsValue = rhs.model.lastRssiUpdateTime
+
+            if (lhsValue > rhsValue)
+            {
+                return@Comparator (if (oldestFirst) 1 else -1)
+            }
+            else if (lhsValue < rhsValue)
+            {
+                return@Comparator (if (oldestFirst) -1 else 1)
+            }
+            0
+        }
+    }
+
+    private fun sortByMacAddress(): java.util.Comparator<in UUPeripheralViewModel>
+    {
+        return Comparator()
+        { lhs: UUPeripheralViewModel, rhs: UUPeripheralViewModel ->
+
+            val lhsValue = lhs.model.address ?: ""
+            val rhsValue = rhs.model.address ?: ""
+
+            lhsValue.compareTo(rhsValue)
+        }
+    }
+
+    private fun stopScanning()
+    {
+        //Log.d(TAG, "stopScanning")
+
+        scanner.stopScanning()
+        updateMenu()
+    }
+
+    private fun openL2CapServer()
+    {
+        gotoActivity(L2CapServerActivity::class.java, null)
+    }
+
+    inner class RequireNamePeripheralFilter: UUPeripheralFilter<UUPeripheral>
+    {
+        override fun shouldDiscoverPeripheral(peripheral: UUPeripheral): UUPeripheralFilter.Result
+        {
+            if (peripheral.name == null)
+            {
+                return UUPeripheralFilter.Result.IgnoreForever
+            }
+
+            return UUPeripheralFilter.Result.Discover
+        }
+    }
+
+    inner class RequireNoNamePeripheralFilter: UUPeripheralFilter<UUPeripheral>
+    {
+        override fun shouldDiscoverPeripheral(peripheral: UUPeripheral): UUPeripheralFilter.Result
+        {
+            if (peripheral.name == null)
+            {
+                return UUPeripheralFilter.Result.Discover
+            }
+
+            return UUPeripheralFilter.Result.IgnoreForever
+        }
+    }
+
+    inner class RequireMinimumRssiPeripheralFilter(private val rssi: Int): UUPeripheralFilter<UUPeripheral>
+    {
+        override fun shouldDiscoverPeripheral(peripheral: UUPeripheral): UUPeripheralFilter.Result
+        {
+            if (peripheral.rssi >= rssi)
+            {
+                return UUPeripheralFilter.Result.Discover
+            }
+
+            return UUPeripheralFilter.Result.IgnoreOnce
+        }
+    }
+
+    inner class RequireManufacturingDataPeripheralFilter(): UUPeripheralFilter<UUPeripheral>
+    {
+        override fun shouldDiscoverPeripheral(peripheral: UUPeripheral): UUPeripheralFilter.Result
+        {
+            if (peripheral.manufacturingData != null)
+            {
+                return UUPeripheralFilter.Result.Discover
+            }
+
+            return UUPeripheralFilter.Result.IgnoreOnce
+        }
+    }
+
+    inner class IgnoreAppleBeaconsPeripheralFilter(): UUPeripheralFilter<UUPeripheral>
+    {
+        override fun shouldDiscoverPeripheral(peripheral: UUPeripheral): UUPeripheralFilter.Result
+        {
+            val check = peripheral.manufacturingData?.uuReadUInt8(0)?.toInt()
+            if (check == 0x4C)
+            {
+                return UUPeripheralFilter.Result.IgnoreForever
+            }
+
+            return UUPeripheralFilter.Result.Discover
+        }
+    }
+
+    inner class OutOfRangeFilter: UUOutOfRangePeripheralFilter<UUPeripheral>
+    {
+        override fun checkPeripheralRange(peripheral: UUPeripheral): UUOutOfRangePeripheralFilter.Result
+        {
+            return if (peripheral.timeSinceLastUpdate > (UUDate.MILLIS_IN_ONE_SECOND * 200))
+            {
+                UUOutOfRangePeripheralFilter.Result.OutOfRange
+            }
+            else
+            {
+                UUOutOfRangePeripheralFilter.Result.InRange
+            }
+        }
+    }
+}

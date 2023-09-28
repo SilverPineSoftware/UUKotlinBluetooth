@@ -13,7 +13,6 @@ import android.os.Parcel
 import android.os.Parcelable
 import com.silverpine.uu.core.UUError
 import com.silverpine.uu.core.uuReadUInt8
-import com.silverpine.uu.core.uuSerializeParcel
 import com.silverpine.uu.core.uuSubData
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.core.uuUtf8
@@ -110,7 +109,7 @@ open class UUPeripheral() : Parcelable
         get() = (device)!!
 
     val address: String?
-        get() = device!!.address
+        get() = device?.address
 
     open val name: String?
         @SuppressLint("MissingPermission")
@@ -173,26 +172,30 @@ open class UUPeripheral() : Parcelable
         return totalBeaconCount.toDouble() / timeSinceFirstBeacon.toDouble() * 1000.0f
     }
 
-    @SuppressLint("MissingPermission")
-    fun getConnectionState(context: Context): ConnectionState
-    {
-        val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-        var state = bluetoothManager.getConnectionState(device, BluetoothProfile.GATT)
-        debugLog("getConnectionState", "Actual connection state is: $state (${ConnectionState.fromProfileConnectionState(state)})")
-        val gatt = UUBluetoothGatt.gattForPeripheral(this)
-        if (gatt != null)
+    val connectionState: ConnectionState
+        @SuppressLint("MissingPermission")
+        get()
         {
-            if (state != BluetoothProfile.STATE_CONNECTING && gatt.isConnecting)
+            val bluetoothManager = UUBluetooth.requireApplicationContext().getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+            var state = bluetoothManager.getConnectionState(device, BluetoothProfile.GATT)
+            debugLog("getConnectionState", "Actual connection state is: $state (${ConnectionState.fromProfileConnectionState(state)})")
+            val gatt = UUBluetoothGatt.gattForPeripheral(this)
+
+            if (gatt != null)
             {
-                debugLog("getConnectionState", "Forcing state to connecting")
-                state = BluetoothProfile.STATE_CONNECTING
-            } else if (state != BluetoothProfile.STATE_DISCONNECTED && gatt.bluetoothGatt == null) {
-                debugLog("getConnectionState", "Forcing state to disconnected")
-                state = BluetoothProfile.STATE_DISCONNECTED
+                if (state != BluetoothProfile.STATE_CONNECTING && gatt.isConnecting)
+                {
+                    debugLog("getConnectionState", "Forcing state to connecting")
+                    state = BluetoothProfile.STATE_CONNECTING
+                }
+                else if (state != BluetoothProfile.STATE_DISCONNECTED && gatt.bluetoothGatt == null)
+                {
+                    debugLog("getConnectionState", "Forcing state to disconnected")
+                    state = BluetoothProfile.STATE_DISCONNECTED
+                }
             }
+            return ConnectionState.fromProfileConnectionState(state)
         }
-        return ConnectionState.fromProfileConnectionState(state)
-    }
 
     fun setBluetoothGatt(gatt: BluetoothGatt?)
     {
@@ -224,20 +227,22 @@ open class UUPeripheral() : Parcelable
     fun connect(
         connectTimeout: Long,
         disconnectTimeout: Long,
-        connected: Runnable,
+        connected: ()->Unit,
         disconnected: (UUError?)->Unit
     ) {
         val gatt = UUBluetoothGatt.gattForPeripheral(this)
-        if (gatt != null) {
+        if (gatt != null)
+        {
             gatt.connect(false, connectTimeout, disconnectTimeout, object : UUConnectionDelegate
             {
-                override fun onConnected(peripheral: UUPeripheral) {
-                    connected.run()
+                override fun onConnected(peripheral: UUPeripheral)
+                {
+                    connected()
                 }
 
                 override fun onDisconnected(peripheral: UUPeripheral, error: UUError?)
                 {
-                    disconnected.invoke(error)
+                    disconnected(error)
                 }
             })
         }
@@ -522,26 +527,25 @@ open class UUPeripheral() : Parcelable
         }
     }
 
-    override fun equals(o: Any?): Boolean
+    override fun equals(other: Any?): Boolean
     {
-        if (this === o)
+        if (this === other)
         {
             return true
         }
 
-        if (o !is UUPeripheral)
+        if (other !is UUPeripheral)
         {
             return false
         }
 
-        val that = o
-        return ((((rssi == that.rssi) && lastRssiUpdateTime == that.lastRssiUpdateTime) && firstAdvertisementTime == that.firstAdvertisementTime) && lastAdvertisementTime == that.lastAdvertisementTime) && totalBeaconCount == that.totalBeaconCount &&
-                (device == that.device) &&
-                Arrays.equals(scanRecord, that.scanRecord) &&
-                Arrays.equals(manufacturingData, that.manufacturingData) &&
-                Arrays.equals(flags, that.flags) &&
-                (localName == that.localName) && serviceUuids == that.serviceUuids &&
-                (bluetoothGatt == that.bluetoothGatt)
+        return ((((rssi == other.rssi) && lastRssiUpdateTime == other.lastRssiUpdateTime) && firstAdvertisementTime == other.firstAdvertisementTime) && lastAdvertisementTime == other.lastAdvertisementTime) && totalBeaconCount == other.totalBeaconCount &&
+                (device == other.device) &&
+                Arrays.equals(scanRecord, other.scanRecord) &&
+                Arrays.equals(manufacturingData, other.manufacturingData) &&
+                Arrays.equals(flags, other.flags) &&
+                (localName == other.localName) && serviceUuids == other.serviceUuids &&
+                (bluetoothGatt == other.bluetoothGatt)
     }
 
     override fun hashCode(): Int
@@ -716,12 +720,14 @@ open class UUPeripheral() : Parcelable
         private const val BLE_PACKET_SIZE_MAX = 512
         private const val BLE_PACKET_OVERHEAD = 3
 
-        override fun createFromParcel(parcel: Parcel): UUPeripheral {
+        override fun createFromParcel(parcel: Parcel): UUPeripheral
+        {
             return UUPeripheral(parcel)
         }
 
-        override fun newArray(size: Int): Array<UUPeripheral?> {
-            return arrayOfNulls(size)
+        override fun newArray(size: Int): Array<UUPeripheral>
+        {
+            return newArray(size)
         }
     }
 }

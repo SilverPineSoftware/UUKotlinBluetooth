@@ -7,11 +7,10 @@ plugins {
 }
 
 android {
-    compileSdkVersion target_sdk
-
     defaultConfig {
         applicationId "com.silverpine.uu.sample.bluetooth"
         minSdkVersion min_sdk
+        compileSdk target_sdk
         targetSdkVersion target_sdk
         versionCode 1
         versionName "1.0"
@@ -29,10 +28,21 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
+
+    java {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(17))
+        }
+    }
+
     buildFeatures {
         dataBinding = true
+        viewBinding true
     }
     namespace 'com.silverpine.uu.sample.bluetooth'
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_17
+    }
 }
 
 dependencies {
@@ -40,13 +50,13 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.9.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation 'androidx.core:core-ktx:1.10.1'
+    implementation 'androidx.core:core-ktx:1.12.0'
 
     implementation "com.silverpine.uu:uu-core-ktx:${uu_core_version}"
-    implementation 'com.silverpine.uu:uu-ux-ktx:0.0.4.40-develop-SNAPSHOT'
+    implementation "com.silverpine.uu:uu-ux-ktx:${uu_ux_version}"
+    
 
     implementation project(':library')
-
 
     testImplementation 'junit:junit:4.13.2'
 

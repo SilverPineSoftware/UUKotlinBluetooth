@@ -1,134 +1,53 @@
 package com.silverpine.uu.sample.bluetooth.ui
 
 import android.Manifest
-import android.app.AlertDialog
-import android.bluetooth.BluetoothDevice
-import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import androidx.annotation.RequiresApi
-import androidx.core.util.Pair
-import androidx.lifecycle.ViewModel
-import androidx.recyclerview.widget.RecyclerView
-import com.silverpine.uu.bluetooth.UUBluetoothScanner
-import com.silverpine.uu.bluetooth.UUOutOfRangePeripheralFilter
-import com.silverpine.uu.bluetooth.UUPeripheral
-import com.silverpine.uu.bluetooth.UUPeripheralFactory
-import com.silverpine.uu.bluetooth.UUPeripheralFilter
-import com.silverpine.uu.core.uuDispatchMain
+import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.silverpine.uu.sample.bluetooth.BR
 import com.silverpine.uu.sample.bluetooth.R
-import com.silverpine.uu.sample.bluetooth.operations.ReadDeviceInfoOperation
+import com.silverpine.uu.sample.bluetooth.databinding.ActivityHomeBinding
+import com.silverpine.uu.sample.bluetooth.viewmodel.HomeViewModel
 import com.silverpine.uu.sample.bluetooth.viewmodel.UUPeripheralViewModel
-import com.silverpine.uu.ux.UUMenuHandler
+import com.silverpine.uu.ux.UUAlertDialog
+import com.silverpine.uu.ux.UUButton
 import com.silverpine.uu.ux.UUPermissions
-import com.silverpine.uu.ux.UURecyclerActivity
+import com.silverpine.uu.ux.UUViewModelRecyclerAdapter
 import com.silverpine.uu.ux.uuOpenSystemSettings
-import com.silverpine.uu.ux.uuPrompt
+import com.silverpine.uu.ux.uuShowAlertDialog
 
-class HomeActivity: UURecyclerActivity()
+class HomeActivity: BaseActivity()
 {
-    private val TAG = HomeActivity::javaClass.name
-
-    private lateinit var scanner: UUBluetoothScanner<UUPeripheral>
-
-    private var lastUpdate: Long = 0
+    private lateinit var viewModel: HomeViewModel
+    private lateinit var adapter: UUViewModelRecyclerAdapter
 
     override fun onCreate(savedInstanceState: Bundle?)
     {
         super.onCreate(savedInstanceState)
 
-        scanner = UUBluetoothScanner(applicationContext, object : UUPeripheralFactory<UUPeripheral>
-        {
-            override fun createPeripheral(
-                device: BluetoothDevice,
-                rssi: Int,
-                scanRecord: ByteArray?
-            ): UUPeripheral
-            {
-                return UUPeripheral(device, rssi, scanRecord)
-            }
-        })
+        viewModel = ViewModelProvider(this)[HomeViewModel::class.java]
+        val binding = ActivityHomeBinding.inflate(layoutInflater)
+        setupViewModel(viewModel, binding)
 
-        //scanner = UUBluetoothScanner(applicationContext) { device, rssi, scanRecord -> UUPeripheral(device, rssi, scanRecord) }
+        viewModel.data.observe(this)
+        {
+            adapter.update(it)
+        }
+
+        val recyclerView = binding.recyclerView
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        adapter = UUViewModelRecyclerAdapter(this)
+        recyclerView.adapter = adapter
+        setupAdapter()
+
+        viewModel.reset()
     }
 
-    override fun setupAdapter(recyclerView: RecyclerView)
+    private fun setupAdapter()
     {
         adapter.registerClass(UUPeripheralViewModel::class.java, R.layout.peripheral_row, BR.vm)
-    }
-
-    override fun handleRowTapped(viewModel: ViewModel)
-    {
-        stopScanning()
-
-        if (viewModel is UUPeripheralViewModel)
-        {
-            val peripheral = viewModel.model
-            val builder = AlertDialog.Builder(this)
-            builder.setTitle("Choose an action for ${peripheral.name} - ${peripheral.address}")
-
-            val actions = ArrayList<Pair<String, Runnable>>()
-            actions.add(Pair("View Services", Runnable { gotoPeripheralServices(peripheral) }))
-            actions.add(Pair("Read Info", Runnable { readDeviceInfo(peripheral) }))
-
-            val items = arrayOfNulls<String>(actions.size)
-            for (i in items.indices)
-            {
-                items[i] = actions[i].first
-            }
-            builder.setCancelable(true)
-
-            builder.setItems(items) { dialog, which ->
-                if (which >= 0 && which < actions.size) {
-                    actions[which].second.run()
-                }
-            }
-
-            builder.create().show()
-        }
-    }
-
-    private fun gotoPeripheralServices(peripheral: UUPeripheral)
-    {
-        val intent = Intent(applicationContext, PeripheralDetailActivity::class.java)
-        intent.putExtra("peripheral", peripheral)
-        startActivity(intent)
-    }
-
-    private var readDeviceInfoOperation: ReadDeviceInfoOperation? = null
-    private fun readDeviceInfo(peripheral: UUPeripheral)
-    {
-        val op = ReadDeviceInfoOperation(peripheral)
-        readDeviceInfoOperation = op
-        op.start()
-        { err ->
-
-            uuDispatchMain()
-            {
-                if (err != null)
-                {
-                    uuPrompt("Read Device Info",
-                        "Error: $err",
-                        "OK",
-                        null,
-                        true,
-                        { },
-                        {})
-                }
-                else
-                {
-                    uuPrompt("Read Device Info",
-                        "Name: ${op.deviceName}\nMfg: ${op.mfgName}",
-                        "OK",
-                        null,
-                        true,
-                        { },
-                        { })
-                }
-            }
-        }
     }
 
     override fun onResume()
@@ -136,53 +55,6 @@ class HomeActivity: UURecyclerActivity()
         super.onResume()
 
         refreshPermissions()
-    }
-
-    override fun populateMenu(menuHandler: UUMenuHandler)
-    {
-        if (scanner.isScanning)
-        {
-            menuHandler.addAction(R.string.stop, this::stopScanning)
-        }
-        else
-        {
-            menuHandler.addAction(R.string.scan, this::startScanning)
-        }
-    }
-
-    private fun startScanning()
-    {
-        Log.d(TAG, "startScanning")
-
-        adapter.update(listOf())
-
-        scanner.startScanning(null, arrayListOf(PeripheralFilter()), arrayListOf(OutOfRangeFilter()))
-        { list ->
-
-            val timeSinceLastUpdate = System.currentTimeMillis() - this.lastUpdate
-            if (timeSinceLastUpdate > 300)
-            {
-                uuDispatchMain()
-                {
-                    Log.d(TAG, "Updating devices, ${list.size} nearby")
-                    val tmp = ArrayList<ViewModel>()
-                    tmp.addAll(list.map { UUPeripheralViewModel(it, applicationContext) })
-                    adapter.update(tmp)
-
-                    lastUpdate = System.currentTimeMillis()
-                }
-            }
-        }
-
-        invalidateOptionsMenu()
-    }
-
-    private fun stopScanning()
-    {
-        Log.d(TAG, "stopScanning")
-
-        scanner.stopScanning()
-        invalidateOptionsMenu()
     }
 
     companion object
@@ -267,26 +139,27 @@ class HomeActivity: UURecyclerActivity()
                 buttonId = R.string.request_permission
             }
 
-            uuPrompt(
-                title = R.string.permissions,
-                message = msgId,
-                positiveButtonTextId = buttonId,
-                cancelable = false,
-                positiveAction =
+            val dlg = UUAlertDialog()
+            dlg.setTitleResource(R.string.permissions)
+            dlg.setMessageResource(msgId)
+            dlg.cancelable = false
+            dlg.positiveButton = UUButton(buttonId)
+            {
+                if (canRequest)
                 {
-                    if (canRequest)
-                    {
-                        UUPermissions.requestPermissions(this, LOCATION_PERMISSION, 12276)
-                        { _, granted ->
+                    UUPermissions.requestPermissions(this, LOCATION_PERMISSION, 12276)
+                    { _, granted ->
 
-                            refreshPermissionsPreSdk31(granted)
-                        }
+                        refreshPermissionsPreSdk31(granted)
                     }
-                    else
-                    {
-                        uuOpenSystemSettings()
-                    }
-                })
+                }
+                else
+                {
+                    uuOpenSystemSettings()
+                }
+            }
+
+            uuShowAlertDialog(dlg)
         }
     }
 
@@ -306,26 +179,27 @@ class HomeActivity: UURecyclerActivity()
                 buttonId = R.string.request_permission
             }
 
-            uuPrompt(
-                title = R.string.permissions,
-                message = msgId,
-                positiveButtonTextId = buttonId,
-                cancelable = false,
-                positiveAction =
+            val dlg = UUAlertDialog()
+            dlg.setTitleResource(R.string.permissions)
+            dlg.setMessageResource(msgId)
+            dlg.cancelable = false
+            dlg.positiveButton = UUButton(buttonId)
+            {
+                if (canRequest)
                 {
-                    if (canRequest)
-                    {
-                        UUPermissions.requestMultiplePermissions(this, arrayOf(BLUETOOTH_SCAN_PERMISSION, BLUETOOTH_CONNECT_PERMISSION), 12276)
-                        { _ ->
+                    UUPermissions.requestMultiplePermissions(this, arrayOf(BLUETOOTH_SCAN_PERMISSION, BLUETOOTH_CONNECT_PERMISSION), 12276)
+                    { _ ->
 
-                            refreshPermissionsPostSdk31()
-                        }
+                        refreshPermissionsPostSdk31()
                     }
-                    else
-                    {
-                        uuOpenSystemSettings()
-                    }
-                })
+                }
+                else
+                {
+                    uuOpenSystemSettings()
+                }
+            }
+
+            uuShowAlertDialog(dlg)
         }
     }
 
@@ -338,33 +212,5 @@ class HomeActivity: UURecyclerActivity()
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         UUPermissions.handleRequestPermissionsResult(this, requestCode,
             permissions.asList().toTypedArray(), grantResults)
-    }
-
-    inner class PeripheralFilter: UUPeripheralFilter<UUPeripheral>
-    {
-        override fun shouldDiscoverPeripheral(peripheral: UUPeripheral): UUPeripheralFilter.Result
-        {
-            if (peripheral.name == null)
-            {
-                return UUPeripheralFilter.Result.IgnoreForever
-            }
-
-            return UUPeripheralFilter.Result.Discover;
-        }
-    }
-
-    inner class OutOfRangeFilter: UUOutOfRangePeripheralFilter<UUPeripheral>
-    {
-        override fun checkPeripheralRange(peripheral: UUPeripheral): UUOutOfRangePeripheralFilter.Result
-        {
-            if (peripheral.timeSinceLastUpdate > 2000)
-            {
-                return UUOutOfRangePeripheralFilter.Result.OutOfRange
-            }
-            else
-            {
-                return UUOutOfRangePeripheralFilter.Result.InRange
-            }
-        }
     }
 }

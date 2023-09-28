@@ -7,8 +7,12 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
+import android.bluetooth.BluetoothServerSocket
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.annotation.RequiresPermission
 import com.silverpine.uu.core.uuIsBitSet
 import com.silverpine.uu.core.uuToHexData
 import com.silverpine.uu.logging.UULog
@@ -498,5 +502,27 @@ object UUBluetooth
         }
 
         return null
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // L2Cap Support
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    @RequiresPermission(value = "android.permission.BLUETOOTH_CONNECT")
+    fun listenForL2CapConnection(secure: Boolean): BluetoothServerSocket
+    {
+        val context = requireApplicationContext()
+        val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        val bluetoothAdapter = bluetoothManager.adapter
+
+        return if (secure)
+        {
+            bluetoothAdapter.listenUsingL2capChannel()
+        }
+        else
+        {
+            bluetoothAdapter.listenUsingInsecureL2capChannel()
+        }
     }
 }

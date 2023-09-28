@@ -46,7 +46,7 @@ class ServiceDetailActivity: UURecyclerActivity()
 
     override fun populateMenu(menuHandler: UUMenuHandler)
     {
-        if (peripheral.getConnectionState(applicationContext) == UUPeripheral.ConnectionState.Connected)
+        if (peripheral.connectionState == UUPeripheral.ConnectionState.Connected)
         {
             menuHandler.add(R.string.disconnect, this::handleDisconnect)
         }

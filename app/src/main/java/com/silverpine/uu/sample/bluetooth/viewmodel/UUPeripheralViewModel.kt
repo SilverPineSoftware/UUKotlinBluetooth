@@ -1,6 +1,5 @@
 package com.silverpine.uu.sample.bluetooth.viewmodel
 
-import android.content.Context
 import android.text.TextUtils
 import android.view.View
 import androidx.lifecycle.LiveData
@@ -9,7 +8,7 @@ import androidx.lifecycle.ViewModel
 import com.silverpine.uu.bluetooth.UUPeripheral
 import com.silverpine.uu.core.uuToHex
 
-class UUPeripheralViewModel(val model: UUPeripheral, context: Context): ViewModel()
+class UUPeripheralViewModel(val model: UUPeripheral): ViewModel()
 {
     private val _friendlyName = MutableLiveData<String?>(null)
     private val _macAddress = MutableLiveData<String?>(null)
@@ -32,9 +31,7 @@ class UUPeripheralViewModel(val model: UUPeripheral, context: Context): ViewMode
         _friendlyName.value = "${model.name}"
         _macAddress.value = "${model.address}\n${TextUtils.join("\n", model.serviceUuids)}"
 
-
-
-        _connectionState.value = "${model.getConnectionState(context)}"
+        _connectionState.value = "${model.connectionState}"
         _rssi.value = "${model.rssi}"
         _timeSinceLastUpdate.value = "${model.timeSinceLastUpdate}"
 

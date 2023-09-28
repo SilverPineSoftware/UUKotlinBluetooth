@@ -32,5 +32,16 @@
 
         </ScrollView>
 
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:uuAlpha="@{ vm.imageAlpha }"
+            app:uuBitmap="@{ vm.imageBitmap }"
+            android:onClick="@{()-> vm.onImageTap() }"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

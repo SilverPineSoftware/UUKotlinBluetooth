@@ -1,10 +1,8 @@
 package com.silverpine.uu.bluetooth
 
 import com.silverpine.uu.core.UUError
-import com.silverpine.uu.core.uuSleep
 import com.silverpine.uu.core.uuSubData
 import com.silverpine.uu.logging.UULog
-import java.io.ByteArrayOutputStream
 import java.io.InputStream
 
 open class UUStreamReadThread(
@@ -19,26 +17,30 @@ open class UUStreamReadThread(
         private val LOGGING_ENABLED = BuildConfig.DEBUG
     }
 
-    private var interrupted: Boolean = false
     private var totalReceived: Long = 0
 
     override fun run()
     {
         try
         {
-            while (!interrupted)
+            while (!isInterrupted)
             {
                 val rx = receiveBytes()
                 if ((rx?.size ?: 0) > 0)
                 {
-                    interrupted = !dataReceived(rx, null)
+                    var shouldInterrupt = !dataReceived(rx, null)
 
                     if (expectedBytes != null)
                     {
                         if (totalReceived >= expectedBytes)
                         {
-                            interrupted = true
+                            shouldInterrupt = true
                         }
+                    }
+
+                    if (shouldInterrupt)
+                    {
+                        interrupt()
                     }
                 }
             }
@@ -81,113 +83,6 @@ open class UUStreamReadThread(
         }
 
         return rx
-    }
-
-    /*
-    private fun receiveBytes2(): ByteArray?
-    {
-        val rxChunk = ByteArray(readChunkSize)
-        //val bos = ByteArrayOutputStream()
-        var rx: ByteArray? = null
-        var err: UUError? = null
-
-        try
-        {
-            var bytesRead: Int
-            var totalBytesRead = 0
-
-            //sleepUntilDataAvailable()
-
-            while (!interrupted) // && inputStream.available() > 0)
-            {
-                bytesRead = inputStream.read(rxChunk, 0, rxChunk.size)
-
-                if (LOGGING_ENABLED)
-                {
-                    debugLog("receiveBytes", "Read Chunk: $bytesRead")
-                }
-
-                if (bytesRead > 0)
-                {
-                    //bos.write(rxChunk, 0, bytesRead)
-                    rx = rxChunk.uuSubData(0, bytesRead)
-                    dataReceived(rx, null)
-
-                    if (LOGGING_ENABLED)
-                    {
-                        totalReceived += bytesRead
-                        debugLog("receiveBytes", "Added $bytesRead to bos, totalReceived: $totalReceived")
-                    }
-                }
-
-                totalBytesRead += bytesRead
-                if (expectedBytes != null)
-                {
-                    if (totalBytesRead >= expectedBytes)
-                    {
-                        break
-                    }
-                }
-
-                return rx
-            }
-
-            //rx = bos.toByteArray()
-
-            if (LOGGING_ENABLED)
-            {
-//                if (rx.size < 100)
-//                {
-//                    debugLog("receiveBytes", "RX: ${rx.uuToHex()}")
-//                }
-            }
-        }
-        catch (ex: Exception)
-        {
-            err = UUBluetoothError.operationFailedError(ex)
-
-            if (LOGGING_ENABLED)
-            {
-                logException("read", ex)
-            }
-        }
-
-        if (interrupted)
-        {
-            return false
-        }
-
-        if (rx?.size == 0)
-        {
-            return true
-        }
-
-        return dataReceived(rx, err)
-    }
-
-    private fun sleepUntilDataAvailable()
-    {
-        do
-        {
-            uuSleep("sleepUntilDataAvailable", 10L)
-        }
-        while (!interrupted && inputStream.available() == 0)
-    }*/
-
-    fun uuInterrupt()
-    {
-        try
-        {
-            interrupted = true
-            interrupt()
-        }
-        catch (ex: Exception)
-        {
-            if (LOGGING_ENABLED)
-            {
-                logException("uuInterrupt", ex)
-            }
-        }
     }
 
     private fun debugLog(method: String, message: String)

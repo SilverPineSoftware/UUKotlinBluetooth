@@ -103,32 +103,6 @@ class L2CapClientViewModel: L2CapBaseViewModel()
             ++pingCount
             updateMenu()
         }
-
-        /*
-        channel.sendCommand(tx, 10000L, 10000L)
-        { rx, rxErr ->
-
-            appendOutput("RX, ${rx?.uuToHex()}, err: $rxErr")
-            ++pingCount
-            updateMenu()
-        }
-        */
-        /*
-        appendOutput("Writing data...")
-        channel.write(tx, 10000L)
-        { txErr ->
-            appendOutput("TX Complete, err: $txErr")
-            updateMenu()
-
-            appendOutput("Reading data...")
-            channel.read(10000L)
-            { rx, rxErr ->
-
-                appendOutput("RX Complete, ${rx?.uuToHex()}, err: $rxErr")
-                ++pingCount
-                updateMenu()
-            }
-        }*/
     }
 
     private fun onWrite()
@@ -169,11 +143,11 @@ class L2CapClientViewModel: L2CapBaseViewModel()
 
         appendOutput("Writing Image, ${tx.size} bytes")
         val start = System.currentTimeMillis()
-        channel.write(tx,UUDate.MILLIS_IN_ONE_MINUTE * 5)
-        { txErr ->
+        channel.sendCommand(tx,UUDate.MILLIS_IN_ONE_MINUTE * 5, UUDate.MILLIS_IN_ONE_MINUTE * 5, L2CapCommand.HEADER_SIZE)
+        { _, rxErr ->
 
             val duration = System.currentTimeMillis() - start
-            appendOutput("Image Sent, took $duration millis, err: $txErr")
+            appendOutput("Image Sent and ack received, took $duration millis, err: $rxErr")
             updateMenu()
         }
     }

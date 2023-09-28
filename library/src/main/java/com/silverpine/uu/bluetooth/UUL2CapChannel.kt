@@ -229,7 +229,7 @@ class UUL2CapChannel(private val peripheral: UUPeripheral)
                     debugLog("read", "L2Cap Read Data Timed Out: $peripheral")
                 }
 
-                readThread.uuInterrupt()
+                readThread.interrupt()
                 notifyReadComplete(null, UUBluetoothError.timeoutError(), completion)
             }
 

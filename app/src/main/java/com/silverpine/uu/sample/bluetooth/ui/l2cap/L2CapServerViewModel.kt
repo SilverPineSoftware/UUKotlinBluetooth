@@ -2,7 +2,11 @@ package com.silverpine.uu.sample.bluetooth.ui.l2cap
 
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattService
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Build
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import com.silverpine.uu.bluetooth.UUBluetooth
 import com.silverpine.uu.bluetooth.UUBluetoothAdvertiser
 import com.silverpine.uu.bluetooth.UUL2CapServer
@@ -10,16 +14,23 @@ import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.core.uuToHexData
 import com.silverpine.uu.core.uuWriteInt32
 import com.silverpine.uu.core.uuWriteUInt8
+import com.silverpine.uu.ux.UUAlpha
 import com.silverpine.uu.ux.UUMenuItem
 import java.nio.ByteOrder
 
 class L2CapServerViewModel: L2CapBaseViewModel()
 {
+    private var _imageAlpha: MutableLiveData<UUAlpha> = MutableLiveData(UUAlpha(0.0f))
+    val imageAlpha: LiveData<UUAlpha> = _imageAlpha
+
+    private var _imageBitmap: MutableLiveData<Bitmap?> = MutableLiveData(null)
+    val imageBitmap: LiveData<Bitmap?> = _imageBitmap
+
     private val echoServer: UUL2CapServer? by lazy()
     {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
         {
-            val server = UUL2CapServer()
+            val server = UUL2CapServer(1024 * 100)
             server.dataReceived = this::parseReceivedData
             server
         }
@@ -30,6 +41,7 @@ class L2CapServerViewModel: L2CapBaseViewModel()
     }
 
     private var rxCommand: L2CapCommand? = null
+    private var rxCommandStart: Long = 0
 
     private fun parseReceivedData(data: ByteArray): ByteArray?
     {
@@ -38,6 +50,7 @@ class L2CapServerViewModel: L2CapBaseViewModel()
         if (rxCommand == null)
         {
             appendOutput("Parsing Command Header")
+            rxCommandStart = System.currentTimeMillis()
             rxCommand = L2CapCommand.fromBytes(data)
             appendOutput("Command Header parsed, Id: ${rxCommand?.id}, Length: ${rxCommand?.data?.size}, Command Bytes Received: ${rxCommand?.bytesReceived}")
         }
@@ -51,7 +64,8 @@ class L2CapServerViewModel: L2CapBaseViewModel()
 
         if (cmd.hasReceivedAllBytes())
         {
-            appendOutput("Full command has been received, payload size: ${rxCommand?.bytesReceived}")
+            val duration = System.currentTimeMillis() - rxCommandStart
+            appendOutput("Full command has been received, payload size: ${rxCommand?.bytesReceived}, took: $duration millis")
 
             val cmdResponse = processCommand(cmd)
             rxCommand = null
@@ -72,7 +86,23 @@ class L2CapServerViewModel: L2CapBaseViewModel()
                 return L2CapCommand(L2CapCommand.Id.Echo, command.data)
 
             L2CapCommand.Id.SendImage ->
-                L2CapCommand(L2CapCommand.Id.AckImage, "ABCD".uuToHexData() ?: byteArrayOf())
+            {
+                try
+                {
+                    val bmp = BitmapFactory.decodeByteArray(command.data, 0, command.data.size)
+                    if (bmp != null)
+                    {
+                        appendOutput("Successfully decoded image")
+                        showImage(bmp)
+                    }
+                }
+                catch (ex: Exception)
+                {
+                    appendOutput("Failed to decode image: $ex")
+                }
+
+                L2CapCommand(L2CapCommand.Id.AckImage, byteArrayOf())
+            }
 
             else ->
                 null
@@ -208,5 +238,19 @@ class L2CapServerViewModel: L2CapBaseViewModel()
         }
 
         return list
+    }
+
+    private fun showImage(bmp: Bitmap)
+    {
+        uuDispatchMain()
+        {
+            _imageBitmap.value = bmp
+            _imageAlpha.value = UUAlpha.FADE_IN
+        }
+    }
+
+    fun onImageTap()
+    {
+        _imageAlpha.value = UUAlpha.FADE_OUT
     }
 }

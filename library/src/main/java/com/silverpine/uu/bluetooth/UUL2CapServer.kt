@@ -10,12 +10,11 @@ import com.silverpine.uu.logging.UULog
 
 @RequiresApi(Build.VERSION_CODES.Q)
 @SuppressLint("MissingPermission")
-class UUL2CapServer
+class UUL2CapServer(val readChunkSize: Int = 10240)
 {
     companion object
     {
         private val LOGGING_ENABLED = BuildConfig.DEBUG
-        private const val READ_CHUNK_SIZE = 10240
     }
 
     private var bluetoothServerSocket: BluetoothServerSocket? = null
@@ -135,7 +134,7 @@ class UUL2CapServer
     {
         try
         {
-            readThread?.uuInterrupt()
+            readThread?.interrupt()
         }
         catch (ex: Exception)
         {
@@ -168,7 +167,7 @@ class UUL2CapServer
                     debugLog("UUBluetoothSocketAcceptThread.run", "Server socket connected")
                 }
 
-                val t = UUStreamReadThread("UUL2CapServer", READ_CHUNK_SIZE, socket.inputStream, null)
+                val t = UUStreamReadThread("UUL2CapServer", readChunkSize, socket.inputStream, null)
                 { rx, err ->
 
                     if (err != null)

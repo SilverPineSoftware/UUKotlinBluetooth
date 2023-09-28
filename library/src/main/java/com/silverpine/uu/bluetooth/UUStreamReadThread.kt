@@ -2,7 +2,7 @@ package com.silverpine.uu.bluetooth
 
 import com.silverpine.uu.core.UUError
 import com.silverpine.uu.core.uuSleep
-import com.silverpine.uu.core.uuToHex
+import com.silverpine.uu.core.uuSubData
 import com.silverpine.uu.logging.UULog
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
@@ -20,16 +20,27 @@ open class UUStreamReadThread(
     }
 
     private var interrupted: Boolean = false
+    private var totalReceived: Long = 0
 
     override fun run()
     {
         try
         {
-            var keepLooping = true
-
-            while (!interrupted && keepLooping)
+            while (!interrupted)
             {
-                keepLooping = receiveBytes()
+                val rx = receiveBytes()
+                if ((rx?.size ?: 0) > 0)
+                {
+                    interrupted = !dataReceived(rx, null)
+
+                    if (expectedBytes != null)
+                    {
+                        if (totalReceived >= expectedBytes)
+                        {
+                            interrupted = true
+                        }
+                    }
+                }
             }
         }
         catch (ex: Exception)
@@ -39,13 +50,44 @@ open class UUStreamReadThread(
                 logException("run", ex)
             }
         }
-
     }
 
-    private fun receiveBytes(): Boolean
+    private fun receiveBytes(): ByteArray?
     {
         val rxChunk = ByteArray(readChunkSize)
-        val bos = ByteArrayOutputStream()
+        var rx: ByteArray? = null
+
+        try
+        {
+            val bytesRead = inputStream.read(rxChunk, 0, rxChunk.size)
+            if (bytesRead > 0)
+            {
+                rx = rxChunk.uuSubData(0, bytesRead)
+
+                totalReceived += bytesRead
+
+                if (LOGGING_ENABLED)
+                {
+                    debugLog("receiveBytes", "Received $bytesRead, totalReceived: $totalReceived")
+                }
+            }
+        }
+        catch (ex: Exception)
+        {
+            if (LOGGING_ENABLED)
+            {
+                logException("receiveBytes", ex)
+            }
+        }
+
+        return rx
+    }
+
+    /*
+    private fun receiveBytes2(): ByteArray?
+    {
+        val rxChunk = ByteArray(readChunkSize)
+        //val bos = ByteArrayOutputStream()
         var rx: ByteArray? = null
         var err: UUError? = null
 
@@ -54,9 +96,9 @@ open class UUStreamReadThread(
             var bytesRead: Int
             var totalBytesRead = 0
 
-            sleepUntilDataAvailable()
+            //sleepUntilDataAvailable()
 
-            while (!interrupted && inputStream.available() > 0)
+            while (!interrupted) // && inputStream.available() > 0)
             {
                 bytesRead = inputStream.read(rxChunk, 0, rxChunk.size)
 
@@ -67,7 +109,15 @@ open class UUStreamReadThread(
 
                 if (bytesRead > 0)
                 {
-                    bos.write(rxChunk, 0, bytesRead)
+                    //bos.write(rxChunk, 0, bytesRead)
+                    rx = rxChunk.uuSubData(0, bytesRead)
+                    dataReceived(rx, null)
+
+                    if (LOGGING_ENABLED)
+                    {
+                        totalReceived += bytesRead
+                        debugLog("receiveBytes", "Added $bytesRead to bos, totalReceived: $totalReceived")
+                    }
                 }
 
                 totalBytesRead += bytesRead
@@ -78,13 +128,18 @@ open class UUStreamReadThread(
                         break
                     }
                 }
+
+                return rx
             }
 
-            rx = bos.toByteArray()
+            //rx = bos.toByteArray()
 
             if (LOGGING_ENABLED)
             {
-                debugLog("receiveBytes", "RX: ${rx.uuToHex()}")
+//                if (rx.size < 100)
+//                {
+//                    debugLog("receiveBytes", "RX: ${rx.uuToHex()}")
+//                }
             }
         }
         catch (ex: Exception)
@@ -102,6 +157,11 @@ open class UUStreamReadThread(
             return false
         }
 
+        if (rx?.size == 0)
+        {
+            return true
+        }
+
         return dataReceived(rx, err)
     }
 
@@ -112,7 +172,7 @@ open class UUStreamReadThread(
             uuSleep("sleepUntilDataAvailable", 10L)
         }
         while (!interrupted && inputStream.available() == 0)
-    }
+    }*/
 
     fun uuInterrupt()
     {

@@ -7,12 +7,11 @@ import com.silverpine.uu.bluetooth.UUBluetooth
 import com.silverpine.uu.bluetooth.UUBluetoothAdvertiser
 import com.silverpine.uu.bluetooth.UUL2CapServer
 import com.silverpine.uu.core.uuDispatchMain
-import com.silverpine.uu.core.uuToHex
+import com.silverpine.uu.core.uuToHexData
 import com.silverpine.uu.core.uuWriteInt32
 import com.silverpine.uu.core.uuWriteUInt8
 import com.silverpine.uu.ux.UUMenuItem
 import java.nio.ByteOrder
-import java.util.UUID
 
 class L2CapServerViewModel: L2CapBaseViewModel()
 {
@@ -21,21 +20,62 @@ class L2CapServerViewModel: L2CapBaseViewModel()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
         {
             val server = UUL2CapServer()
-            server.dataReceived =
-            { rx ->
-
-                appendOutput("Received ${rx.size} bytes")
-                appendOutput("RX: ${rx.uuToHex()}")
-
-                appendOutput("TX: ${rx.uuToHex()}")
-                rx
-            }
-
+            server.dataReceived = this::parseReceivedData
             server
         }
         else
         {
             null
+        }
+    }
+
+    private var rxCommand: L2CapCommand? = null
+
+    private fun parseReceivedData(data: ByteArray): ByteArray?
+    {
+        appendOutput("Received ${data.size} bytes")
+
+        if (rxCommand == null)
+        {
+            appendOutput("Parsing Command Header")
+            rxCommand = L2CapCommand.fromBytes(data)
+            appendOutput("Command Header parsed, Id: ${rxCommand?.id}, Length: ${rxCommand?.data?.size}, Command Bytes Received: ${rxCommand?.bytesReceived}")
+        }
+        else
+        {
+            rxCommand?.receiveBytes(data)
+            appendOutput("Total Command Bytes Received: ${rxCommand?.bytesReceived}")
+        }
+
+        val cmd = rxCommand ?: return null
+
+        if (cmd.hasReceivedAllBytes())
+        {
+            appendOutput("Full command has been received, payload size: ${rxCommand?.bytesReceived}")
+
+            val cmdResponse = processCommand(cmd)
+            rxCommand = null
+            cmdResponse?.let()
+            { txCmd ->
+                return txCmd.toByteArray()
+            }
+        }
+
+        return null
+    }
+
+    private fun processCommand(command: L2CapCommand): L2CapCommand?
+    {
+        return when (command.id)
+        {
+            L2CapCommand.Id.Echo ->
+                return L2CapCommand(L2CapCommand.Id.Echo, command.data)
+
+            L2CapCommand.Id.SendImage ->
+                L2CapCommand(L2CapCommand.Id.AckImage, "ABCD".uuToHexData() ?: byteArrayOf())
+
+            else ->
+                null
         }
     }
 

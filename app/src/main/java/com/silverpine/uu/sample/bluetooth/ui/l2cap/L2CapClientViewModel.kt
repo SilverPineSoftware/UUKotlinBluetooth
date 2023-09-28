@@ -2,12 +2,15 @@ package com.silverpine.uu.sample.bluetooth.ui.l2cap
 
 import android.annotation.SuppressLint
 import android.os.Build
+import androidx.annotation.RawRes
 import androidx.annotation.RequiresApi
 import com.silverpine.uu.bluetooth.UUBluetooth
 import com.silverpine.uu.bluetooth.UUL2CapChannel
 import com.silverpine.uu.bluetooth.UUPeripheral
+import com.silverpine.uu.core.UUDate
 import com.silverpine.uu.core.UUError
 import com.silverpine.uu.core.UURandom
+import com.silverpine.uu.core.UUResources
 import com.silverpine.uu.core.uuReadInt32
 import com.silverpine.uu.core.uuReadUInt8
 import com.silverpine.uu.core.uuToHex
@@ -67,12 +70,6 @@ class L2CapClientViewModel: L2CapBaseViewModel()
                 updateMenu()
             }
         }
-
-    //        val psm = peripheral.name?.replace("L2CapServer-", "")?.toInt() ?: 0
-//        val secure = false
-//        val timeout = 10000L
-
-
     }
 
     private fun onDisconnect()
@@ -87,18 +84,35 @@ class L2CapClientViewModel: L2CapBaseViewModel()
 
     private fun onPing()
     {
-        val tx = ByteArray(Int.SIZE_BYTES)
-        tx.uuWriteInt32(ByteOrder.BIG_ENDIAN, 0, pingCount)
+        val buffer = ByteArray(Int.SIZE_BYTES)
+        buffer.uuWriteInt32(ByteOrder.BIG_ENDIAN, 0, pingCount)
 
+        val cmd = L2CapCommand(L2CapCommand.Id.Echo, buffer)
+        val tx = cmd.toByteArray()
+
+        appendOutput("Sending ping, ${tx.size} bytes")
         appendOutput("TX: ${tx.uuToHex()}")
+        val start = System.currentTimeMillis()
+        channel.sendCommand(tx,10000L, 10000L, tx.size)
+        { rx, rxErr ->
 
-        channel.sendCommand(tx, 10000L, 10000L, 4)
+            val duration = System.currentTimeMillis() - start
+            appendOutput("Ping Sent, took $duration millis, err: $rxErr")
+
+            appendOutput("RX, ${rx?.uuToHex()}")
+            ++pingCount
+            updateMenu()
+        }
+
+        /*
+        channel.sendCommand(tx, 10000L, 10000L)
         { rx, rxErr ->
 
             appendOutput("RX, ${rx?.uuToHex()}, err: $rxErr")
             ++pingCount
             updateMenu()
         }
+        */
         /*
         appendOutput("Writing data...")
         channel.write(tx, 10000L)
@@ -141,6 +155,29 @@ class L2CapClientViewModel: L2CapBaseViewModel()
         }
     }
 
+    private fun onSendImage(@RawRes resourceId: Int)
+    {
+        val data = UUResources.getRawBytes(resourceId)
+        if (data == null)
+        {
+            appendOutput("Failed to read image resource")
+            return
+        }
+
+        val cmd = L2CapCommand(L2CapCommand.Id.SendImage, data)
+        val tx = cmd.toByteArray()
+
+        appendOutput("Writing Image, ${tx.size} bytes")
+        val start = System.currentTimeMillis()
+        channel.write(tx,UUDate.MILLIS_IN_ONE_MINUTE * 5)
+        { txErr ->
+
+            val duration = System.currentTimeMillis() - start
+            appendOutput("Image Sent, took $duration millis, err: $txErr")
+            updateMenu()
+        }
+    }
+
     override fun buildMenu(): ArrayList<UUMenuItem>
     {
         val list = ArrayList<UUMenuItem>()
@@ -149,8 +186,10 @@ class L2CapClientViewModel: L2CapBaseViewModel()
         {
             list.add(UUMenuItem(R.string.disconnect_l2cap, this::onDisconnect))
             list.add(UUMenuItem(R.string.ping, this::onPing))
-            list.add(UUMenuItem(R.string.read, this::onWrite))
-            list.add(UUMenuItem(R.string.write, this::onRead))
+            list.add(UUMenuItem(R.string.read, this::onRead))
+            list.add(UUMenuItem(R.string.write, this::onWrite))
+            list.add(UUMenuItem("Send Image 1", { onSendImage(R.raw.image_1) }))
+            list.add(UUMenuItem("Send Image 2", { onSendImage(R.raw.image_2) }))
         }
         else
         {

@@ -1,6 +1,5 @@
 package com.silverpine.uu.bluetooth
 
-import com.silverpine.uu.core.UUError
 import com.silverpine.uu.core.uuSubData
 import com.silverpine.uu.logging.UULog
 import java.io.InputStream
@@ -9,8 +8,7 @@ open class UUStreamReadThread(
     name: String = "UUStreamReadThread",
     private val readChunkSize: Int = 1024,
     private val inputStream: InputStream,
-    private val expectedBytes: Int?,
-    private val dataReceived: (ByteArray?, UUError?)->Boolean): Thread(name)
+    private val dataReceived: (ByteArray)->Unit): Thread(name)
 {
     companion object
     {
@@ -26,22 +24,9 @@ open class UUStreamReadThread(
             while (!isInterrupted)
             {
                 val rx = receiveBytes()
-                if ((rx?.size ?: 0) > 0)
+                rx?.let()
                 {
-                    var shouldInterrupt = !dataReceived(rx, null)
-
-                    if (expectedBytes != null)
-                    {
-                        if (totalReceived >= expectedBytes)
-                        {
-                            shouldInterrupt = true
-                        }
-                    }
-
-                    if (shouldInterrupt)
-                    {
-                        interrupt()
-                    }
+                    dataReceived(it)
                 }
             }
         }

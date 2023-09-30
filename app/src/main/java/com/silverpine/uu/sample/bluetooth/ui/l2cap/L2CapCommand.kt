@@ -34,6 +34,12 @@ class L2CapCommand(val id: Id, val data: ByteArray)
 
     var bytesReceived: Int = 0
 
+    val payloadBytesRemaining: Int
+        get()
+        {
+            return data.size - bytesReceived
+        }
+
     fun receiveBytes(bytes: ByteArray)
     {
         data.uuWriteData(bytesReceived, bytes)

@@ -5,7 +5,7 @@ import android.os.Build
 import androidx.annotation.RawRes
 import androidx.annotation.RequiresApi
 import com.silverpine.uu.bluetooth.UUBluetooth
-import com.silverpine.uu.bluetooth.UUL2CapChannel
+import com.silverpine.uu.bluetooth.UUL2CapClient
 import com.silverpine.uu.bluetooth.UUPeripheral
 import com.silverpine.uu.core.UUDate
 import com.silverpine.uu.core.UUError
@@ -25,13 +25,13 @@ import java.nio.ByteOrder
 class L2CapClientViewModel: L2CapBaseViewModel()
 {
     private lateinit var peripheral: UUPeripheral
-    private lateinit var channel: UUL2CapChannel
+    private lateinit var channel: UUL2CapClient
     private var pingCount: Int = 0
 
     fun update(peripheral: UUPeripheral)
     {
         this.peripheral = peripheral
-        this.channel = UUL2CapChannel(peripheral)
+        this.channel = UUL2CapClient(peripheral)
         updateMenu()
         appendOutput("Tap Connect to begin")
     }
@@ -121,7 +121,7 @@ class L2CapClientViewModel: L2CapBaseViewModel()
     private fun onRead()
     {
         appendOutput("Reading data...")
-        channel.read(10000L)
+        channel.read(10000L, 1024)
         { rx, rxErr ->
 
             appendOutput("RX Complete, ${rx?.uuToHex()}, err: $rxErr")

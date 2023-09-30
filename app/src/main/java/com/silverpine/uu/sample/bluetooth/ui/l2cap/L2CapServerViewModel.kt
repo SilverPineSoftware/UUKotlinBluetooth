@@ -11,7 +11,6 @@ import com.silverpine.uu.bluetooth.UUBluetooth
 import com.silverpine.uu.bluetooth.UUBluetoothAdvertiser
 import com.silverpine.uu.bluetooth.UUL2CapServer
 import com.silverpine.uu.core.uuDispatchMain
-import com.silverpine.uu.core.uuToHexData
 import com.silverpine.uu.core.uuWriteInt32
 import com.silverpine.uu.core.uuWriteUInt8
 import com.silverpine.uu.ux.UUAlpha
@@ -30,8 +29,9 @@ class L2CapServerViewModel: L2CapBaseViewModel()
     {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
         {
-            val server = UUL2CapServer(1024 * 100)
+            val server = UUL2CapServer()
             server.dataReceived = this::parseReceivedData
+            server.clientConnected = this::clientConnected
             server
         }
         else
@@ -43,7 +43,17 @@ class L2CapServerViewModel: L2CapBaseViewModel()
     private var rxCommand: L2CapCommand? = null
     private var rxCommandStart: Long = 0
 
-    private fun parseReceivedData(data: ByteArray): ByteArray?
+    private fun clientConnected()
+    {
+        appendOutput("Client was connected, waiting for data...")
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+        {
+            echoServer?.startReading()
+        }
+    }
+
+    private fun parseReceivedData(data: ByteArray)
     {
         appendOutput("Received ${data.size} bytes")
 
@@ -60,7 +70,7 @@ class L2CapServerViewModel: L2CapBaseViewModel()
             appendOutput("Total Command Bytes Received: ${rxCommand?.bytesReceived}")
         }
 
-        val cmd = rxCommand ?: return null
+        val cmd = rxCommand ?: return
 
         if (cmd.hasReceivedAllBytes())
         {
@@ -71,11 +81,17 @@ class L2CapServerViewModel: L2CapBaseViewModel()
             rxCommand = null
             cmdResponse?.let()
             { txCmd ->
-                return txCmd.toByteArray()
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+                {
+                    echoServer?.write(txCmd.toByteArray(), 10000L)
+                    { txErr ->
+                        appendOutput("Response sent, err: $txErr")
+
+                    }
+                }
             }
         }
-
-        return null
     }
 
     private fun processCommand(command: L2CapCommand): L2CapCommand?

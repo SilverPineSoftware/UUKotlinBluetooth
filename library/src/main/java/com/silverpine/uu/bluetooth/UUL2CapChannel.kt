@@ -5,87 +5,41 @@ import android.bluetooth.BluetoothSocket
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.silverpine.uu.core.UUError
+import com.silverpine.uu.core.UURandom
 import com.silverpine.uu.core.UUTimer
 import com.silverpine.uu.core.UUWorkerThread
 import com.silverpine.uu.core.uuSafeClose
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.logging.UULog
+import java.io.ByteArrayOutputStream
+import java.io.InputStream
 import java.util.Locale
 
 @RequiresApi(Build.VERSION_CODES.Q)
 @SuppressLint("MissingPermission")
-class UUL2CapChannel(private val peripheral: UUPeripheral)
+open class UUL2CapChannel
 {
     companion object
     {
-        private val LOGGING_ENABLED = BuildConfig.DEBUG
+        private val LOGGING_ENABLED = false // BuildConfig.DEBUG
+        private val DATA_LOGGING_ENABLED = false //BuildConfig.DEBUG
+
+        const val READ_WATCHDOG_TIMER_ID = "ReadWatchdog"
+        const val WRITE_WATCHDOG_TIMER_ID = "WriteWatchdog"
     }
 
-    private enum class TimerBuckets
-    {
-        ConnectWatchdog,
-        WriteWatchdog,
-        ReadWatchdog
-    }
+    protected val id = UURandom.uuid()
 
-    private val workerThread = UUWorkerThread("UUL2CapChannel_${peripheral.address}")
-    private var socket: BluetoothSocket? = null
+    protected val workerThread = UUWorkerThread("UUL2CapChannel_$id")
+    protected var socket: BluetoothSocket? = null
+    private var readThread: ReadThread? = null
+    var readChunkSize: Int = 10240
 
     val isConnected: Boolean
         get()
         {
             return (socket?.isConnected == true)
         }
-
-    fun connect(
-        psm: Int,
-        secure: Boolean,
-        timeout: Long,
-        completion: (UUError?) -> Unit)
-    {
-        workerThread.post()
-        {
-            val timerId = timerId(TimerBuckets.ConnectWatchdog)
-
-            UUTimer.startTimer(timerId, timeout, null)
-            { _, _ ->
-                if (LOGGING_ENABLED)
-                {
-                    debugLog("connect", "L2Cap Connect Timed Out: $peripheral, psm: $psm, secure: $secure")
-                }
-                notifyConnectComplete(UUBluetoothError.timeoutError(), completion)
-            }
-
-            var err: UUError? = null
-
-            try
-            {
-                val sock = if (secure)
-                {
-                    peripheral.bluetoothDevice.createL2capChannel(psm)
-                }
-                else
-                {
-                    peripheral.bluetoothDevice.createInsecureL2capChannel(psm)
-                }
-
-                sock.connect()
-                socket = sock
-            }
-            catch (ex: Exception)
-            {
-                err = UUBluetoothError.operationFailedError(ex)
-
-                if (LOGGING_ENABLED)
-                {
-                    logException("connect", ex)
-                }
-            }
-
-            UUTimer.cancelActiveTimer(timerId)
-            notifyConnectComplete(err, completion)
-        }
-    }
 
     fun disconnect(completion: (UUError?)->Unit)
     {
@@ -95,10 +49,7 @@ class UUL2CapChannel(private val peripheral: UUPeripheral)
 
             try
             {
-                if (LOGGING_ENABLED)
-                {
-                    debugLog("disconnect", "Disconnecting L2CapChannel")
-                }
+                debugLog("disconnect", "Disconnecting L2CapChannel")
 
                 socket?.inputStream?.uuSafeClose()
                 socket?.outputStream?.uuSafeClose()
@@ -108,14 +59,10 @@ class UUL2CapChannel(private val peripheral: UUPeripheral)
             catch (ex: Exception)
             {
                 err = UUBluetoothError.operationFailedError(ex)
-
-                if (LOGGING_ENABLED)
-                {
-                    logException("disconnect", ex)
-                }
+                logException("disconnect", ex)
             }
 
-            notifyDisconnectComplete(err, completion)
+            notifyCallback(err, completion)
         }
     }
 
@@ -129,65 +76,53 @@ class UUL2CapChannel(private val peripheral: UUPeripheral)
             val sock = socket ?: run()
             {
                 val err = UUBluetoothError.preconditionFailedError("socket is null")
-                notifyWriteComplete(err, completion)
+                notifyCallback(err, completion)
                 return@post
             }
 
             if (!sock.isConnected)
             {
                 val err = UUBluetoothError.preconditionFailedError("socket.isConnected is false")
-                notifyWriteComplete(err, completion)
+                notifyCallback(err, completion)
                 return@post
             }
 
             val outputStream = sock.outputStream ?: run()
             {
                 val err = UUBluetoothError.preconditionFailedError("socket.outputStream is null")
-                notifyWriteComplete(err, completion)
+                notifyCallback(err, completion)
                 return@post
             }
 
-            val timerId = timerId(TimerBuckets.WriteWatchdog)
+            val timerId = timerId(WRITE_WATCHDOG_TIMER_ID)
 
             UUTimer.startTimer(timerId, timeout, null)
             { _, _ ->
-                if (LOGGING_ENABLED)
-                {
-                    debugLog("write", "L2Cap Write Data Timed Out: $peripheral")
-                }
-
-                notifyWriteComplete(UUBluetoothError.timeoutError(), completion)
+                debugLog("write", "L2Cap Write timed out.")
+                notifyCallback(UUBluetoothError.timeoutError(), completion)
             }
 
             var err: UUError? = null
 
             try
             {
-                if (LOGGING_ENABLED)
-                {
-                    debugLog("write", "TX: ${data.uuToHex()}")
-                }
-
+                debugLogData("write", "TX", data)
                 outputStream.write(data)
             }
             catch (ex: Exception)
             {
                 err = UUBluetoothError.operationFailedError(ex)
-
-                if (LOGGING_ENABLED)
-                {
-                    logException("write", ex)
-                }
+                logException("write", ex)
             }
 
             UUTimer.cancelActiveTimer(timerId)
-            notifyWriteComplete(err, completion)
+            notifyCallback(err, completion)
         }
     }
 
     fun read(
         timeout: Long,
-        expectedBytes: Int? = null,
+        expectedBytes: Int,
         completion: (ByteArray?, UUError?)->Unit)
     {
         workerThread.post()
@@ -213,67 +148,36 @@ class UUL2CapChannel(private val peripheral: UUPeripheral)
                 return@post
             }
 
-            val timerId = timerId(TimerBuckets.ReadWatchdog)
 
-            val readThread = UUStreamReadThread("UUL2CapChannelReadThread", 1024, inputStream, expectedBytes)
-            { rx, err ->
-                UUTimer.cancelActiveTimer(timerId)
-                notifyReadComplete(rx,err, completion)
-                false
+            if (readThread != null)
+            {
+                val err = UUBluetoothError.preconditionFailedError("readThread is not null")
+                notifyReadComplete(null, err, completion)
+                return@post
             }
+
+            val timerId = timerId(READ_WATCHDOG_TIMER_ID)
+
+            val t = ReadThread(readChunkSize, inputStream)
 
             UUTimer.startTimer(timerId, timeout, null)
             { _, _ ->
-                if (LOGGING_ENABLED)
-                {
-                    debugLog("read", "L2Cap Read Data Timed Out: $peripheral")
-                }
-
-                readThread.interrupt()
+                debugLog("read", "L2Cap Read timed out.")
+                t.interrupt()
                 notifyReadComplete(null, UUBluetoothError.timeoutError(), completion)
             }
 
-            readThread.start()
-        }
-    }
-
-    fun sendCommand(
-        command: ByteArray,
-        sendTimeout: Long,
-        receiveTimeout: Long,
-        expectedBytes: Int,
-        completion: (ByteArray?, UUError?)->Unit)
-    {
-        write(command, sendTimeout)
-        { txErr ->
-
-            if (txErr != null)
-            {
-                completion(null, txErr)
-                return@write
+            readThread = t
+            t.read(expectedBytes)
+            { rx ->
+                UUTimer.cancelActiveTimer(timerId)
+                debugLogData("read", "RX", rx)
+                notifyReadComplete(rx, null, completion)
             }
-
-            read(receiveTimeout, expectedBytes, completion)
         }
     }
 
-    private fun notifyConnectComplete(error: UUError?, completion: (UUError?)->Unit)
-    {
-        workerThread.post()
-        {
-            completion(error)
-        }
-    }
-
-    private fun notifyDisconnectComplete(error: UUError?, completion: (UUError?) -> Unit)
-    {
-        workerThread.post()
-        {
-            completion(error)
-        }
-    }
-
-    private fun notifyWriteComplete(error: UUError?, completion: (UUError?) -> Unit)
+    protected fun notifyCallback(error: UUError?, completion: (UUError?) -> Unit)
     {
         workerThread.post()
         {
@@ -285,21 +189,17 @@ class UUL2CapChannel(private val peripheral: UUPeripheral)
     {
         workerThread.post()
         {
+            readThread = null
             completion(data, error)
         }
     }
 
-    private fun timerId(bucket: TimerBuckets): String
+    protected fun timerId(bucket: String): String
     {
-        return String.format(
-            Locale.US,
-            "%s__l2cap_%s",
-            peripheral.address,
-            bucket
-        )
+        return String.format(Locale.US, "UUL2CapChannel_%s_%s", id, bucket)
     }
 
-    private fun debugLog(method: String, message: String)
+    protected fun debugLog(method: String, message: String)
     {
         if (LOGGING_ENABLED)
         {
@@ -307,11 +207,67 @@ class UUL2CapChannel(private val peripheral: UUPeripheral)
         }
     }
 
-    private fun logException(method: String, exception: Throwable)
+    protected fun debugLogData(method: String, tag: String, data: ByteArray)
+    {
+        if (LOGGING_ENABLED)
+        {
+            UULog.d(javaClass, method, "$tag: ${data.uuToHex()}")
+        }
+    }
+
+    protected fun logException(method: String, exception: Throwable)
     {
         if (LOGGING_ENABLED)
         {
             UULog.d(javaClass, method, "", exception)
+        }
+    }
+
+    inner class ReadThread(chunkSize: Int, private val inputStream: InputStream): Thread("UUL2CapReadThread_$id")
+    {
+        private val rxChunk = ByteArray(chunkSize)
+        private var totalReceived: Long = 0
+        private var readCompletion: (ByteArray)->Unit = { }
+        private var countToRead: Int = 0
+
+        fun read(count: Int, completion: (ByteArray)->Unit)
+        {
+            countToRead = count
+            readCompletion = completion
+            start()
+        }
+
+        override fun run()
+        {
+            var rx = byteArrayOf()
+            val bos = ByteArrayOutputStream()
+
+            try
+            {
+                while (!isInterrupted && bos.size() < countToRead)
+                {
+                    val bytesRead = inputStream.read(rxChunk, 0, rxChunk.size)
+                    if (bytesRead > 0)
+                    {
+                        bos.write(rxChunk, 0, bytesRead)
+
+                        totalReceived += bytesRead
+                        debugLog("run", "Received $bytesRead, totalReceived: $totalReceived")
+                    }
+                }
+
+                rx = bos.toByteArray()
+            }
+            catch (ex: Exception)
+            {
+                logException("run", ex)
+            }
+            finally
+            {
+                bos.uuSafeClose()
+            }
+
+            readCompletion(rx)
         }
     }
 }

@@ -6,22 +6,17 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import com.silverpine.uu.core.UUError
 import com.silverpine.uu.core.uuSafeClose
-import com.silverpine.uu.logging.UULog
 
 @RequiresApi(Build.VERSION_CODES.Q)
 @SuppressLint("MissingPermission")
-class UUL2CapServer(val readChunkSize: Int = 10240)
+class UUL2CapServer: UUL2CapChannel()
 {
-    companion object
-    {
-        private val LOGGING_ENABLED = BuildConfig.DEBUG
-    }
-
     private var bluetoothServerSocket: BluetoothServerSocket? = null
     private var connectionListenerThread: UUBluetoothSocketAcceptThread? = null
     private var readThread: UUStreamReadThread? = null
 
-    var dataReceived: (ByteArray)->ByteArray? = { null }
+    var clientConnected: ()->Unit = { }
+    var dataReceived: (ByteArray)->Unit = { }
 
     val isRunning: Boolean
         get()
@@ -42,11 +37,7 @@ class UUL2CapServer(val readChunkSize: Int = 10240)
         }
         catch (ex: Exception)
         {
-            if (LOGGING_ENABLED)
-            {
-                debugLog("start", ex)
-            }
-
+            logException("start", ex)
             error = UUBluetoothError.operationFailedError(ex)
         }
 
@@ -55,27 +46,12 @@ class UUL2CapServer(val readChunkSize: Int = 10240)
 
     fun stop()
     {
+        disconnect {  }
         stopReading()
         stopAcceptingSocketConnections()
 
         bluetoothServerSocket?.uuSafeClose()
         bluetoothServerSocket = null
-    }
-
-    private fun debugLog(method: String, message: String)
-    {
-        if (LOGGING_ENABLED)
-        {
-            UULog.d(javaClass, method, message)
-        }
-    }
-
-    private fun debugLog(method: String, exception: Exception)
-    {
-        if (LOGGING_ENABLED)
-        {
-            UULog.d(javaClass, method, "", exception)
-        }
     }
 
     private fun startAcceptingSocketConnections()
@@ -92,18 +68,12 @@ class UUL2CapServer(val readChunkSize: Int = 10240)
                 connectionListenerThread = thread
             } ?: run()
             {
-                if (LOGGING_ENABLED)
-                {
-                    debugLog("startAcceptingSocketConnections", "bluetoothServerSocket is null!")
-                }
+                debugLog("startAcceptingSocketConnections", "bluetoothServerSocket is null!")
             }
         }
         catch (ex: Exception)
         {
-            if (LOGGING_ENABLED)
-            {
-                debugLog("startListeningForSocketConnections", ex)
-            }
+            logException("startListeningForSocketConnections", ex)
         }
         finally
         {
@@ -119,10 +89,7 @@ class UUL2CapServer(val readChunkSize: Int = 10240)
         }
         catch (ex: Exception)
         {
-            if (LOGGING_ENABLED)
-            {
-                debugLog("stopListeningForSocketConnections", ex)
-            }
+            logException("stopListeningForSocketConnections", ex)
         }
         finally
         {
@@ -130,7 +97,30 @@ class UUL2CapServer(val readChunkSize: Int = 10240)
         }
     }
 
-    private fun stopReading()
+    fun startReading(): UUError?
+    {
+        val sock = socket ?: run()
+        {
+            return UUBluetoothError.preconditionFailedError("socket is null")
+        }
+
+        if (!sock.isConnected)
+        {
+            return UUBluetoothError.preconditionFailedError("socket.isConnected is false")
+        }
+
+        val inputStream = sock.inputStream ?: run()
+        {
+            return UUBluetoothError.preconditionFailedError("socket.inputStream is null")
+        }
+
+        val t = UUStreamReadThread("UUL2CapServer", readChunkSize, inputStream, dataReceived)
+        t.start()
+        readThread = t
+        return null
+    }
+
+    fun stopReading()
     {
         try
         {
@@ -138,10 +128,7 @@ class UUL2CapServer(val readChunkSize: Int = 10240)
         }
         catch (ex: Exception)
         {
-            if (LOGGING_ENABLED)
-            {
-                debugLog("stopReading", ex)
-            }
+            logException("stopReading", ex)
         }
         finally
         {
@@ -155,48 +142,15 @@ class UUL2CapServer(val readChunkSize: Int = 10240)
         {
             try
             {
-                if (LOGGING_ENABLED)
-                {
-                    debugLog("UUBluetoothSocketAcceptThread.run", "Accepting socket connections...")
-                }
+                debugLog("UUBluetoothSocketAcceptThread.run", "Accepting socket connections...")
+                socket = serverSocket.accept()
 
-                val socket = serverSocket.accept()
-
-                if (LOGGING_ENABLED)
-                {
-                    debugLog("UUBluetoothSocketAcceptThread.run", "Server socket connected")
-                }
-
-                val t = UUStreamReadThread("UUL2CapServer", readChunkSize, socket.inputStream, null)
-                { rx, err ->
-
-                    if (err != null)
-                    {
-                        socket?.uuSafeClose()
-                        startAcceptingSocketConnections()
-                        return@UUStreamReadThread false
-                    }
-
-                    rx?.let()
-                    { rxBytes ->
-                        val txBytes = dataReceived(rxBytes)
-                        txBytes?.let()
-                        { tx ->
-                            socket.outputStream.write(tx, 0, tx.size)
-                        }
-                    }
-                    true
-                }
-
-                t.start()
-                readThread = t
+                debugLog("UUBluetoothSocketAcceptThread.run", "Server socket connected")
+                clientConnected()
             }
             catch (ex: Exception)
             {
-                if (LOGGING_ENABLED)
-                {
-                    debugLog("UUBluetoothSocketAcceptThread.run", ex)
-                }
+                logException("UUBluetoothSocketAcceptThread.run", ex)
             }
         }
     }

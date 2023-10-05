@@ -34,9 +34,10 @@ class UUBluetoothScanner<T : UUPeripheral>(context: Context, factory: UUPeripher
     private val nearbyPeripherals = HashMap<String, T>()
     private var nearbyPeripheralCallback: ((ArrayList<T>)->Unit)? = null
     var outOfRangeFilterEvaluationFrequency: Long = 500
+    var allowExtendedAdvertisements: Boolean = true
 
     fun startScanning(
-        serviceUuidList: Array<UUID>?,
+        serviceUuidList: ArrayList<UUID>?,
         filters: ArrayList<UUPeripheralFilter<T>>?,
         outOfRangeFilters: ArrayList<UUOutOfRangePeripheralFilter<T>>?,
         callback: ((ArrayList<T>)->Unit))
@@ -80,21 +81,18 @@ class UUBluetoothScanner<T : UUPeripheral>(context: Context, factory: UUPeripher
         }
     }
 
-    private fun startScan(serviceUuidList: Array<UUID>?)
+    private fun startScan(serviceUuidList: ArrayList<UUID>?)
     {
         stopScan()
 
         try
         {
             val filters = ArrayList<ScanFilter>()
-            if (serviceUuidList != null)
-            {
-                for (uuid in serviceUuidList)
-                {
-                    val fb = ScanFilter.Builder()
-                    fb.setServiceUuid(ParcelUuid(uuid))
-                    filters.add(fb.build())
-                }
+            serviceUuidList?.forEach()
+            { uuid ->
+                val fb = ScanFilter.Builder()
+                fb.setServiceUuid(ParcelUuid(uuid))
+                filters.add(fb.build())
             }
 
             val builder = ScanSettings.Builder()
@@ -103,6 +101,7 @@ class UUBluetoothScanner<T : UUPeripheral>(context: Context, factory: UUPeripher
             builder.setNumOfMatches(ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT)
             builder.setReportDelay(0)
             builder.setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+            builder.setLegacy(!allowExtendedAdvertisements)
             val settings = builder.build()
             bluetoothLeScanner = bluetoothAdapter.bluetoothLeScanner
 

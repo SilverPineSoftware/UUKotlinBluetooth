@@ -94,6 +94,7 @@ internal object UUBluetoothError
     {
         val err = makeError(UUBluetoothErrorCode.OperationFailed)
         err.addUserInfo(USER_INFO_KEY_METHOD_NAME, method)
+        err.errorDescription = "Operation Failed: $method"
         return err
     }
 
@@ -120,6 +121,7 @@ internal object UUBluetoothError
     {
         val err = makeError(UUBluetoothErrorCode.PreconditionFailed)
         err.addUserInfo(USER_INFO_KEY_MESSAGE, message)
+        err.errorDescription = "Precondition Failed: $message"
         return err
     }
 

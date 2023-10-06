@@ -5,22 +5,22 @@ import android.bluetooth.BluetoothSocket
 import com.silverpine.uu.core.uuSafeClose
 import com.silverpine.uu.core.uuSubData
 import com.silverpine.uu.logging.UULog
-import java.io.InputStream
 
 open class UUStreamReadThread(
     name: String = "UUStreamReadThread",
     private val readChunkSize: Int = 1024,
-    private val socket: BluetoothSocket,
-    private val dataReceived: (ByteArray)->Unit): Thread(name)
+    private val socket: BluetoothSocket): Thread(name)
 {
     companion object
     {
         private val LOGGING_ENABLED = BuildConfig.DEBUG
     }
 
-    private var inputStream: InputStream? = null
+    //private var inputStream: InputStream? = null
     private val rxChunk = ByteArray(readChunkSize)
     private var totalReceived: Long = 0
+
+    var dataReceived: ((ByteArray)->Unit)? = null
 
     override fun run()
     {
@@ -29,11 +29,46 @@ open class UUStreamReadThread(
             while (!isInterrupted)
             {
                 val rx = receiveBytes()
-                rx?.let()
-                {
-                    dataReceived(it)
-                }
+                notifyDataReceived(rx)
             }
+        }
+        catch (ex: Exception)
+        {
+            if (LOGGING_ENABLED)
+            {
+                logException("run", ex)
+            }
+        }
+        finally
+        {
+            dataReceived = null
+        }
+    }
+
+    private fun notifyDataReceived(data: ByteArray?)
+    {
+        try
+        {
+            if (isInterrupted)
+            {
+                debugLog("notifyDataReceived", "Thread has been interrupted, do not notify data received")
+                return;
+            }
+
+            val block = dataReceived
+            if (block == null)
+            {
+                debugLog("notifyDataReceived", "DataReceived callback is null, nothing to do!")
+                return;
+            }
+
+            if (data == null)
+            {
+                debugLog("notifyDataReceived", "data is null, nothing to do!")
+                return;
+            }
+
+            block(data)
         }
         catch (ex: Exception)
         {

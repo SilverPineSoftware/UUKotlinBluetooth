@@ -11,6 +11,7 @@ import com.silverpine.uu.bluetooth.UUBluetooth
 import com.silverpine.uu.bluetooth.UUBluetoothAdvertiser
 import com.silverpine.uu.bluetooth.UUL2CapServer
 import com.silverpine.uu.core.uuDispatchMain
+import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.core.uuWriteInt32
 import com.silverpine.uu.core.uuWriteUInt8
 import com.silverpine.uu.ux.UUAlpha
@@ -56,6 +57,7 @@ class L2CapServerViewModel: L2CapBaseViewModel()
     private fun parseReceivedData(data: ByteArray)
     {
         appendOutput("Received ${data.size} bytes")
+        appendOutput("RX: ${data.uuToHex()}")
 
         if (rxCommand == null)
         {
@@ -84,6 +86,9 @@ class L2CapServerViewModel: L2CapBaseViewModel()
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
                 {
+                    val tx = txCmd.toByteArray()
+                    appendOutput("Writing ${tx.size} bytes")
+                    appendOutput("TX: ${tx.uuToHex()}")
                     echoServer?.write(txCmd.toByteArray(), 10000L)
                     { txErr ->
                         appendOutput("Response sent, err: $txErr")

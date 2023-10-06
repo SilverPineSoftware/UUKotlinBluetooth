@@ -118,10 +118,10 @@ class L2CapClientViewModel: L2CapBaseViewModel()
         }
     }
 
-    private fun onRead()
+    private fun onRead(count: Int)
     {
-        appendOutput("Reading data...")
-        channel.read(10000L, 1024)
+        appendOutput("Reading $count bytes")
+        channel.read(10000L, count)
         { rx, rxErr ->
 
             appendOutput("RX Complete, ${rx?.uuToHex()}, err: $rxErr")
@@ -152,6 +152,38 @@ class L2CapClientViewModel: L2CapBaseViewModel()
         }
     }
 
+    private fun onWriteRandom(count: Int)
+    {
+        val tx = UURandom.bytes(count)
+        appendOutput("Writing ${tx.size} random bytes")
+        val start = System.currentTimeMillis()
+        channel.write(tx, UUDate.MILLIS_IN_ONE_MINUTE * 5)
+        { txErr ->
+            val duration = System.currentTimeMillis() - start
+            appendOutput("Write random bytes done, took $duration millis, err: $txErr")
+            updateMenu()
+        }
+    }
+
+    private fun onStartReading()
+    {
+        appendOutput("Starting Read Thread")
+        channel.dataReceived = this::dataReceived
+        channel.startReading()
+    }
+
+    private fun onStopReading()
+    {
+        appendOutput("Stopping Read Thread")
+        channel.dataReceived = {  }
+        channel.stopReading()
+    }
+
+    private fun dataReceived(data: ByteArray)
+    {
+        appendOutput("RX: (${data.size}) ${data.uuToHex()}")
+    }
+
     override fun buildMenu(): ArrayList<UUMenuItem>
     {
         val list = ArrayList<UUMenuItem>()
@@ -160,10 +192,19 @@ class L2CapClientViewModel: L2CapBaseViewModel()
         {
             list.add(UUMenuItem(R.string.disconnect_l2cap, this::onDisconnect))
             list.add(UUMenuItem(R.string.ping, this::onPing))
-            list.add(UUMenuItem(R.string.read, this::onRead))
+            list.add(UUMenuItem(R.string.read, {  onRead(1024) }))
+            list.add(UUMenuItem("Start Reading", {  onStartReading() }))
+            list.add(UUMenuItem("Stop Reading", {  onStopReading() }))
             list.add(UUMenuItem(R.string.write, this::onWrite))
             list.add(UUMenuItem("Send Image 1", { onSendImage(R.raw.image_1) }))
             list.add(UUMenuItem("Send Image 2", { onSendImage(R.raw.image_2) }))
+            list.add(UUMenuItem("Write 100 bytes", { onWriteRandom(100) }))
+            list.add(UUMenuItem("Write 500 bytes", { onWriteRandom(500) }))
+            list.add(UUMenuItem("Write 1K", { onWriteRandom(1024) }))
+            list.add(UUMenuItem("Write 2K", { onWriteRandom(1024 * 2) }))
+            list.add(UUMenuItem("Write 4K", { onWriteRandom(1024 * 4) }))
+            list.add(UUMenuItem("Write 10K", { onWriteRandom(1024 * 10) }))
+            list.add(UUMenuItem("Write 100K", { onWriteRandom(1024 * 100) }))
         }
         else
         {

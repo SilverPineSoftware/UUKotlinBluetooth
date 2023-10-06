@@ -11,8 +11,6 @@ import com.silverpine.uu.core.UUWorkerThread
 import com.silverpine.uu.core.uuSafeClose
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.logging.UULog
-import java.io.ByteArrayOutputStream
-import java.io.InputStream
 import java.util.Locale
 
 @RequiresApi(Build.VERSION_CODES.Q)
@@ -21,8 +19,8 @@ open class UUL2CapChannel
 {
     companion object
     {
-        private val LOGGING_ENABLED = false // BuildConfig.DEBUG
-        private val DATA_LOGGING_ENABLED = false //BuildConfig.DEBUG
+        private val LOGGING_ENABLED = true // BuildConfig.DEBUG
+        private val DATA_LOGGING_ENABLED = true //BuildConfig.DEBUG
 
         const val READ_WATCHDOG_TIMER_ID = "ReadWatchdog"
         const val WRITE_WATCHDOG_TIMER_ID = "WriteWatchdog"
@@ -32,9 +30,9 @@ open class UUL2CapChannel
 
     protected val workerThread = UUWorkerThread("UUL2CapChannel_$id")
     protected var socket: BluetoothSocket? = null
-    private var readOnceThread: ReadThread? = null
+    //private var readOnceThread: ReadThread? = null
     private var readThread: UUStreamReadThread? = null
-    var dataReceived: (ByteArray)->Unit = { }
+    var dataReceived: ((ByteArray)->Unit)? = null
     var readChunkSize: Int = 10240
 
     val isConnected: Boolean
@@ -160,30 +158,38 @@ open class UUL2CapChannel
                 return@post
             }
 
-            val inputStream = sock.inputStream ?: run()
-            {
-                val err = UUBluetoothError.preconditionFailedError("socket.inputStream is null")
-                notifyReadComplete(null, err, completion)
-                return@post
-            }
+//            val inputStream = sock.inputStream ?: run()
+//            {
+//                val err = UUBluetoothError.preconditionFailedError("socket.inputStream is null")
+//                notifyReadComplete(null, err, completion)
+//                return@post
+//            }
 
-            if (readOnceThread != null)
-            {
-                val err = UUBluetoothError.preconditionFailedError("readOnceThread is not null")
-                notifyReadComplete(null, err, completion)
-                return@post
-            }
+//            if (readOnceThread != null)
+//            {
+//                val err = UUBluetoothError.preconditionFailedError("readOnceThread is not null")
+//                notifyReadComplete(null, err, completion)
+//                return@post
+//            }
 
-            if (readThread != null)
-            {
-                val err = UUBluetoothError.preconditionFailedError("readThread is not null")
-                notifyReadComplete(null, err, completion)
-                return@post
-            }
+//            if (readThread != null)
+//            {
+//                val err = UUBluetoothError.preconditionFailedError("readThread is not null")
+//                notifyReadComplete(null, err, completion)
+//                return@post
+//            }
 
             val timerId = timerId(READ_WATCHDOG_TIMER_ID)
 
-            val t = ReadThread(readChunkSize, inputStream)
+            val t = UUStreamReadThread("UUL2CapChannel", expectedBytes, sock)
+
+            t.dataReceived =
+            { rx ->
+                t.interrupt()
+                UUTimer.cancelActiveTimer(timerId)
+                debugLogData("read", "RX", rx)
+                notifyReadComplete(rx, null, completion)
+            }
 
             UUTimer.startTimer(timerId, timeout, null)
             { _, _ ->
@@ -192,13 +198,7 @@ open class UUL2CapChannel
                 notifyReadComplete(null, UUBluetoothError.timeoutError(), completion)
             }
 
-            readOnceThread = t
-            t.read(expectedBytes)
-            { rx ->
-                UUTimer.cancelActiveTimer(timerId)
-                debugLogData("read", "RX", rx)
-                notifyReadComplete(rx, null, completion)
-            }
+            t.start()
         }
     }
 
@@ -209,7 +209,8 @@ open class UUL2CapChannel
             return UUBluetoothError.preconditionFailedError("socket is null")
         }
 
-        val t = UUStreamReadThread("UUL2CapChannel", readChunkSize, sock, dataReceived)
+        val t = UUStreamReadThread("UUL2CapChannel", readChunkSize, sock)
+        t.dataReceived = dataReceived
         t.start()
         readThread = t
         return null
@@ -263,7 +264,7 @@ open class UUL2CapChannel
 
     protected fun debugLogData(method: String, tag: String, data: ByteArray)
     {
-        if (LOGGING_ENABLED)
+        if (DATA_LOGGING_ENABLED)
         {
             UULog.d(javaClass, method, "$tag: ${data.uuToHex()}")
         }
@@ -277,6 +278,7 @@ open class UUL2CapChannel
         }
     }
 
+    /*
     inner class ReadThread(chunkSize: Int, private val inputStream: InputStream): Thread("UUL2CapReadThread_$id")
     {
         private val rxChunk = ByteArray(chunkSize)
@@ -324,4 +326,6 @@ open class UUL2CapChannel
             readCompletion(rx)
         }
     }
+
+     */
 }

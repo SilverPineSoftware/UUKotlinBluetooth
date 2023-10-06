@@ -8,7 +8,6 @@ import com.silverpine.uu.bluetooth.UUDefaultPeripheralFactory
 import com.silverpine.uu.bluetooth.UUOutOfRangePeripheralFilter
 import com.silverpine.uu.bluetooth.UUPeripheral
 import com.silverpine.uu.bluetooth.UUPeripheralFilter
-import com.silverpine.uu.core.UUDate
 import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.core.uuReadUInt8
 import com.silverpine.uu.logging.UULog
@@ -20,6 +19,7 @@ import com.silverpine.uu.sample.bluetooth.ui.l2cap.L2CapServerActivity
 import com.silverpine.uu.ux.UUAlertDialog
 import com.silverpine.uu.ux.UUButton
 import com.silverpine.uu.ux.UUMenuItem
+import java.util.UUID
 
 class HomeViewModel: RecyclerViewModel()
 {
@@ -244,7 +244,7 @@ class HomeViewModel: RecyclerViewModel()
         {
             if (peripheral.name == null)
             {
-                return UUPeripheralFilter.Result.IgnoreForever
+                return UUPeripheralFilter.Result.IgnoreOnce
             }
 
             return UUPeripheralFilter.Result.Discover
@@ -260,7 +260,7 @@ class HomeViewModel: RecyclerViewModel()
                 return UUPeripheralFilter.Result.Discover
             }
 
-            return UUPeripheralFilter.Result.IgnoreForever
+            return UUPeripheralFilter.Result.IgnoreOnce
         }
     }
 
@@ -294,21 +294,34 @@ class HomeViewModel: RecyclerViewModel()
     {
         override fun shouldDiscoverPeripheral(peripheral: UUPeripheral): UUPeripheralFilter.Result
         {
-            val check = peripheral.manufacturingData?.uuReadUInt8(0)?.toInt()
+            val check = peripheral.manufacturingData?.uuReadUInt8(0)
             if (check == 0x4C)
             {
-                return UUPeripheralFilter.Result.IgnoreForever
+                return UUPeripheralFilter.Result.IgnoreOnce
             }
 
             return UUPeripheralFilter.Result.Discover
         }
     }
 
-    inner class OutOfRangeFilter: UUOutOfRangePeripheralFilter<UUPeripheral>
+    inner class MacAddressFilter(private val list: List<String>): UUPeripheralFilter<UUPeripheral>
+    {
+        override fun shouldDiscoverPeripheral(peripheral: UUPeripheral): UUPeripheralFilter.Result
+        {
+            if (list.contains(peripheral.address))
+            {
+                return UUPeripheralFilter.Result.Discover
+            }
+
+            return UUPeripheralFilter.Result.IgnoreOnce
+        }
+    }
+
+    inner class OutOfRangeFilter(private val outOfRangeTimeout: Long): UUOutOfRangePeripheralFilter<UUPeripheral>
     {
         override fun checkPeripheralRange(peripheral: UUPeripheral): UUOutOfRangePeripheralFilter.Result
         {
-            return if (peripheral.timeSinceLastUpdate > (UUDate.MILLIS_IN_ONE_SECOND * 200))
+            return if (peripheral.timeSinceLastUpdate > outOfRangeTimeout)
             {
                 UUOutOfRangePeripheralFilter.Result.OutOfRange
             }

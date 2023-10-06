@@ -1,5 +1,8 @@
 package com.silverpine.uu.bluetooth
 
+import android.annotation.SuppressLint
+import android.bluetooth.BluetoothSocket
+import com.silverpine.uu.core.uuSafeClose
 import com.silverpine.uu.core.uuSubData
 import com.silverpine.uu.logging.UULog
 import java.io.InputStream
@@ -7,7 +10,7 @@ import java.io.InputStream
 open class UUStreamReadThread(
     name: String = "UUStreamReadThread",
     private val readChunkSize: Int = 1024,
-    private val inputStream: InputStream,
+    private val socket: BluetoothSocket,
     private val dataReceived: (ByteArray)->Unit): Thread(name)
 {
     companion object
@@ -15,6 +18,8 @@ open class UUStreamReadThread(
         private val LOGGING_ENABLED = BuildConfig.DEBUG
     }
 
+    private var inputStream: InputStream? = null
+    private val rxChunk = ByteArray(readChunkSize)
     private var totalReceived: Long = 0
 
     override fun run()
@@ -39,14 +44,37 @@ open class UUStreamReadThread(
         }
     }
 
+    @SuppressLint("MissingPermission")
     private fun receiveBytes(): ByteArray?
     {
-        val rxChunk = ByteArray(readChunkSize)
         var rx: ByteArray? = null
 
         try
         {
-            val bytesRead = inputStream.read(rxChunk, 0, rxChunk.size)
+            if (!socket.isConnected)
+            {
+                debugLog("receiveBytes", "Socket is NOT Connected! Attempting to reconnect")
+                socket.connect()
+
+                val sleepTime = 1000L
+                debugLog("receiveBytes", "Sleeping $sleepTime after socket connect")
+                sleep(sleepTime)
+                return null
+            }
+
+            val inputStream = socket.inputStream ?: run()
+            {
+                debugLog("receiveBytes", "Socket input stream is null! Disconnecting and reconnecting!")
+                socket.uuSafeClose()
+
+
+                val sleepTime = 1000L
+                debugLog("receiveBytes", "Sleeping $sleepTime after socket close")
+                sleep(sleepTime)
+                return null
+            }
+
+            val bytesRead = inputStream.read(rxChunk, 0, readChunkSize)
             if (bytesRead > 0)
             {
                 rx = rxChunk.uuSubData(0, bytesRead)
@@ -61,10 +89,13 @@ open class UUStreamReadThread(
         }
         catch (ex: Exception)
         {
-            if (LOGGING_ENABLED)
-            {
-                logException("receiveBytes", ex)
-            }
+            logException("receiveBytes", ex)
+
+            val sleepTime = 1000L
+            debugLog("receiveBytes", "Sleeping $sleepTime after catching exception")
+            sleep(sleepTime)
+
+            socket.uuSafeClose()
         }
 
         return rx

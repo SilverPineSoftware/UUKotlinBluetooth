@@ -16,7 +16,6 @@ class UUL2CapServer: UUL2CapChannel()
     private var readThread: UUStreamReadThread? = null
 
     var clientConnected: ()->Unit = { }
-    var dataReceived: (ByteArray)->Unit = { }
 
     val isRunning: Boolean
         get()
@@ -94,45 +93,6 @@ class UUL2CapServer: UUL2CapChannel()
         finally
         {
             connectionListenerThread = null
-        }
-    }
-
-    fun startReading(): UUError?
-    {
-        val sock = socket ?: run()
-        {
-            return UUBluetoothError.preconditionFailedError("socket is null")
-        }
-
-        if (!sock.isConnected)
-        {
-            return UUBluetoothError.preconditionFailedError("socket.isConnected is false")
-        }
-
-        val inputStream = sock.inputStream ?: run()
-        {
-            return UUBluetoothError.preconditionFailedError("socket.inputStream is null")
-        }
-
-        val t = UUStreamReadThread("UUL2CapServer", readChunkSize, inputStream, dataReceived)
-        t.start()
-        readThread = t
-        return null
-    }
-
-    fun stopReading()
-    {
-        try
-        {
-            readThread?.interrupt()
-        }
-        catch (ex: Exception)
-        {
-            logException("stopReading", ex)
-        }
-        finally
-        {
-            readThread = null
         }
     }
 

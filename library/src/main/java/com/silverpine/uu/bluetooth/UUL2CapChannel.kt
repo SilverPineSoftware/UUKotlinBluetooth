@@ -32,7 +32,9 @@ open class UUL2CapChannel
 
     protected val workerThread = UUWorkerThread("UUL2CapChannel_$id")
     protected var socket: BluetoothSocket? = null
-    private var readThread: ReadThread? = null
+    private var readOnceThread: ReadThread? = null
+    private var readThread: UUStreamReadThread? = null
+    var dataReceived: (ByteArray)->Unit = { }
     var readChunkSize: Int = 10240
 
     val isConnected: Boolean
@@ -43,6 +45,8 @@ open class UUL2CapChannel
 
     fun disconnect(completion: (UUError?)->Unit)
     {
+        stopReading()
+
         workerThread.post()
         {
             var err: UUError? = null
@@ -108,15 +112,30 @@ open class UUL2CapChannel
             {
                 debugLogData("write", "TX", data)
                 outputStream.write(data)
+                outputStream.flush()
             }
             catch (ex: Exception)
             {
                 err = UUBluetoothError.operationFailedError(ex)
                 logException("write", ex)
+                reconnect()
             }
 
             UUTimer.cancelActiveTimer(timerId)
             notifyCallback(err, completion)
+        }
+    }
+
+    private fun reconnect()
+    {
+        try
+        {
+            socket?.uuSafeClose()
+            socket?.connect()
+        }
+        catch (ex: Exception)
+        {
+            logException("reconnect", ex)
         }
     }
 
@@ -148,6 +167,12 @@ open class UUL2CapChannel
                 return@post
             }
 
+            if (readOnceThread != null)
+            {
+                val err = UUBluetoothError.preconditionFailedError("readOnceThread is not null")
+                notifyReadComplete(null, err, completion)
+                return@post
+            }
 
             if (readThread != null)
             {
@@ -167,13 +192,42 @@ open class UUL2CapChannel
                 notifyReadComplete(null, UUBluetoothError.timeoutError(), completion)
             }
 
-            readThread = t
+            readOnceThread = t
             t.read(expectedBytes)
             { rx ->
                 UUTimer.cancelActiveTimer(timerId)
                 debugLogData("read", "RX", rx)
                 notifyReadComplete(rx, null, completion)
             }
+        }
+    }
+
+    fun startReading(): UUError?
+    {
+        val sock = socket ?: run()
+        {
+            return UUBluetoothError.preconditionFailedError("socket is null")
+        }
+
+        val t = UUStreamReadThread("UUL2CapChannel", readChunkSize, sock, dataReceived)
+        t.start()
+        readThread = t
+        return null
+    }
+
+    fun stopReading()
+    {
+        try
+        {
+            readThread?.interrupt()
+        }
+        catch (ex: Exception)
+        {
+            logException("stopReading", ex)
+        }
+        finally
+        {
+            readThread = null
         }
     }
 

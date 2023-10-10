@@ -433,15 +433,29 @@ open class UUPeripheral() : Parcelable
         while (index < bytes.size)
         {
             val length = bytes.uuReadUInt8(index)
+            index += Byte.SIZE_BYTES
             if (length == 0)
             {
                 break
             }
 
-            val dataType = bytes.uuReadUInt8(index + 1)
+            val dataType = bytes.uuReadUInt8(index)
+            index += Byte.SIZE_BYTES
 
-            val data = ByteArray(length - 1)
-            System.arraycopy(bytes, index + 2, data, 0, data.size)
+            val dataLength = length - 1
+            val data = bytes.uuSubData(index, dataLength)
+            if (data == null)
+            {
+                debugLog("parse", "Unable to get data chunk at index $index with count $dataLength")
+                break
+            }
+
+            if (data.size != dataLength)
+            {
+                debugLog("parse", "Data length is wrong. Expected $dataLength but got ${data.size}")
+            }
+
+            index += data.size
 
             when (dataType.toByte())
             {
@@ -472,8 +486,6 @@ open class UUPeripheral() : Parcelable
                     parseServiceUuid(data, 16)
                 }
             }
-
-            index += 1 + length
         }
 
         manufacturingData?.let()

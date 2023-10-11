@@ -67,7 +67,7 @@ class HomeViewModel: RecyclerViewModel()
         filters.add(RequireNamePeripheralFilter())
 
         val outOfRangeFilters: ArrayList<UUOutOfRangePeripheralFilter<UUPeripheral>> = arrayListOf()
-        outOfRangeFilters.add(OutOfRangeFilter())
+        outOfRangeFilters.add(OutOfRangeFilter(30000))
 
         scanner.startScanning(null, filters, outOfRangeFilters)
         { list ->

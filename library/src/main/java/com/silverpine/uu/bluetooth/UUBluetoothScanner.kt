@@ -12,7 +12,7 @@ import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.os.ParcelUuid
 import com.silverpine.uu.core.UUTimer
-import com.silverpine.uu.core.UUWorkerThread
+import com.silverpine.uu.core.uuDispatch
 import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.logging.UULog
 import java.util.UUID
@@ -23,7 +23,7 @@ class UUBluetoothScanner<T : UUPeripheral>(context: Context, factory: UUPeripher
     private val bluetoothAdapter: BluetoothAdapter
     private var bluetoothLeScanner: BluetoothLeScanner? = null
     private var scanCallback: ScanCallback? = null
-    private val scanThread = UUWorkerThread("UUBluetoothScanner")
+    //private val scanThread = UUWorkerThread("UUBluetoothScanner")
     var isScanning = false
         private set
 
@@ -168,13 +168,35 @@ class UUBluetoothScanner<T : UUPeripheral>(context: Context, factory: UUPeripher
                 return
             }
 
-            scanThread.post()
+            val address = scanResult.device.address ?: return
+
+            var peripheral: T?
+            synchronized(nearbyPeripherals)
             {
-                val peripheral = createPeripheral(scanResult)
-                peripheral?.let()
+                peripheral = nearbyPeripherals[address]
+            }
+
+            if (peripheral == null)
+            {
+                peripheral = peripheralFactory.createPeripheral(scanResult.device)
+            }
+
+            peripheral?.let()
+            { p ->
+
+                p.updateAdvertisement(scanResult.rssi, safeGetScanRecord(scanResult))
+
+                if (shouldDiscoverPeripheral(p))
                 {
-                    if (shouldDiscoverPeripheral(peripheral)) {
-                        handlePeripheralFound(peripheral)
+                    synchronized(nearbyPeripherals)
+                    {
+                        nearbyPeripherals[address] = p
+                    }
+
+                    uuDispatch()
+                    {
+                        val sorted = sortedPeripherals()
+                        nearbyPeripheralCallback?.invoke(sorted)
                     }
                 }
             }
@@ -182,23 +204,6 @@ class UUBluetoothScanner<T : UUPeripheral>(context: Context, factory: UUPeripher
         catch (ex: Exception)
         {
             debugLog("handleScanResult", ex)
-        }
-    }
-
-    private fun createPeripheral(scanResult: ScanResult): T?
-    {
-        return try
-        {
-            peripheralFactory.createPeripheral(
-                scanResult.device,
-                scanResult.rssi,
-                safeGetScanRecord(scanResult)
-            )
-        }
-        catch (ex: Exception)
-        {
-            debugLog("createPeripheral", ex)
-            null
         }
     }
 
@@ -214,39 +219,6 @@ class UUBluetoothScanner<T : UUPeripheral>(context: Context, factory: UUPeripher
         }
 
         return null
-    }
-
-    private fun handlePeripheralFound(peripheral: T)
-    {
-        if (!isScanning)
-        {
-            debugLog(
-                "handlePeripheralFound",
-                "Not scanning anymore, throwing away scan result from: $peripheral"
-            )
-            safeEndAllScanning()
-            return
-        }
-
-        val address: String? = peripheral.address
-        if (address == null)
-        {
-            debugLog("handlePeripheralFound", "Peripheral has a null address, throwing it out.")
-            return
-        }
-
-        debugLog(
-            "handlePeripheralFound",
-            "Peripheral Found: $peripheral"
-        )
-
-        synchronized(nearbyPeripherals)
-        {
-            nearbyPeripherals[address] = peripheral
-        }
-
-        val sorted = sortedPeripherals()
-        nearbyPeripheralCallback?.invoke(sorted)
     }
 
     private fun sortedPeripherals(): ArrayList<T>

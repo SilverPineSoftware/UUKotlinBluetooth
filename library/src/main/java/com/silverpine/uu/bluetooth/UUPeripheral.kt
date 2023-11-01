@@ -94,16 +94,12 @@ open class UUPeripheral() : Parcelable
     private var bluetoothGatt: BluetoothGatt? = null
     var negotiatedMtuSize: Int? = null
 
-
-    constructor(device: BluetoothDevice, rssi: Int, scanRecord: ByteArray?) : this() {
+    constructor(device: BluetoothDevice) : this()
+    {
+        this.device = device
         firstAdvertisementTime = 0
         totalBeaconCount = 0
-        updateAdvertisement(device, rssi, scanRecord)
     }
-
-//    fun getManufacturingData(): ByteArray? {
-//        return manufacturingData
-//    }
 
     val bluetoothDevice: BluetoothDevice
         get() = (device)!!
@@ -144,9 +140,8 @@ open class UUPeripheral() : Parcelable
         lastRssiUpdateTime = System.currentTimeMillis()
     }
 
-    fun updateAdvertisement(device: BluetoothDevice, rssi: Int, scanRecord: ByteArray?)
+    open fun updateAdvertisement(rssi: Int, scanRecord: ByteArray?)
     {
-        this.device = device
         this.scanRecord = scanRecord
         if (firstAdvertisementTime == 0L)
         {
@@ -427,6 +422,8 @@ open class UUPeripheral() : Parcelable
 
     private fun parseScanRecord()
     {
+        serviceUuids.clear()
+
         val bytes = scanRecord ?: return
 
         var index = 0

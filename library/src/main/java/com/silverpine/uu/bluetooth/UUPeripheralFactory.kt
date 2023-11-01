@@ -4,13 +4,13 @@ import android.bluetooth.BluetoothDevice
 
 interface UUPeripheralFactory<T : UUPeripheral>
 {
-    fun createPeripheral(device: BluetoothDevice, rssi: Int, scanRecord: ByteArray?): T
+    fun createPeripheral(device: BluetoothDevice): T
 }
 
 class UUDefaultPeripheralFactory: UUPeripheralFactory<UUPeripheral>
 {
-    override fun createPeripheral(device: BluetoothDevice, rssi: Int, scanRecord: ByteArray?): UUPeripheral
+    override fun createPeripheral(device: BluetoothDevice): UUPeripheral
     {
-        return UUPeripheral(device, rssi, scanRecord)
+        return UUPeripheral(device)
     }
 }

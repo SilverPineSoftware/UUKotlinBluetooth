@@ -11,6 +11,7 @@ import com.silverpine.uu.sample.bluetooth.R
 import com.silverpine.uu.sample.bluetooth.databinding.ActivityHomeBinding
 import com.silverpine.uu.sample.bluetooth.viewmodel.HomeViewModel
 import com.silverpine.uu.sample.bluetooth.viewmodel.UUPeripheralViewModel
+import com.silverpine.uu.ux.UUAdapterItemViewModelMapping
 import com.silverpine.uu.ux.UUAlertDialog
 import com.silverpine.uu.ux.UUButton
 import com.silverpine.uu.ux.UUPermissions
@@ -47,7 +48,7 @@ class HomeActivity: BaseActivity()
 
     private fun setupAdapter()
     {
-        adapter.registerClass(UUPeripheralViewModel::class.java, R.layout.peripheral_row, BR.vm)
+        adapter.registerViewModel(UUAdapterItemViewModelMapping(UUPeripheralViewModel::class.java, R.layout.peripheral_row, BR.vm))
     }
 
     override fun onResume()

@@ -20,6 +20,7 @@ import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.core.uuIsNotEmpty
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.logging.UULog
+import java.io.Closeable
 import java.util.Locale
 import java.util.UUID
 
@@ -34,7 +35,7 @@ typealias UUDataDelegate = (ByteArray)->Unit
  * A helpful set of wrapper methods around BluetoothGatt
  */
 @SuppressLint("MissingPermission")
-internal class UUBluetoothGatt(private val context: Context, peripheral: UUPeripheral)
+internal class UUBluetoothGatt(private val context: Context, peripheral: UUPeripheral): Closeable
 {
     private val peripheral: UUPeripheral
 
@@ -1358,21 +1359,42 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
         // Static Gatt management
         ////////////////////////////////////////////////////////////////////////////////////////////////
         private val gattHashMap = HashMap<String?, UUBluetoothGatt>()
-        fun gattForPeripheral(peripheral: UUPeripheral): UUBluetoothGatt? {
+        fun gattForPeripheral(peripheral: UUPeripheral): UUBluetoothGatt?
+        {
             val ctx = requireApplicationContext()
             var gatt: UUBluetoothGatt? = null
             val address = peripheral.address
 
-            if (address.uuIsNotEmpty()) {
-                if (gattHashMap.containsKey(address)) {
+            if (address.uuIsNotEmpty())
+            {
+                if (gattHashMap.containsKey(address))
+                {
                     gatt = gattHashMap[address]
+                    UULog.d(javaClass, "gattForPeripheral", "Found existing gatt for $address")
                 }
-                if (gatt == null) {
+
+                if (gatt == null)
+                {
                     gatt = UUBluetoothGatt(ctx, peripheral)
+                    UULog.d(javaClass, "gattForPeripheral", "Creating new gatt for $address")
                     gattHashMap[address] = gatt
                 }
             }
+
             return gatt
+        }
+    }
+
+    override fun close()
+    {
+        try
+        {
+            bluetoothGatt?.close()
+            bluetoothGatt = null
+        }
+        catch (ex: Exception)
+        {
+            UULog.d(javaClass, "close", "", ex)
         }
     }
 }

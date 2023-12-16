@@ -1,7 +1,6 @@
 package com.silverpine.uu.sample.bluetooth.viewmodel
 
 import android.os.Bundle
-import androidx.lifecycle.ViewModel
 import com.silverpine.uu.bluetooth.UUBluetooth
 import com.silverpine.uu.bluetooth.UUBluetoothScanner
 import com.silverpine.uu.bluetooth.UUDefaultPeripheralFactory
@@ -16,10 +15,10 @@ import com.silverpine.uu.sample.bluetooth.operations.ReadDeviceInfoOperation
 import com.silverpine.uu.sample.bluetooth.ui.PeripheralDetailActivity
 import com.silverpine.uu.sample.bluetooth.ui.l2cap.L2CapClientActivity
 import com.silverpine.uu.sample.bluetooth.ui.l2cap.L2CapServerActivity
+import com.silverpine.uu.ux.UUAdapterItemViewModel
 import com.silverpine.uu.ux.UUAlertDialog
 import com.silverpine.uu.ux.UUButton
 import com.silverpine.uu.ux.UUMenuItem
-import java.util.UUID
 
 class HomeViewModel: RecyclerViewModel()
 {
@@ -77,7 +76,7 @@ class HomeViewModel: RecyclerViewModel()
             {
                 uuDispatchMain()
                 {
-                    val tmp = ArrayList<ViewModel>()
+                    val tmp = ArrayList<UUAdapterItemViewModel>()
                     val vmList = list.map()
                     {
                         val vm = UUPeripheralViewModel(it)

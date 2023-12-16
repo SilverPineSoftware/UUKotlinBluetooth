@@ -3,11 +3,11 @@ package com.silverpine.uu.sample.bluetooth.viewmodel
 import android.view.View
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
+import com.silverpine.uu.ux.UUAdapterItemViewModel
 
 class LabelValueViewModel(
     labelText: String? = null,
-    valueText: String? = null): ViewModel()
+    valueText: String? = null): UUAdapterItemViewModel()
 {
     private val _label = MutableLiveData<String?>(null)
     private val _value = MutableLiveData<String?>(null)

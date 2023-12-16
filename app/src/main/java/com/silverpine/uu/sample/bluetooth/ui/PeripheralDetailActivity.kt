@@ -12,6 +12,8 @@ import com.silverpine.uu.sample.bluetooth.R
 import com.silverpine.uu.sample.bluetooth.viewmodel.LabelValueViewModel
 import com.silverpine.uu.sample.bluetooth.viewmodel.SectionHeaderViewModel
 import com.silverpine.uu.sample.bluetooth.viewmodel.ServiceViewModel
+import com.silverpine.uu.ux.UUAdapterItemViewModel
+import com.silverpine.uu.ux.UUAdapterItemViewModelMapping
 import com.silverpine.uu.ux.UUMenuHandler
 import com.silverpine.uu.ux.UURecyclerActivity
 import com.silverpine.uu.ux.uuRequireParcelable
@@ -31,9 +33,9 @@ class PeripheralDetailActivity : UURecyclerActivity()
 
     override fun setupAdapter(recyclerView: RecyclerView)
     {
-        adapter.registerClass(LabelValueViewModel::class.java, R.layout.label_value_row, BR.vm)
-        adapter.registerClass(ServiceViewModel::class.java, R.layout.service_row, BR.vm)
-        adapter.registerClass(SectionHeaderViewModel::class.java, R.layout.section_header, BR.vm)
+        adapter.registerViewModel(UUAdapterItemViewModelMapping(LabelValueViewModel::class.java, R.layout.label_value_row, BR.vm))
+        adapter.registerViewModel(UUAdapterItemViewModelMapping(ServiceViewModel::class.java, R.layout.service_row, BR.vm))
+        adapter.registerViewModel(UUAdapterItemViewModelMapping(SectionHeaderViewModel::class.java, R.layout.section_header, BR.vm))
     }
 
     override fun handleRowTapped(viewModel: ViewModel)
@@ -104,7 +106,7 @@ class PeripheralDetailActivity : UURecyclerActivity()
     {
         uuDispatchMain()
         {
-            val tmp = ArrayList<ViewModel>()
+            val tmp = ArrayList<UUAdapterItemViewModel>()
             tmp.add(SectionHeaderViewModel(R.string.info))
             tmp.add(LabelValueViewModel(R.string.address_label.load(), peripheral.address))
             tmp.add(LabelValueViewModel(R.string.name_label.load(), peripheral.name))

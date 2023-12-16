@@ -6,7 +6,6 @@ import android.view.View
 import androidx.databinding.BindingAdapter
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import com.silverpine.uu.bluetooth.UUBluetooth
 import com.silverpine.uu.bluetooth.UUPeripheral
 import com.silverpine.uu.core.uuDispatchMain
@@ -14,8 +13,9 @@ import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.core.uuToHexData
 import com.silverpine.uu.sample.bluetooth.R
 import com.silverpine.uu.sample.bluetooth.ui.Strings
+import com.silverpine.uu.ux.UUAdapterItemViewModel
 
-class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: BluetoothGattCharacteristic): ViewModel()
+class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: BluetoothGattCharacteristic): UUAdapterItemViewModel()
 {
     private val _uuid = MutableLiveData<String?>(null)
     private val _name = MutableLiveData<String?>(null)

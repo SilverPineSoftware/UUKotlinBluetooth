@@ -5,8 +5,9 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.silverpine.uu.sample.bluetooth.ui.Strings
+import com.silverpine.uu.ux.UUAdapterItemViewModel
 
-class SectionHeaderViewModel(text: String = "", @StringRes textResourceId: Int = -1): ViewModel()
+class SectionHeaderViewModel(text: String = "", @StringRes textResourceId: Int = -1): UUAdapterItemViewModel()
 {
     constructor(@StringRes labelResourceId: Int): this("", labelResourceId)
     constructor(label: String): this(label, -1)

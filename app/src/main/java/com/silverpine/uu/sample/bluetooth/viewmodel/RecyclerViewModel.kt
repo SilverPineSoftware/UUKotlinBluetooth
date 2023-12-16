@@ -2,14 +2,14 @@ package com.silverpine.uu.sample.bluetooth.viewmodel
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
+import com.silverpine.uu.ux.UUAdapterItemViewModel
 
 open class RecyclerViewModel: BaseViewModel()
 {
-    private var _data: MutableLiveData<ArrayList<ViewModel>> = MutableLiveData()
-    val data: LiveData<ArrayList<ViewModel>> = _data
+    private var _data: MutableLiveData<ArrayList<UUAdapterItemViewModel>> = MutableLiveData()
+    val data: LiveData<ArrayList<UUAdapterItemViewModel>> = _data
 
-    fun updateData(list: ArrayList<ViewModel>)
+    fun updateData(list: ArrayList<UUAdapterItemViewModel>)
     {
         _data.value = list
     }

@@ -4,11 +4,11 @@ import android.text.TextUtils
 import android.view.View
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import com.silverpine.uu.bluetooth.UUPeripheral
 import com.silverpine.uu.core.uuToHex
+import com.silverpine.uu.ux.UUAdapterItemViewModel
 
-class UUPeripheralViewModel(val model: UUPeripheral): ViewModel()
+class UUPeripheralViewModel(val model: UUPeripheral): UUAdapterItemViewModel()
 {
     private val _friendlyName = MutableLiveData<String?>(null)
     private val _macAddress = MutableLiveData<String?>(null)

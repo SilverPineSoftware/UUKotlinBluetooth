@@ -237,7 +237,7 @@ class UUBluetoothAdvertiser(context: Context)
                     var actualFriendlyName: String?
                     do
                     {
-                        uuSleep("setLocalDeviceName", 5)
+                        uuSleep(5)
 
                         actualFriendlyName = bluetoothAdapter.name
                         if (LOGGING_ENABLED)

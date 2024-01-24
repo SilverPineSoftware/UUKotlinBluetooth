@@ -43,7 +43,7 @@ class HomeActivity: BaseActivity()
         recyclerView.adapter = adapter
         setupAdapter()
 
-        viewModel.reset()
+        viewModel.start()
     }
 
     private fun setupAdapter()

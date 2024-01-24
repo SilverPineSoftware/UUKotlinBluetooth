@@ -20,10 +20,23 @@ import java.util.UUID
 @SuppressLint("MissingPermission")
 class UUBluetoothScanner<T : UUPeripheral>(context: Context, factory: UUPeripheralFactory<T>)
 {
+    companion object
+    {
+        private val LOGGING_ENABLED = BuildConfig.DEBUG
+
+        private const val outOfRangeFilterEvaluationFrequencyTimerId = "UUBluetoothScanner_outOfRangeFilterEvaluationFrequency"
+        private const val SCAN_RESTART_TIMER_ID = "UUBluetoothScanner_scanRestartTimerId"
+
+        // Starting with Android N the OS has a limitation where you cannot start a BLE scan more
+        // than five times within 30 seconds.
+        private const val SCAN_LIMIT_MILLIS = 30000
+        private const val SCAN_LIMIT_COUNT = 5
+    }
+
     private val bluetoothAdapter: BluetoothAdapter
     private var bluetoothLeScanner: BluetoothLeScanner? = null
     private var scanCallback: ScanCallback? = null
-    //private val scanThread = UUWorkerThread("UUBluetoothScanner")
+
     var isScanning = false
         private set
 
@@ -36,11 +49,17 @@ class UUBluetoothScanner<T : UUPeripheral>(context: Context, factory: UUPeripher
     var outOfRangeFilterEvaluationFrequency: Long = 500
     var allowExtendedAdvertisements: Boolean = true
 
+    var scanDelayedCallback: (Long)->Unit = { }
+
+    private var scanCheckStartTime: Long = 0
+    private var scanCheckCount = 0
+
     fun startScanning(
         serviceUuidList: ArrayList<UUID>?,
         filters: ArrayList<UUPeripheralFilter<T>>?,
         outOfRangeFilters: ArrayList<UUOutOfRangePeripheralFilter<T>>?,
-        callback: ((ArrayList<T>)->Unit))
+        callback: ((ArrayList<T>)->Unit)
+    )
     {
         scanFilters.clear()
         filters?.let()
@@ -60,7 +79,6 @@ class UUBluetoothScanner<T : UUPeripheral>(context: Context, factory: UUPeripher
 
         uuDispatchMain()
         {
-
             startScan(serviceUuidList)
         }
     }
@@ -74,10 +92,23 @@ class UUBluetoothScanner<T : UUPeripheral>(context: Context, factory: UUPeripher
     fun stopScanning()
     {
         isScanning = false
-        stopOutOfRangeEvaluationTimer()
+
+        stopAllTimers()
+
         uuDispatchMain()
         {
             stopScan()
+        }
+    }
+
+    private fun restartScanAfterDelay(delay: Long, serviceUuidList: ArrayList<UUID>?)
+    {
+        stopScanRestartTimer()
+
+        UUTimer.startTimer(SCAN_RESTART_TIMER_ID, delay, null)
+        { _,_ ->
+            debugLog("restartScanAfterDelay", "Scan is being restarted after delay")
+            startScan(serviceUuidList)
         }
     }
 
@@ -87,6 +118,42 @@ class UUBluetoothScanner<T : UUPeripheral>(context: Context, factory: UUPeripher
 
         try
         {
+            if (scanCheckCount == 0)
+            {
+                scanCheckStartTime = System.currentTimeMillis()
+                scanCheckCount = 1
+            }
+            else
+            {
+                val timeSinceLastScan = System.currentTimeMillis() - scanCheckStartTime
+                if (timeSinceLastScan < SCAN_LIMIT_MILLIS)
+                {
+                    ++scanCheckCount
+                }
+                else
+                {
+                    scanCheckStartTime = System.currentTimeMillis()
+                    scanCheckCount = 1
+                }
+            }
+
+            if (scanCheckCount >= SCAN_LIMIT_COUNT)
+            {
+                val timeLeft = scanCheckStartTime + SCAN_LIMIT_MILLIS - System.currentTimeMillis() + 1000
+
+                // Notify app of error/warning condition
+
+                debugLog("startScan", "Scanning too frequently, scheduling scan restart in $timeLeft millis")
+                restartScanAfterDelay(timeLeft, serviceUuidList)
+
+                uuDispatch()
+                {
+                    scanDelayedCallback(timeLeft)
+                }
+
+                return
+            }
+
             val filters = ArrayList<ScanFilter>()
             serviceUuidList?.forEach()
             { uuid ->
@@ -381,10 +448,15 @@ class UUBluetoothScanner<T : UUPeripheral>(context: Context, factory: UUPeripher
         UUTimer.cancelActiveTimer(outOfRangeFilterEvaluationFrequencyTimerId)
     }
 
-    companion object
+    private fun stopScanRestartTimer()
     {
-        private val LOGGING_ENABLED = true //BuildConfig.DEBUG
-        private const val outOfRangeFilterEvaluationFrequencyTimerId = "UUBluetoothScanner_outOfRangeFilterEvaluationFrequency"
+        UUTimer.cancelActiveTimer(SCAN_RESTART_TIMER_ID)
+    }
+
+    private fun stopAllTimers()
+    {
+        stopOutOfRangeEvaluationTimer()
+        stopScanRestartTimer()
     }
 
     private fun debugLog(method: String, message: String)

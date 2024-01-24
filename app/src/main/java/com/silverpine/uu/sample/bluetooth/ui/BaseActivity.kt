@@ -10,6 +10,7 @@ import com.silverpine.uu.sample.bluetooth.viewmodel.BaseViewModel
 import com.silverpine.uu.ux.UUMenuHandler
 import com.silverpine.uu.ux.UUMenuItem
 import com.silverpine.uu.ux.uuShowAlertDialog
+import com.silverpine.uu.ux.uuShowToast
 import com.silverpine.uu.ux.uuStartActivity
 
 open class BaseActivity : AppCompatActivity()
@@ -24,6 +25,7 @@ open class BaseActivity : AppCompatActivity()
         setContentView(binding.root)
         viewModel.gotoActivity = this::uuStartActivity
         viewModel.showAlertDialog = this::uuShowAlertDialog
+        viewModel.onToast = this::uuShowToast
 
         viewModel.menuItems.observe(this)
         {

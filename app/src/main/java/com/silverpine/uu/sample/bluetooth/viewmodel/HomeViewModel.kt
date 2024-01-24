@@ -1,6 +1,7 @@
 package com.silverpine.uu.sample.bluetooth.viewmodel
 
 import android.os.Bundle
+import android.widget.Toast
 import com.silverpine.uu.bluetooth.UUBluetooth
 import com.silverpine.uu.bluetooth.UUBluetoothScanner
 import com.silverpine.uu.bluetooth.UUDefaultPeripheralFactory
@@ -19,6 +20,7 @@ import com.silverpine.uu.ux.UUAdapterItemViewModel
 import com.silverpine.uu.ux.UUAlertDialog
 import com.silverpine.uu.ux.UUButton
 import com.silverpine.uu.ux.UUMenuItem
+import com.silverpine.uu.ux.UUToast
 
 class HomeViewModel: RecyclerViewModel()
 {
@@ -26,12 +28,16 @@ class HomeViewModel: RecyclerViewModel()
 
     private var lastUpdate: Long = 0
 
-    fun reset()
+    fun start()
     {
+        scanner.scanDelayedCallback =
+        { delayMillis ->
+            onToast(UUToast("Scanning too frequently. Scan will resume in $delayMillis milliseconds", Toast.LENGTH_SHORT))
+        }
+
         stopScanning()
         updateMenu()
     }
-
 
     override fun buildMenu(): ArrayList<UUMenuItem>
     {

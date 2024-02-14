@@ -73,6 +73,16 @@ internal object UUBluetoothError
     }
 
     /**
+     * Wrapper method to return an already connected error
+     *
+     * @return a UUBluetoothError object
+     */
+    fun alreadyConnectedError(): UUError
+    {
+        return makeError(UUBluetoothErrorCode.AlreadyConnected)
+    }
+
+    /**
      * Wrapper method to return a disconnected error
      *
      * @return a UUBluetoothError object

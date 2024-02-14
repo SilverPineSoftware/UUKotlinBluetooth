@@ -75,12 +75,14 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
         if (bluetoothGatt != null)
         {
             debugLog("connect", "WARNING -- Bluetooth Gatt is already connected to ${bluetoothGatt?.device?.address}")
+            notifyDisconnectDelegate(delegate, UUBluetoothError.alreadyConnectedError())
             return
         }
 
         if (isConnectWatchdogActive)
         {
             debugLog("connect", "WARNING -- Bluetooth Gatt making connection attempt to ${bluetoothGatt?.device?.address}")
+            notifyDisconnectDelegate(delegate, UUBluetoothError.alreadyConnectedError())
             return
         }
 
@@ -723,7 +725,7 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
     {
         try
         {
-            delegate?.onDisconnected((peripheral), error)
+            delegate?.onDisconnected(peripheral, error)
         }
         catch (ex: Exception)
         {

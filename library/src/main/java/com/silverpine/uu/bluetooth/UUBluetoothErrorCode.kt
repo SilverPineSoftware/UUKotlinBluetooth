@@ -39,7 +39,13 @@ enum class UUBluetoothErrorCode(val rawValue: Int)
     /**
      * An operation could not be attempted because one or more preconditions failed.
      */
-    PreconditionFailed(6);
+    PreconditionFailed(6),
+
+    /**
+     * An operation could not be attempted because another connection is already active for the given
+     * BluetoothDevice
+     */
+    AlreadyConnected(7);
 
     /**
      *

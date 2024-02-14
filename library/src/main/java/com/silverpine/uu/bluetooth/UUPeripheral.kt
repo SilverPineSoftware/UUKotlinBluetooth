@@ -174,11 +174,11 @@ open class UUPeripheral() : Parcelable
             val bluetoothManager = UUBluetooth.requireApplicationContext().getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
             var state = bluetoothManager.getConnectionState(device, BluetoothProfile.GATT)
             debugLog("getConnectionState", "Actual connection state is: $state (${ConnectionState.fromProfileConnectionState(state)})")
-            val gatt = UUBluetoothGatt.gattForPeripheral(this)
+            val gatt = uuGatt
 
             if (gatt != null)
             {
-                if (state != BluetoothProfile.STATE_CONNECTING && gatt.isConnecting)
+                if ((state != BluetoothProfile.STATE_CONNECTING) && gatt.isConnecting)
                 {
                     debugLog("getConnectionState", "Forcing state to connecting")
                     state = BluetoothProfile.STATE_CONNECTING
@@ -197,16 +197,20 @@ open class UUPeripheral() : Parcelable
         bluetoothGatt = gatt
     }
 
-    fun requestHighPriority(delegate: UUPeripheralBoolDelegate) {
+    private val uuGatt: UUBluetoothGatt?
+        get()
+        {
+            return UUBluetoothGattManager.gattForPeripheral(this)
+        }
 
-        UUBluetoothGatt.gattForPeripheral(this)?.requestHighPriority(delegate)
+    fun requestHighPriority(delegate: UUPeripheralBoolDelegate)
+    {
+        uuGatt?.requestHighPriority(delegate)
     }
 
     fun requestMtuSize(timeout: Long, mtuSize: Int, delegate: UUPeripheralErrorDelegate)
     {
-        val gatt = UUBluetoothGatt.gattForPeripheral(this)
-
-        gatt?.requestMtuSize(timeout, mtuSize)
+        uuGatt?.requestMtuSize(timeout, mtuSize)
         { peripheral, error ->
 
             if (error == null) {
@@ -223,29 +227,25 @@ open class UUPeripheral() : Parcelable
         connectTimeout: Long,
         disconnectTimeout: Long,
         connected: ()->Unit,
-        disconnected: (UUError?)->Unit
-    ) {
-        val gatt = UUBluetoothGatt.gattForPeripheral(this)
-        if (gatt != null)
+        disconnected: (UUError?)->Unit)
+    {
+        uuGatt?.connect(false, connectTimeout, disconnectTimeout, object : UUConnectionDelegate
         {
-            gatt.connect(false, connectTimeout, disconnectTimeout, object : UUConnectionDelegate
+            override fun onConnected(peripheral: UUPeripheral)
             {
-                override fun onConnected(peripheral: UUPeripheral)
-                {
-                    connected()
-                }
+                connected()
+            }
 
-                override fun onDisconnected(peripheral: UUPeripheral, error: UUError?)
-                {
-                    disconnected(error)
-                }
-            })
-        }
+            override fun onDisconnected(peripheral: UUPeripheral, error: UUError?)
+            {
+                disconnected(error)
+            }
+        })
     }
 
     fun disconnect(error: UUError?)
     {
-        val gatt = UUBluetoothGatt.gattForPeripheral(this)
+        val gatt = uuGatt
 
         if (gatt != null)
         {
@@ -255,10 +255,9 @@ open class UUPeripheral() : Parcelable
 
     fun discoverServices(
         timeout: Long,
-        delegate: UUDiscoverServicesDelegate
-    )
+        delegate: UUDiscoverServicesDelegate)
     {
-        val gatt = UUBluetoothGatt.gattForPeripheral(this)
+        val gatt = uuGatt
 
         gatt?.discoverServices(timeout)
         { _, error ->
@@ -272,8 +271,10 @@ open class UUPeripheral() : Parcelable
     fun discoveredServices(): ArrayList<BluetoothGattService>
     {
         acquireExistingGatt()
+
         val list = ArrayList<BluetoothGattService>()
-        if (bluetoothGatt != null) {
+        if (bluetoothGatt != null)
+        {
             list.addAll(bluetoothGatt!!.services)
         }
 
@@ -298,7 +299,7 @@ open class UUPeripheral() : Parcelable
         notifyDelegate: UUCharacteristicDelegate?,
         delegate: UUCharacteristicDelegate
     ) {
-        val gatt = UUBluetoothGatt.gattForPeripheral(this)
+        val gatt = uuGatt
 
         if (gatt != null)
         {
@@ -311,7 +312,7 @@ open class UUPeripheral() : Parcelable
         timeout: Long,
         delegate: UUCharacteristicDelegate
     ) {
-        val gatt = UUBluetoothGatt.gattForPeripheral(this)
+        val gatt = uuGatt
 
         if (gatt != null)
         {
@@ -325,7 +326,7 @@ open class UUPeripheral() : Parcelable
         delegate: UUDescriptorDelegate
     )
     {
-        val gatt = UUBluetoothGatt.gattForPeripheral(this)
+        val gatt = uuGatt
 
         if (gatt != null)
         {
@@ -340,7 +341,7 @@ open class UUPeripheral() : Parcelable
         delegate: UUDescriptorDelegate
     )
     {
-        val gatt = UUBluetoothGatt.gattForPeripheral(this)
+        val gatt = uuGatt
         if (gatt != null)
         {
             gatt.writeDescriptor(descriptor, data, timeout, delegate)
@@ -354,7 +355,7 @@ open class UUPeripheral() : Parcelable
         delegate: UUCharacteristicDelegate
     )
     {
-        val gatt = UUBluetoothGatt.gattForPeripheral(this)
+        val gatt = uuGatt
 
         if (gatt != null)
         {
@@ -369,7 +370,7 @@ open class UUPeripheral() : Parcelable
         delegate: UUCharacteristicDelegate
     )
     {
-        val gatt = UUBluetoothGatt.gattForPeripheral(this)
+        val gatt = uuGatt
         if (gatt != null)
         {
             gatt.writeCharacteristicWithoutResponse(characteristic, data, timeout, delegate)
@@ -381,7 +382,7 @@ open class UUPeripheral() : Parcelable
         delegate: UUPeripheralErrorDelegate
     )
     {
-        val gatt = UUBluetoothGatt.gattForPeripheral(this)
+        val gatt = uuGatt
         if (gatt != null)
         {
             gatt.readRssi(timeout, delegate)
@@ -390,7 +391,7 @@ open class UUPeripheral() : Parcelable
 
     fun startRssiPolling(context: Context, interval: Long, delegate: UUPeripheralDelegate)
     {
-        val gatt = UUBluetoothGatt.gattForPeripheral(this)
+        val gatt = uuGatt
 
         if (gatt != null)
         {
@@ -400,7 +401,7 @@ open class UUPeripheral() : Parcelable
 
     fun stopRssiPolling()
     {
-        val gatt = UUBluetoothGatt.gattForPeripheral(this)
+        val gatt = uuGatt
         gatt?.stopRssiPolling()
     }
 
@@ -408,7 +409,7 @@ open class UUPeripheral() : Parcelable
         get()
         {
             var isPolling = false
-            val gatt = UUBluetoothGatt.gattForPeripheral(this)
+            val gatt = uuGatt
             if (gatt != null)
             {
                 isPolling = gatt.isPollingForRssi
@@ -672,7 +673,7 @@ open class UUPeripheral() : Parcelable
 
     private fun acquireExistingGatt()
     {
-        val gatt = UUBluetoothGatt.gattForPeripheral(this)
+        val gatt = uuGatt
 
         if (gatt != null)
         {

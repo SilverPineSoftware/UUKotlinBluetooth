@@ -12,13 +12,11 @@ import com.silverpine.uu.bluetooth.UUBluetooth.characteristicPermissionsToString
 import com.silverpine.uu.bluetooth.UUBluetooth.characteristicPropertiesToString
 import com.silverpine.uu.bluetooth.UUBluetooth.connectionStateToString
 import com.silverpine.uu.bluetooth.UUBluetooth.gattStatusToString
-import com.silverpine.uu.bluetooth.UUBluetooth.requireApplicationContext
 import com.silverpine.uu.bluetooth.UUBluetoothError.timeoutError
 import com.silverpine.uu.core.UUError
 import com.silverpine.uu.core.UURandom
 import com.silverpine.uu.core.UUTimer
 import com.silverpine.uu.core.uuDispatchMain
-import com.silverpine.uu.core.uuIsNotEmpty
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.logging.UULog
 import java.io.Closeable
@@ -30,7 +28,7 @@ typealias UUDescriptorDelegate = (UUPeripheral, BluetoothGattDescriptor, UUError
 typealias UUDiscoverServicesDelegate = (ArrayList<BluetoothGattService>, UUError?)->Unit
 typealias UUPeripheralDelegate = (UUPeripheral?)->Unit
 typealias UUPeripheralErrorDelegate = (UUPeripheral,UUError?)->Unit
-typealias UUDataDelegate = (ByteArray)->Unit
+//typealias UUDataDelegate = (ByteArray)->Unit
 
 /**
  * A helpful set of wrapper methods around BluetoothGatt
@@ -74,6 +72,18 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
         disconnectTimeout: Long,
         delegate: UUConnectionDelegate)
     {
+        if (bluetoothGatt != null)
+        {
+            debugLog("connect", "WARNING -- Bluetooth Gatt is already connected to ${bluetoothGatt?.device?.address}")
+            return
+        }
+
+        if (isConnectWatchdogActive)
+        {
+            debugLog("connect", "WARNING -- Bluetooth Gatt making connection attempt to ${bluetoothGatt?.device?.address}")
+            return
+        }
+
         val timerId = connectWatchdogTimerId()
 
         connectionDelegate = object : UUConnectionDelegate
@@ -1365,81 +1375,28 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
         bluetoothGattCallback = UUBluetoothGattCallback()
     }
 
-    companion object {
+    companion object
+    {
         private val LOGGING_ENABLED = true //BuildConfig.DEBUG
 
         // Internal Constants
-        private val CONNECT_WATCHDOG_BUCKET = "UUBluetoothConnectWatchdogBucket"
-        private val SERVICE_DISCOVERY_WATCHDOG_BUCKET = "UUBluetoothServiceDiscoveryWatchdogBucket"
-        private val CHARACTERISTIC_NOTIFY_STATE_WATCHDOG_BUCKET =
-            "UUBluetoothCharacteristicNotifyStateWatchdogBucket"
-        private val READ_CHARACTERISTIC_WATCHDOG_BUCKET =
-            "UUBluetoothReadCharacteristicValueWatchdogBucket"
-        private val WRITE_CHARACTERISTIC_WATCHDOG_BUCKET =
-            "UUBluetoothWriteCharacteristicValueWatchdogBucket"
-        private val READ_DESCRIPTOR_WATCHDOG_BUCKET = "UUBluetoothReadDescriptorValueWatchdogBucket"
-        private val WRITE_DESCRIPTOR_WATCHDOG_BUCKET =
-            "UUBluetoothWriteDescriptorValueWatchdogBucket"
-        private val READ_RSSI_WATCHDOG_BUCKET = "UUBluetoothReadRssiWatchdogBucket"
-        private val POLL_RSSI_BUCKET = "UUBluetoothPollRssiBucket"
-        private val DISCONNECT_WATCHDOG_BUCKET = "UUBluetoothDisconnectWatchdogBucket"
-        private val REQUEST_MTU_WATCHDOG_BUCKET = "UUBluetoothRequestWatchdogBucket"
-        private val TIMEOUT_DISABLED = -1
-
-
-        ////////////////////////////////////////////////////////////////////////////////////////////////
-        // Static Gatt management
-        ////////////////////////////////////////////////////////////////////////////////////////////////
-        private val gattHashMap = HashMap<String?, UUBluetoothGatt>()
-        fun gattForPeripheral(peripheral: UUPeripheral): UUBluetoothGatt?
-        {
-            val ctx = requireApplicationContext()
-            var gatt: UUBluetoothGatt? = null
-            val address = peripheral.address
-
-            if (address.uuIsNotEmpty())
-            {
-                if (gattHashMap.containsKey(address))
-                {
-                    gatt = gattHashMap[address]
-                    UULog.d(javaClass, "gattForPeripheral", "Found existing gatt for $address")
-                }
-
-                if (gatt == null)
-                {
-                    gatt = UUBluetoothGatt(ctx, peripheral)
-                    UULog.d(javaClass, "gattForPeripheral", "Creating new gatt for $address")
-                    gattHashMap[address] = gatt
-                }
-            }
-
-            return gatt
-        }
+        private const val CONNECT_WATCHDOG_BUCKET = "UUBluetoothConnectWatchdogBucket"
+        private const val SERVICE_DISCOVERY_WATCHDOG_BUCKET = "UUBluetoothServiceDiscoveryWatchdogBucket"
+        private const val CHARACTERISTIC_NOTIFY_STATE_WATCHDOG_BUCKET = "UUBluetoothCharacteristicNotifyStateWatchdogBucket"
+        private const val READ_CHARACTERISTIC_WATCHDOG_BUCKET = "UUBluetoothReadCharacteristicValueWatchdogBucket"
+        private const val WRITE_CHARACTERISTIC_WATCHDOG_BUCKET = "UUBluetoothWriteCharacteristicValueWatchdogBucket"
+        private const val READ_DESCRIPTOR_WATCHDOG_BUCKET = "UUBluetoothReadDescriptorValueWatchdogBucket"
+        private const val WRITE_DESCRIPTOR_WATCHDOG_BUCKET = "UUBluetoothWriteDescriptorValueWatchdogBucket"
+        private const val READ_RSSI_WATCHDOG_BUCKET = "UUBluetoothReadRssiWatchdogBucket"
+        private const val POLL_RSSI_BUCKET = "UUBluetoothPollRssiBucket"
+        private const val DISCONNECT_WATCHDOG_BUCKET = "UUBluetoothDisconnectWatchdogBucket"
+        private const val REQUEST_MTU_WATCHDOG_BUCKET = "UUBluetoothRequestWatchdogBucket"
+        private const val TIMEOUT_DISABLED = -1
     }
 
     override fun close()
     {
         UULog.d(javaClass, "close", "Closing Gatt from Closable")
         closeGatt()
-
-//        try
-//        {
-//            val gatt = bluetoothGatt
-//            if (gatt != null)
-//            {
-//                gatt.close()
-//            }
-//
-//            //bluetoothGatt?.close()
-//            //bluetoothGatt = null
-//        }
-//        catch (ex: Exception)
-//        {
-//            UULog.d(javaClass, "close", "", ex)
-//        }
-//        finally
-//        {
-//            bluetoothGatt = null
-//        }
     }
 }

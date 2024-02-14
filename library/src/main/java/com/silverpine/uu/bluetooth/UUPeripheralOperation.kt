@@ -5,6 +5,8 @@ import android.bluetooth.BluetoothGattService
 import com.silverpine.uu.bluetooth.UUBluetoothError.missingRequiredCharacteristic
 import com.silverpine.uu.bluetooth.UUBluetoothError.operationFailedError
 import com.silverpine.uu.core.UUError
+import com.silverpine.uu.core.UURandom
+import com.silverpine.uu.core.UUTimer
 import com.silverpine.uu.core.uuReadInt16
 import com.silverpine.uu.core.uuReadInt32
 import com.silverpine.uu.core.uuReadInt64
@@ -21,6 +23,7 @@ import com.silverpine.uu.core.uuWriteUInt16
 import com.silverpine.uu.core.uuWriteUInt32
 import com.silverpine.uu.core.uuWriteUInt64
 import com.silverpine.uu.core.uuWriteUInt8
+import com.silverpine.uu.logging.UULog
 import java.nio.ByteOrder
 import java.nio.charset.Charset
 import java.util.UUID
@@ -34,8 +37,8 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
     var connectTimeout = UUPeripheral.Defaults.ConnectTimeout.toLong()
     var disconnectTimeout = UUPeripheral.Defaults.DisconnectTimeout.toLong()
     var serviceDiscoveryTimeout = UUPeripheral.Defaults.ServiceDiscoveryTimeout.toLong()
-    private val readTimeout = UUPeripheral.Defaults.OperationTimeout.toLong()
-    private val writeTimeout = UUPeripheral.Defaults.OperationTimeout.toLong()
+    protected val readTimeout = UUPeripheral.Defaults.OperationTimeout.toLong()
+    protected val writeTimeout = UUPeripheral.Defaults.OperationTimeout.toLong()
 
     fun findDiscoveredService(uuid: UUID): BluetoothGattService?
     {
@@ -87,6 +90,18 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
                 }
 
                 completion()
+            }
+        }
+    }
+
+    fun writeData(data: ByteArray, toCharacteristic: UUID, completion: (UUError?)->Unit)
+    {
+        requireDiscoveredCharacteristic(toCharacteristic)
+        { characteristic ->
+
+            peripheral.writeCharacteristic(characteristic, data, writeTimeout)
+            { _, _, error: UUError? ->
+                completion(error)
             }
         }
     }
@@ -343,6 +358,8 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
 
     fun start(completion: (UUError?)->Unit)
     {
+        UULog.d(javaClass, "start", "${javaClass.simpleName}, Starting operation")
+
         operationCallback = completion
         peripheral.connect(connectTimeout, disconnectTimeout,
             { handleConnected() }) { disconnectError: UUError? ->
@@ -354,6 +371,7 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
 
     fun end(error: UUError?)
     {
+        UULog.d(javaClass, "end", "${javaClass.simpleName}, Ending operation, error: $error")
         //debug(javaClass, "end", "**** Ending Operation with error: " + UUString.safeToString(error))
         peripheral.disconnect(error)
     }
@@ -362,6 +380,8 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
 
     private fun handleConnected()
     {
+        UULog.d(javaClass, "handleConnected", "${javaClass.simpleName}, is connected, discovering services now")
+
         peripheral.discoverServices(serviceDiscoveryTimeout)
         { services, error ->
 
@@ -418,9 +438,34 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
 
     private fun handleCharacteristicDiscoveryFinished()
     {
-        execute()
-        { error: UUError? ->
-            end(error)
+        executeOperation()
+    }
+
+    private fun executeOperation()
+    {
+        val timerId = "ExecuteOperationTimerId_${UURandom.uuid()}"
+        try
+        {
+            val start = System.currentTimeMillis()
+            val t = UUTimer(timerId, 20000, true, null)
+            { _, _ ->
+                val duration = System.currentTimeMillis() - start
+                UULog.w(javaClass, "executeOperation", "Operation has not completed after $duration millis")
+            }
+            t.start()
+
+            execute()
+            { error: UUError? ->
+                end(error)
+            }
+        }
+        catch (ex: Exception)
+        {
+            UULog.e(javaClass, "executeOperation", "", ex)
+        }
+        finally
+        {
+            UUTimer.cancelActiveTimer(timerId)
         }
     }
 

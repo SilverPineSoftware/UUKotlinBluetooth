@@ -15,6 +15,7 @@ import com.silverpine.uu.bluetooth.UUBluetooth.gattStatusToString
 import com.silverpine.uu.bluetooth.UUBluetooth.requireApplicationContext
 import com.silverpine.uu.bluetooth.UUBluetoothError.timeoutError
 import com.silverpine.uu.core.UUError
+import com.silverpine.uu.core.UURandom
 import com.silverpine.uu.core.UUTimer
 import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.core.uuIsNotEmpty
@@ -37,6 +38,8 @@ typealias UUDataDelegate = (ByteArray)->Unit
 @SuppressLint("MissingPermission")
 internal class UUBluetoothGatt(private val context: Context, peripheral: UUPeripheral): Closeable
 {
+    private val id = UURandom.uuid()
+
     private val peripheral: UUPeripheral
 
     var bluetoothGatt: BluetoothGatt? = null
@@ -60,6 +63,10 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
         get() = (bluetoothGatt != null && isConnectWatchdogActive)
     private val isConnectWatchdogActive: Boolean
         get() = (UUTimer.findActiveTimer(connectWatchdogTimerId()) != null)
+
+
+    var __GATT_CREATE_CALLS = 0
+    var __GATT_CLOSE_CALLS = 0
 
     fun connect(
         connectGattAutoFlag: Boolean,
@@ -107,6 +114,14 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
                 bluetoothGattCallback,
                 BluetoothDevice.TRANSPORT_LE
             )
+
+            ++__GATT_CREATE_CALLS
+            logGattInfo("connect")
+
+            if ((__GATT_CREATE_CALLS - __GATT_CLOSE_CALLS) > 1)
+            {
+                debugLog("connect", "ERROR -- Gatt connect/close calls are out of sync!")
+            }
         }
     }
 
@@ -1011,7 +1026,12 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
     {
         try
         {
-            bluetoothGatt?.close()
+            val gatt = bluetoothGatt
+            if (gatt != null)
+            {
+                ++__GATT_CLOSE_CALLS
+                gatt.close()
+            }
         }
         catch (ex: Exception)
         {
@@ -1020,6 +1040,7 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
         finally
         {
             bluetoothGatt = null
+            logGattInfo("closeGatt-finally")
         }
     }
 
@@ -1052,6 +1073,17 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
         if (LOGGING_ENABLED)
         {
             UULog.d(javaClass, method, "", exception)
+        }
+    }
+
+    private fun logGattInfo(fromWhere: String)
+    {
+        if (LOGGING_ENABLED)
+        {
+            UULog.d(javaClass,
+                "logGattInfo",
+                "$fromWhere, $id, GATT create calls: $__GATT_CREATE_CALLS, GATT close calls: $__GATT_CLOSE_CALLS"
+            )
         }
     }
 
@@ -1387,14 +1419,27 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
 
     override fun close()
     {
-        try
-        {
-            bluetoothGatt?.close()
-            bluetoothGatt = null
-        }
-        catch (ex: Exception)
-        {
-            UULog.d(javaClass, "close", "", ex)
-        }
+        UULog.d(javaClass, "close", "Closing Gatt from Closable")
+        closeGatt()
+
+//        try
+//        {
+//            val gatt = bluetoothGatt
+//            if (gatt != null)
+//            {
+//                gatt.close()
+//            }
+//
+//            //bluetoothGatt?.close()
+//            //bluetoothGatt = null
+//        }
+//        catch (ex: Exception)
+//        {
+//            UULog.d(javaClass, "close", "", ex)
+//        }
+//        finally
+//        {
+//            bluetoothGatt = null
+//        }
     }
 }

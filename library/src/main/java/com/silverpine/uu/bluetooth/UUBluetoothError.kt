@@ -83,6 +83,16 @@ internal object UUBluetoothError
     }
 
     /**
+     * Wrapper method to return an user interrupted error
+     *
+     * @return a UUBluetoothError object
+     */
+    fun userInterruptedError(): UUError
+    {
+        return makeError(UUBluetoothErrorCode.UserInterrupted)
+    }
+
+    /**
      * Wrapper method to return a disconnected error
      *
      * @return a UUBluetoothError object

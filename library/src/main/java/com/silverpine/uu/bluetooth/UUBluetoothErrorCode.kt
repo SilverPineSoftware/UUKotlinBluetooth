@@ -45,7 +45,12 @@ enum class UUBluetoothErrorCode(val rawValue: Int)
      * An operation could not be attempted because another connection is already active for the given
      * BluetoothDevice
      */
-    AlreadyConnected(7);
+    AlreadyConnected(7),
+
+    /**
+     * An operation was interrupted by the user
+     */
+    UserInterrupted(8);
 
     /**
      *

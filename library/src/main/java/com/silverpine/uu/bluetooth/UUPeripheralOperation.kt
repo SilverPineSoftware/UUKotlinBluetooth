@@ -376,6 +376,11 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
         peripheral.disconnect(error)
     }
 
+    fun interrupt()
+    {
+        end(UUBluetoothError.userInterruptedError())
+    }
+
     abstract fun execute(completion: (UUError?)->Unit)
 
     private fun handleConnected()

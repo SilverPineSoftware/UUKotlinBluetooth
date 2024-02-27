@@ -448,17 +448,8 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
 
     private fun executeOperation()
     {
-        val timerId = "ExecuteOperationTimerId_${UURandom.uuid()}"
         try
         {
-            val start = System.currentTimeMillis()
-            val t = UUTimer(timerId, 20000, true, null)
-            { _, _ ->
-                val duration = System.currentTimeMillis() - start
-                UULog.w(javaClass, "executeOperation", "Operation has not completed after $duration millis")
-            }
-            t.start()
-
             execute()
             { error: UUError? ->
                 end(error)
@@ -467,10 +458,6 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
         catch (ex: Exception)
         {
             UULog.e(javaClass, "executeOperation", "", ex)
-        }
-        finally
-        {
-            UUTimer.cancelActiveTimer(timerId)
         }
     }
 

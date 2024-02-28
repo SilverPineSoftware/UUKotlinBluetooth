@@ -1,21 +1,22 @@
 package com.silverpine.uu.sample.bluetooth.viewmodel
 
+import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.util.Log
-import android.view.View
-import androidx.databinding.BindingAdapter
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.silverpine.uu.bluetooth.UUBluetooth
-import com.silverpine.uu.bluetooth.UUPeripheral
-import com.silverpine.uu.core.uuDispatchMain
+import com.silverpine.uu.bluetooth.UUBluetoothGattSession
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.core.uuToHexData
 import com.silverpine.uu.sample.bluetooth.R
 import com.silverpine.uu.sample.bluetooth.ui.Strings
 import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
-class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: BluetoothGattCharacteristic): UUAdapterItemViewModel()
+class CharacteristicViewModel2(private val session: UUBluetoothGattSession, private val model: BluetoothGattCharacteristic): UUAdapterItemViewModel()
 {
     private val _uuid = MutableLiveData<String?>(null)
     private val _name = MutableLiveData<String?>(null)
@@ -39,6 +40,7 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: B
     val canWriteData: LiveData<Boolean> = _canWriteData
     val canWWORWriteData: LiveData<Boolean> = _canWWORWriteData
 
+    private var characteristicData: ByteArray? = null
     var data = MutableLiveData<String?>(null)
 
     init
@@ -58,17 +60,14 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: B
 
     private fun formatData(): String?
     {
-        if (model.value == null)
-        {
-            return null
-        }
+        val data = characteristicData ?: return null
 
         if (hexSelected.value == true)
         {
-            return model.value.uuToHex()
+            return data.uuToHex()
         }
 
-        return String(model.value, Charsets.UTF_8)
+        return String(data, Charsets.UTF_8)
     }
 
     fun toggleHex(hex: Boolean)
@@ -80,13 +79,17 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: B
 
     fun readData()
     {
-        peripheral.readCharacteristic(model, 60000)
-        { p, updatedCharacteristic, error ->
+        CoroutineScope(Dispatchers.IO).launch()
+        {
+            val result = session.readCharacteristic(model)
+            characteristicData = result.success
 
-            uuDispatchMain()
+            if (result.error != null)
             {
-                refreshData()
+                // Show error
             }
+
+            refreshData()
         }
     }
 
@@ -94,6 +97,7 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: B
     {
         val isNotifying = UUBluetooth.isNotifying(model)
 
+        /*
         peripheral.setNotifyState(model,
             !isNotifying,
             30000,
@@ -116,45 +120,39 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: B
             {
                 refreshData()
             }
-        }
+        }*/
     }
 
     fun writeData()
     {
-        data.value?.let()
-        { hex ->
+        CoroutineScope(Dispatchers.IO).launch()
+        {
+            data.value?.let()
+            { hex ->
 
-            val tx = hex.uuToHexData()
+                val tx = hex.uuToHexData()
 
-            Log.d("DEBUG", "Writing $hex")
+                Log.d("DEBUG", "Writing $hex")
 
-            peripheral.writeCharacteristic(model, tx!!, 10000)
-            { p, c, e ->
-
-                uuDispatchMain()
-                {
-                    refreshData()
-                }
+                val result = session.writeCharacteristic(model, tx!!, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
+                refreshData()
             }
         }
     }
 
     fun wworWriteData()
     {
-        data.value?.let()
-        { hex ->
+        CoroutineScope(Dispatchers.IO).launch()
+        {
+            data.value?.let()
+            { hex ->
 
-            val tx = hex.uuToHexData()
+                val tx = hex.uuToHexData()
 
-            Log.d("DEBUG", "Writing WWOR $hex")
+                Log.d("DEBUG", "Writing $hex without response")
 
-            peripheral.writeCharacteristicWithoutResponse(model, tx!!, 10000)
-            { p, c, e ->
-
-                uuDispatchMain()
-                {
-                    refreshData()
-                }
+                val result = session.writeCharacteristic(model, tx!!, BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE)
+                refreshData()
             }
         }
     }
@@ -163,23 +161,16 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: B
     {
         if (UUBluetooth.isNotifying(model))
         {
-            _isNotifying.value = Strings.load(R.string.yes)
+            _isNotifying.postValue(Strings.load(R.string.yes))
         }
         else
         {
-            _isNotifying.value = Strings.load(R.string.no)
+            _isNotifying.postValue(Strings.load(R.string.no))
         }
     }
 
     private fun refreshData()
     {
-        data.value = formatData()
+        data.postValue(formatData())
     }
-}
-
-@BindingAdapter("selected")
-fun setSelected(view: View, value: Boolean)
-{
-    view.isSelected = value
-    view.invalidate()
 }

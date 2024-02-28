@@ -23,6 +23,9 @@
             android:name=".ui.ServiceDetailActivity"
             android:exported="false" />
         <activity
+            android:name=".ui.DeviceSessionActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.HomeActivity"
             android:exported="true">
             <intent-filter>

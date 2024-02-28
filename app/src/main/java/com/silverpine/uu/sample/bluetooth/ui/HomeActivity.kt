@@ -2,25 +2,23 @@ package com.silverpine.uu.sample.bluetooth.ui
 
 import android.Manifest
 import android.os.Build
-import android.os.Bundle
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModelProvider
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.silverpine.uu.sample.bluetooth.BR
 import com.silverpine.uu.sample.bluetooth.R
-import com.silverpine.uu.sample.bluetooth.databinding.ActivityHomeBinding
 import com.silverpine.uu.sample.bluetooth.viewmodel.HomeViewModel
+import com.silverpine.uu.sample.bluetooth.viewmodel.RecyclerViewModel
 import com.silverpine.uu.sample.bluetooth.viewmodel.UUPeripheralViewModel
-import com.silverpine.uu.ux.UUAdapterItemViewModelMapping
 import com.silverpine.uu.ux.UUAlertDialog
 import com.silverpine.uu.ux.UUButton
 import com.silverpine.uu.ux.UUPermissions
-import com.silverpine.uu.ux.UUViewModelRecyclerAdapter
 import com.silverpine.uu.ux.uuOpenSystemSettings
 import com.silverpine.uu.ux.uuShowAlertDialog
+import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModelMapping
 
-class HomeActivity: BaseActivity()
+class HomeActivity: RecyclerActivity()
 {
+    /*
     private lateinit var viewModel: HomeViewModel
     private lateinit var adapter: UUViewModelRecyclerAdapter
 
@@ -49,7 +47,19 @@ class HomeActivity: BaseActivity()
     private fun setupAdapter()
     {
         adapter.registerViewModel(UUAdapterItemViewModelMapping(UUPeripheralViewModel::class.java, R.layout.peripheral_row, BR.vm))
+    }*/
+
+    override fun getViewModel(): RecyclerViewModel
+    {
+        return ViewModelProvider(this)[HomeViewModel::class.java]
     }
+
+    override fun setupAdapter()
+    {
+        adapter.registerViewModel(UUAdapterItemViewModelMapping(UUPeripheralViewModel::class.java, R.layout.peripheral_row, BR.vm))
+    }
+
+
 
     override fun onResume()
     {

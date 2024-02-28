@@ -3,7 +3,7 @@ package com.silverpine.uu.sample.bluetooth.viewmodel
 import android.view.View
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.silverpine.uu.ux.UUAdapterItemViewModel
+import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModel
 
 class LabelValueViewModel(
     labelText: String? = null,
@@ -19,8 +19,8 @@ class LabelValueViewModel(
 
     init
     {
-        _label.value = labelText
-        _value.value = valueText
+        _label.postValue(labelText)
+        _value.postValue(valueText)
     }
 
     fun handleClick(view: View)

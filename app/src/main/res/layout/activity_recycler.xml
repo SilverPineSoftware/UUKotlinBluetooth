@@ -7,7 +7,7 @@
     <data>
         <variable
             name="vm"
-            type="com.silverpine.uu.sample.bluetooth.viewmodel.HomeViewModel" />
+            type="com.silverpine.uu.sample.bluetooth.viewmodel.RecyclerViewModel" />
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout

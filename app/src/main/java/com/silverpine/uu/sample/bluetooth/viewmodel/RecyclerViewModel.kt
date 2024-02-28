@@ -2,7 +2,7 @@ package com.silverpine.uu.sample.bluetooth.viewmodel
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.silverpine.uu.ux.UUAdapterItemViewModel
+import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModel
 
 open class RecyclerViewModel: BaseViewModel()
 {
@@ -11,6 +11,11 @@ open class RecyclerViewModel: BaseViewModel()
 
     fun updateData(list: ArrayList<UUAdapterItemViewModel>)
     {
-        _data.value = list
+        _data.postValue(list)
+    }
+
+    open fun start()
+    {
+
     }
 }

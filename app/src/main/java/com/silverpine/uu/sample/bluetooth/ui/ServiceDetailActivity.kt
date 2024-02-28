@@ -12,12 +12,12 @@ import com.silverpine.uu.sample.bluetooth.R
 import com.silverpine.uu.sample.bluetooth.viewmodel.CharacteristicViewModel
 import com.silverpine.uu.sample.bluetooth.viewmodel.SectionHeaderViewModel
 import com.silverpine.uu.sample.bluetooth.viewmodel.ServiceViewModel
-import com.silverpine.uu.ux.UUAdapterItemViewModel
-import com.silverpine.uu.ux.UUAdapterItemViewModelMapping
 import com.silverpine.uu.ux.UUMenuHandler
 import com.silverpine.uu.ux.UURecyclerActivity
 import com.silverpine.uu.ux.uuRequireParcelable
 import com.silverpine.uu.ux.uuShowToast
+import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModel
+import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModelMapping
 
 class ServiceDetailActivity: UURecyclerActivity()
 {

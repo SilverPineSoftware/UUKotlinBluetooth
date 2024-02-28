@@ -6,7 +6,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.silverpine.uu.bluetooth.UUPeripheral
 import com.silverpine.uu.core.uuToHex
-import com.silverpine.uu.ux.UUAdapterItemViewModel
+import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModel
 
 class UUPeripheralViewModel(val model: UUPeripheral): UUAdapterItemViewModel()
 {
@@ -28,19 +28,19 @@ class UUPeripheralViewModel(val model: UUPeripheral): UUAdapterItemViewModel()
 
     init
     {
-        _friendlyName.value = "${model.name}"
-        _macAddress.value = "${model.address}\n${TextUtils.join("\n", model.serviceUuids)}"
+        _friendlyName.postValue("${model.name}")
+        _macAddress.postValue("${model.address}\n${TextUtils.join("\n", model.serviceUuids)}")
 
-        _connectionState.value = "${model.connectionState}"
-        _rssi.value = "${model.rssi}"
-        _timeSinceLastUpdate.value = "${model.timeSinceLastUpdate}"
+        _connectionState.postValue("${model.connectionState}")
+        _rssi.postValue("${model.rssi}")
+        _timeSinceLastUpdate.postValue("${model.timeSinceLastUpdate}")
 
         model.manufacturingData?.let()
         {
-            _manufacturingData.value = it.uuToHex()
+            _manufacturingData.postValue(it.uuToHex())
         } ?: run()
         {
-            _manufacturingData.value = ""
+            _manufacturingData.postValue("")
         }
     }
 

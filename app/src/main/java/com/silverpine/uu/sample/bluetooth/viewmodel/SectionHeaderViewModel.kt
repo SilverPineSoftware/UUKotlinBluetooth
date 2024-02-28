@@ -3,9 +3,8 @@ package com.silverpine.uu.sample.bluetooth.viewmodel
 import androidx.annotation.StringRes
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import com.silverpine.uu.sample.bluetooth.ui.Strings
-import com.silverpine.uu.ux.UUAdapterItemViewModel
+import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModel
 
 class SectionHeaderViewModel(text: String = "", @StringRes textResourceId: Int = -1): UUAdapterItemViewModel()
 {
@@ -19,11 +18,11 @@ class SectionHeaderViewModel(text: String = "", @StringRes textResourceId: Int =
     {
         if (textResourceId != -1)
         {
-            _label .value = Strings.load(textResourceId)
+            _label.postValue(Strings.load(textResourceId))
         }
         else
         {
-            _label.value = text
+            _label.postValue(text)
         }
     }
 }

@@ -3,6 +3,7 @@ package com.silverpine.uu.sample.bluetooth.viewmodel
 import android.os.Bundle
 import android.widget.Toast
 import com.silverpine.uu.bluetooth.UUBluetooth
+import com.silverpine.uu.bluetooth.UUBluetoothGattSession
 import com.silverpine.uu.bluetooth.UUBluetoothScanner
 import com.silverpine.uu.bluetooth.UUDefaultPeripheralFactory
 import com.silverpine.uu.bluetooth.UUOutOfRangePeripheralFilter
@@ -10,17 +11,22 @@ import com.silverpine.uu.bluetooth.UUPeripheral
 import com.silverpine.uu.bluetooth.UUPeripheralFilter
 import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.core.uuReadUInt8
+import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.logging.UULog
 import com.silverpine.uu.sample.bluetooth.R
 import com.silverpine.uu.sample.bluetooth.operations.ReadDeviceInfoOperation
+import com.silverpine.uu.sample.bluetooth.ui.DeviceSessionActivity
 import com.silverpine.uu.sample.bluetooth.ui.PeripheralDetailActivity
 import com.silverpine.uu.sample.bluetooth.ui.l2cap.L2CapClientActivity
 import com.silverpine.uu.sample.bluetooth.ui.l2cap.L2CapServerActivity
-import com.silverpine.uu.ux.UUAdapterItemViewModel
 import com.silverpine.uu.ux.UUAlertDialog
 import com.silverpine.uu.ux.UUButton
 import com.silverpine.uu.ux.UUMenuItem
 import com.silverpine.uu.ux.UUToast
+import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class HomeViewModel: RecyclerViewModel()
 {
@@ -28,11 +34,11 @@ class HomeViewModel: RecyclerViewModel()
 
     private var lastUpdate: Long = 0
 
-    fun start()
+    override fun start()
     {
         scanner.scanDelayedCallback =
         { delayMillis ->
-            onToast(UUToast("Scanning too frequently. Scan will resume in $delayMillis milliseconds", Toast.LENGTH_SHORT))
+            uuToast(UUToast("Scanning too frequently. Scan will resume in $delayMillis milliseconds", Toast.LENGTH_SHORT))
         }
 
         stopScanning()
@@ -65,7 +71,7 @@ class HomeViewModel: RecyclerViewModel()
         //adapter.update(listOf())
 
         val filters: ArrayList<UUPeripheralFilter<UUPeripheral>> = arrayListOf()
-        filters.add(RequireMinimumRssiPeripheralFilter(-70))
+        //filters.add(RequireMinimumRssiPeripheralFilter(-70))
         //filters.add(RequireManufacturingDataPeripheralFilter())
         //filters.add(IgnoreAppleBeaconsPeripheralFilter())
         //filters.add(RequireNoNamePeripheralFilter())
@@ -108,12 +114,13 @@ class HomeViewModel: RecyclerViewModel()
         items.add(UUButton("View Services") { gotoPeripheralServices(peripheral) })
         items.add(UUButton("Read Info") { readDeviceInfo(peripheral) })
         items.add(UUButton("Start L2Cap Client") { gotoL2CapClient(peripheral) })
+        items.add(UUButton("Start Session") { gotoDeviceSession(peripheral) })
 
         val dlg = UUAlertDialog()
         dlg.title = "Choose an action for ${peripheral.name} - ${peripheral.address}"
         dlg.items = items
 
-        showAlertDialog(dlg)
+        uuShowAlertDialog(dlg)
     }
 
     private fun gotoPeripheralServices(peripheral: UUPeripheral)
@@ -121,7 +128,15 @@ class HomeViewModel: RecyclerViewModel()
         val args = Bundle()
         args.putParcelable("peripheral", peripheral)
 
-        gotoActivity(PeripheralDetailActivity::class.java, args)
+        uuStartActivity(PeripheralDetailActivity::class.java, args)
+    }
+
+    private fun gotoDeviceSession(peripheral: UUPeripheral)
+    {
+        val args = Bundle()
+        args.putParcelable("bluetoothDevice", peripheral.bluetoothDevice)
+
+        uuStartActivity(DeviceSessionActivity::class.java, args)
     }
 
     private fun gotoL2CapClient(peripheral: UUPeripheral)
@@ -129,12 +144,44 @@ class HomeViewModel: RecyclerViewModel()
         val args = Bundle()
         args.putParcelable("peripheral", peripheral)
 
-        gotoActivity(L2CapClientActivity::class.java, args)
+        uuStartActivity(L2CapClientActivity::class.java, args)
     }
 
     private var readDeviceInfoOperation: ReadDeviceInfoOperation? = null
     private fun readDeviceInfo(peripheral: UUPeripheral)
     {
+        val session = UUBluetoothGattSession(UUBluetooth.requireApplicationContext(), peripheral.bluetoothDevice)
+
+        CoroutineScope(Dispatchers.IO).launch()
+        {
+            val connectError = session.connect()
+            UULog.d(javaClass, "readDeviceInfo","Connect returned: $connectError")
+
+            val servicesResult = session.discoverServices()
+            UULog.d(javaClass, "readDeviceInfo", "discoverServices, error: ${servicesResult.error}, services: ${servicesResult.success}")
+            servicesResult.success?.forEach { UULog.d(javaClass, "readDeviceInfo", "Service: ${it.uuid} - ${UUBluetooth.bluetoothSpecName(it.uuid)}") }
+
+            servicesResult.success?.let()
+            { services ->
+                for (service in services)
+                {
+                    service.characteristics.forEach { UULog.d(javaClass, "readDeviceInfo", "Service: ${it.uuid} - ${UUBluetooth.bluetoothSpecName(it.uuid)}") }
+
+                    for (chr in service.characteristics)
+                    {
+                        UULog.d(javaClass, "readDeviceInfo", "Reading ${chr.uuid} - ${UUBluetooth.bluetoothSpecName(chr.uuid)}, Properties: ${UUBluetooth.characteristicPropertiesToString(chr.properties)}, Permissions: ${UUBluetooth.characteristicPermissionsToString(chr.permissions)}")
+                        val readResult = session.readCharacteristic(chr)
+                        UULog.d(javaClass, "readDeviceInfo", "Read char ${chr.uuid} returned ${readResult.success?.uuToHex()}, error: ${readResult.error}")
+                    }
+                }
+
+            }
+
+
+            session.disconnect()
+        }
+
+        /*
         val op = ReadDeviceInfoOperation(peripheral)
         readDeviceInfoOperation = op
         op.start()
@@ -167,7 +214,7 @@ class HomeViewModel: RecyclerViewModel()
                     showAlertDialog(dlg)
                 }
             }
-        }
+        }*/
     }
 
     private fun sortPeripherals(list: List<UUPeripheralViewModel>)
@@ -240,7 +287,7 @@ class HomeViewModel: RecyclerViewModel()
 
     private fun openL2CapServer()
     {
-        gotoActivity(L2CapServerActivity::class.java, null)
+        uuStartActivity(L2CapServerActivity::class.java, null)
     }
 
     inner class RequireNamePeripheralFilter: UUPeripheralFilter<UUPeripheral>

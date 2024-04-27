@@ -372,11 +372,11 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
 
     private fun endAllMetrics()
     {
-        connectMetric.end()
-        serviceDiscoveryMetric.end()
-        charDiscoveryMetric.end()
-        operationTimeMetric.end()
-        overallTimeMetric.end()
+        connectMetric.end(false)
+        serviceDiscoveryMetric.end(false)
+        charDiscoveryMetric.end(false)
+        operationTimeMetric.end(false)
+        overallTimeMetric.end(false)
     }
 
     private fun logMetrics()
@@ -421,9 +421,9 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
 
     private fun handleConnected()
     {
-        UULog.d(javaClass, "handleConnected", "${javaClass.simpleName}, is connected, discovering services now")
-
         connectMetric.end()
+        UULog.d(javaClass, "handleConnected", "Connect took ${connectMetric.duration} ms")
+        UULog.d(javaClass, "handleConnected", "${javaClass.simpleName}, is connected, discovering services now")
 
         serviceDiscoveryMetric.start()
 
@@ -451,6 +451,8 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
             servicesNeedingCharacteristicDiscovery.addAll(services)
 
             serviceDiscoveryMetric.end()
+            UULog.d(javaClass, "handleConnected", "Service Discovery took ${connectMetric.duration} ms")
+
             charDiscoveryMetric.start()
 
             discoverNextCharacteristics()
@@ -491,6 +493,7 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
     private fun handleCharacteristicDiscoveryFinished()
     {
         charDiscoveryMetric.end()
+        UULog.d(javaClass, "handleCharacteristicDiscoveryFinished", "Characteristic Discovery took ${charDiscoveryMetric.duration} ms")
 
         executeOperation()
     }
@@ -505,6 +508,7 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
             { error: UUError? ->
 
                 operationTimeMetric.end()
+                UULog.d(javaClass, "executeOperation", "Operation took ${connectMetric.duration} ms")
                 end(error)
             }
         }

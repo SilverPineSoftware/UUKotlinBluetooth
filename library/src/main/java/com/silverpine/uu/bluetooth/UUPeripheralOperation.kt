@@ -41,7 +41,6 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
 
     val connectMetric = UUTimedMetric("connect")
     val serviceDiscoveryMetric = UUTimedMetric("service_discovery")
-    val charDiscoveryMetric = UUTimedMetric("char_discovery")
     val operationTimeMetric = UUTimedMetric("operation_time")
     val overallTimeMetric = UUTimedMetric("overall_time")
 
@@ -365,7 +364,6 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
     {
         connectMetric.reset()
         serviceDiscoveryMetric.reset()
-        charDiscoveryMetric.reset()
         operationTimeMetric.reset()
         overallTimeMetric.reset()
     }
@@ -374,18 +372,16 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
     {
         connectMetric.end(false)
         serviceDiscoveryMetric.end(false)
-        charDiscoveryMetric.end(false)
         operationTimeMetric.end(false)
         overallTimeMetric.end(false)
     }
 
     private fun logMetrics()
     {
-        UULog.d(javaClass, "logMetrics", connectMetric.toString())
-        UULog.d(javaClass, "logMetrics", serviceDiscoveryMetric.toString())
-        UULog.d(javaClass, "logMetrics", charDiscoveryMetric.toString())
-        UULog.d(javaClass, "logMetrics", operationTimeMetric.toString())
-        UULog.d(javaClass, "logMetrics", overallTimeMetric.toString())
+        UULog.d(javaClass, "logMetrics", "${javaClass.simpleName}, $connectMetric")
+        UULog.d(javaClass, "logMetrics", "${javaClass.simpleName}, $serviceDiscoveryMetric")
+        UULog.d(javaClass, "logMetrics", "${javaClass.simpleName}, $operationTimeMetric")
+        UULog.d(javaClass, "logMetrics", "${javaClass.simpleName}, $overallTimeMetric")
     }
 
     fun start(completion: (UUError?)->Unit)
@@ -453,8 +449,6 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
             serviceDiscoveryMetric.end()
             UULog.d(javaClass, "handleConnected", "Service Discovery took ${connectMetric.duration} ms")
 
-            charDiscoveryMetric.start()
-
             discoverNextCharacteristics()
         }
     }
@@ -492,9 +486,6 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
 
     private fun handleCharacteristicDiscoveryFinished()
     {
-        charDiscoveryMetric.end()
-        UULog.d(javaClass, "handleCharacteristicDiscoveryFinished", "Characteristic Discovery took ${charDiscoveryMetric.duration} ms")
-
         executeOperation()
     }
 

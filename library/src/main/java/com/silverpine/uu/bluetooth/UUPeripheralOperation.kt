@@ -5,8 +5,7 @@ import android.bluetooth.BluetoothGattService
 import com.silverpine.uu.bluetooth.UUBluetoothError.missingRequiredCharacteristic
 import com.silverpine.uu.bluetooth.UUBluetoothError.operationFailedError
 import com.silverpine.uu.core.UUError
-import com.silverpine.uu.core.UURandom
-import com.silverpine.uu.core.UUTimer
+import com.silverpine.uu.core.UUTimedMetric
 import com.silverpine.uu.core.uuReadInt16
 import com.silverpine.uu.core.uuReadInt32
 import com.silverpine.uu.core.uuReadInt64
@@ -39,6 +38,12 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
     var serviceDiscoveryTimeout = UUPeripheral.Defaults.ServiceDiscoveryTimeout.toLong()
     protected val readTimeout = UUPeripheral.Defaults.OperationTimeout.toLong()
     protected val writeTimeout = UUPeripheral.Defaults.OperationTimeout.toLong()
+
+    val connectMetric = UUTimedMetric("connect")
+    val serviceDiscoveryMetric = UUTimedMetric("service_discovery")
+    val charDiscoveryMetric = UUTimedMetric("char_discovery")
+    val operationTimeMetric = UUTimedMetric("operation_time")
+    val overallTimeMetric = UUTimedMetric("overall_time")
 
     fun findDiscoveredService(uuid: UUID): BluetoothGattService?
     {
@@ -356,13 +361,44 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
         write(buffer, toCharacteristic, completion)
     }
 
+    private fun resetAllMetrics()
+    {
+        connectMetric.reset()
+        serviceDiscoveryMetric.reset()
+        charDiscoveryMetric.reset()
+        operationTimeMetric.reset()
+        overallTimeMetric.reset()
+    }
+
+    private fun endAllMetrics()
+    {
+        connectMetric.end()
+        serviceDiscoveryMetric.end()
+        charDiscoveryMetric.end()
+        operationTimeMetric.end()
+        overallTimeMetric.end()
+    }
+
+    private fun logMetrics()
+    {
+        UULog.d(javaClass, "logMetrics", connectMetric.toString())
+        UULog.d(javaClass, "logMetrics", serviceDiscoveryMetric.toString())
+        UULog.d(javaClass, "logMetrics", charDiscoveryMetric.toString())
+        UULog.d(javaClass, "logMetrics", operationTimeMetric.toString())
+        UULog.d(javaClass, "logMetrics", overallTimeMetric.toString())
+    }
+
     fun start(completion: (UUError?)->Unit)
     {
         UULog.d(javaClass, "start", "${javaClass.simpleName}, Starting operation")
 
+        resetAllMetrics()
+        connectMetric.start()
+        overallTimeMetric.start()
+
         operationCallback = completion
-        peripheral.connect(connectTimeout, disconnectTimeout,
-            { handleConnected() }) { disconnectError: UUError? ->
+        peripheral.connect(connectTimeout, disconnectTimeout, { handleConnected() })
+        { disconnectError: UUError? ->
             handleDisconnection(
                 disconnectError
             )
@@ -387,6 +423,10 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
     {
         UULog.d(javaClass, "handleConnected", "${javaClass.simpleName}, is connected, discovering services now")
 
+        connectMetric.end()
+
+        serviceDiscoveryMetric.start()
+
         peripheral.discoverServices(serviceDiscoveryTimeout)
         { services, error ->
 
@@ -409,12 +449,19 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
 
             discoveredServices.addAll(services)
             servicesNeedingCharacteristicDiscovery.addAll(services)
+
+            serviceDiscoveryMetric.end()
+            charDiscoveryMetric.start()
+
             discoverNextCharacteristics()
         }
     }
 
     private fun handleDisconnection(disconnectError: UUError?)
     {
+        endAllMetrics()
+        logMetrics()
+
         val callback = operationCallback
         operationCallback = null
         callback?.invoke(disconnectError)
@@ -443,6 +490,8 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
 
     private fun handleCharacteristicDiscoveryFinished()
     {
+        charDiscoveryMetric.end()
+
         executeOperation()
     }
 
@@ -450,8 +499,12 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
     {
         try
         {
+            operationTimeMetric.start()
+
             execute()
             { error: UUError? ->
+
+                operationTimeMetric.end()
                 end(error)
             }
         }

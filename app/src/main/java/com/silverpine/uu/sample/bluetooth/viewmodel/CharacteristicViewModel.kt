@@ -8,6 +8,11 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.silverpine.uu.bluetooth.UUBluetooth
 import com.silverpine.uu.bluetooth.UUPeripheral
+import com.silverpine.uu.bluetooth.uuCanReadData
+import com.silverpine.uu.bluetooth.uuCanToggleNotify
+import com.silverpine.uu.bluetooth.uuCanWriteData
+import com.silverpine.uu.bluetooth.uuCanWriteWithoutResponse
+import com.silverpine.uu.bluetooth.uuIsNotifying
 import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.core.uuToHexData
@@ -46,11 +51,11 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: B
         _uuid.value = "${model.uuid}"
         _name.value = UUBluetooth.bluetoothSpecName(model.uuid)
         _properties.value = UUBluetooth.characteristicPropertiesToString(model.properties)
-        _dataEditable.value = (UUBluetooth.canWriteData(model) || UUBluetooth.canWriteWithoutResponse(model))
-        _canToggleNotify.value = UUBluetooth.canToggleNotify(model)
-        _canReadData.value = UUBluetooth.canReadData(model)
-        _canWriteData.value = UUBluetooth.canWriteData(model)
-        _canWWORWriteData.value = UUBluetooth.canWriteWithoutResponse(model)
+        _dataEditable.value = model.uuCanWriteData() or model.uuCanWriteWithoutResponse()
+        _canToggleNotify.value = model.uuCanToggleNotify()
+        _canReadData.value = model.uuCanReadData()
+        _canWriteData.value = model.uuCanWriteData()
+        _canWWORWriteData.value = model.uuCanWriteWithoutResponse()
 
         refreshNotifyLabel()
         refreshData()
@@ -92,7 +97,7 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: B
 
     fun toggleNotify()
     {
-        val isNotifying = UUBluetooth.isNotifying(model)
+        val isNotifying = model.uuIsNotifying()
 
         peripheral.setNotifyState(model,
             !isNotifying,
@@ -161,7 +166,7 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: B
 
     private fun refreshNotifyLabel()
     {
-        if (UUBluetooth.isNotifying(model))
+        if (model.uuIsNotifying())
         {
             _isNotifying.value = Strings.load(R.string.yes)
         }

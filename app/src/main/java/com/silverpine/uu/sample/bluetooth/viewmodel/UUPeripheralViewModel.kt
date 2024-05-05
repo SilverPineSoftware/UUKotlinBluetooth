@@ -6,7 +6,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.silverpine.uu.bluetooth.UUPeripheral
 import com.silverpine.uu.core.uuToHex
-import com.silverpine.uu.ux.UUAdapterItemViewModel
+import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModel
 
 class UUPeripheralViewModel(val model: UUPeripheral): UUAdapterItemViewModel()
 {

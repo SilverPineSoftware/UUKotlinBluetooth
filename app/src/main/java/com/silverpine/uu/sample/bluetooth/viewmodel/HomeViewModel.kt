@@ -16,11 +16,11 @@ import com.silverpine.uu.sample.bluetooth.operations.ReadDeviceInfoOperation
 import com.silverpine.uu.sample.bluetooth.ui.PeripheralDetailActivity
 import com.silverpine.uu.sample.bluetooth.ui.l2cap.L2CapClientActivity
 import com.silverpine.uu.sample.bluetooth.ui.l2cap.L2CapServerActivity
-import com.silverpine.uu.ux.UUAdapterItemViewModel
 import com.silverpine.uu.ux.UUAlertDialog
 import com.silverpine.uu.ux.UUButton
 import com.silverpine.uu.ux.UUMenuItem
 import com.silverpine.uu.ux.UUToast
+import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModel
 
 class HomeViewModel: RecyclerViewModel()
 {

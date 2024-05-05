@@ -11,13 +11,13 @@ import com.silverpine.uu.sample.bluetooth.R
 import com.silverpine.uu.sample.bluetooth.databinding.ActivityHomeBinding
 import com.silverpine.uu.sample.bluetooth.viewmodel.HomeViewModel
 import com.silverpine.uu.sample.bluetooth.viewmodel.UUPeripheralViewModel
-import com.silverpine.uu.ux.UUAdapterItemViewModelMapping
 import com.silverpine.uu.ux.UUAlertDialog
 import com.silverpine.uu.ux.UUButton
 import com.silverpine.uu.ux.UUPermissions
 import com.silverpine.uu.ux.UUViewModelRecyclerAdapter
 import com.silverpine.uu.ux.uuOpenSystemSettings
 import com.silverpine.uu.ux.uuShowAlertDialog
+import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModelMapping
 
 class HomeActivity: BaseActivity()
 {

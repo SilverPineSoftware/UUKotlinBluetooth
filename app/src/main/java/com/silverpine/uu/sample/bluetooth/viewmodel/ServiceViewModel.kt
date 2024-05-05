@@ -4,10 +4,9 @@ import android.bluetooth.BluetoothGattService
 import android.view.View
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import com.silverpine.uu.bluetooth.UUBluetooth
 import com.silverpine.uu.sample.bluetooth.ui.uuTypeAsString
-import com.silverpine.uu.ux.UUAdapterItemViewModel
+import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModel
 
 class ServiceViewModel(val model: BluetoothGattService): UUAdapterItemViewModel()
 {

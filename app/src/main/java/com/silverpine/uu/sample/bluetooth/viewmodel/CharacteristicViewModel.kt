@@ -13,7 +13,7 @@ import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.core.uuToHexData
 import com.silverpine.uu.sample.bluetooth.R
 import com.silverpine.uu.sample.bluetooth.ui.Strings
-import com.silverpine.uu.ux.UUAdapterItemViewModel
+import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModel
 
 class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: BluetoothGattCharacteristic): UUAdapterItemViewModel()
 {

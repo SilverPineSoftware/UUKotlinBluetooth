@@ -1,20 +1,7 @@
 <resources>
     <string name="app_name">UUKotlinBluetooth</string>
-    <string name="title_activity_main">MainActivity</string>
-    <!-- Strings used for fragments for navigation -->
-    <string name="first_fragment_label">First Fragment</string>
-    <string name="second_fragment_label">Second Fragment</string>
-    <string name="next">Next</string>
-    <string name="previous">Previous</string>
-
-    <string name="hello_first_fragment">Hello first fragment</string>
-    <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
-    <string name="title_activity_home">HomeActivity</string>
-
     <string name="scan">Scan</string>
     <string name="stop">Stop</string>
-
-
     <string name="permissions" formatted="false">Permissions</string>
     <string name="request_permission" formatted="false">Request</string>
     <string name="app_settings" formatted="false">App Settings</string>
@@ -22,8 +9,6 @@
     <string name="location_permission_denied_message" formatted="false">In order to use Bluetooth to interact with BLE peripherals, the application needs permission to access the phone\'s location. Tap \'App Settings\' below, and then enable location permissions for the app.</string>
     <string name="bluetooth_permission_request_message" formatted="false">In order to use Bluetooth to scan for BLE peripherals, the application needs permission to access Bluetooth.  Tap \'Request\' below, and then tap Allow on the next dialog.</string>
     <string name="bluetooth_permission_denied_message" formatted="false">In order to use Bluetooth to interact with BLE peripherals, the application needs permission to access Bluetooth. Tap \'App Settings\' below, and then enable bluetooth permissions for the app.</string>
-
-
     <string name="connect">Connect</string>
     <string name="disconnect">Disconnect</string>
     <string name="discover_services">Discover Services</string>
@@ -50,7 +35,6 @@
     <string name="hex">hex</string>
     <string name="utf8">utf8</string>
     <string name="mtu_size_label">MTU Size:</string>
-
     <string name="listen">Listen</string>
     <string name="advertise">Advertise</string>
     <string name="ping">Ping</string>
@@ -62,5 +46,5 @@
     <string name="disconnect_gatt">Disconnect GATT</string>
     <string name="read">Read</string>
     <string name="write">Write</string>
-
+    <string name="read_all">Read All</string>
 </resources>

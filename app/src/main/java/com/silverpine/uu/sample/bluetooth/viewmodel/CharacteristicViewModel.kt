@@ -7,13 +7,16 @@ import androidx.databinding.BindingAdapter
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.silverpine.uu.bluetooth.UUBluetooth
+import com.silverpine.uu.bluetooth.UUBluetoothConstants
 import com.silverpine.uu.bluetooth.UUPeripheral
 import com.silverpine.uu.bluetooth.uuCanReadData
 import com.silverpine.uu.bluetooth.uuCanToggleNotify
 import com.silverpine.uu.bluetooth.uuCanWriteData
 import com.silverpine.uu.bluetooth.uuCanWriteWithoutResponse
+import com.silverpine.uu.bluetooth.uuHasExtendedProperties
 import com.silverpine.uu.bluetooth.uuIsNotifying
 import com.silverpine.uu.core.uuDispatchMain
+import com.silverpine.uu.core.uuIsNull
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.core.uuToHexData
 import com.silverpine.uu.sample.bluetooth.R
@@ -46,6 +49,8 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: B
 
     var data = MutableLiveData<String?>(null)
 
+    var index = 0
+
     init
     {
         _uuid.value = "${model.uuid}"
@@ -63,17 +68,22 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: B
 
     private fun formatData(): String?
     {
-        if (model.value == null)
+        return formatData(model.value)
+    }
+
+    private fun formatData(value: ByteArray?): String?
+    {
+        if (value == null)
         {
             return null
         }
 
         if (hexSelected.value == true)
         {
-            return model.value.uuToHex()
+            return value.uuToHex()
         }
 
-        return String(model.value, Charsets.UTF_8)
+        return String(value, Charsets.UTF_8)
     }
 
     fun toggleHex(hex: Boolean)
@@ -179,6 +189,11 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: B
     private fun refreshData()
     {
         data.value = formatData()
+    }
+
+    fun updateData(updatedData: ByteArray?)
+    {
+        data.value = formatData(updatedData)
     }
 }
 

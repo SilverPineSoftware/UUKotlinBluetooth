@@ -4,7 +4,6 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
-import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothServerSocket
@@ -16,7 +15,6 @@ import androidx.annotation.RequiresPermission
 import com.silverpine.uu.core.uuIsBitSet
 import com.silverpine.uu.core.uuToHexData
 import com.silverpine.uu.logging.UULog
-import java.util.Arrays
 import java.util.Locale
 import java.util.UUID
 
@@ -53,58 +51,6 @@ object UUBluetooth
      * @since 1.0.0
      */
     val BUILD_DATE: String = BuildConfig.BUILD_DATE
-
-    /**
-     * Formats a full 128-bit UUID string from a 16-bit short code string
-     *
-     * @param shortCode the BTLE short code.  Must be exactly 4 chars long
-     * @return a valid UUID string, or null if the short code is not valid.
-     */
-    fun shortCodeToFullUuidString(shortCode: String): String?
-    {
-        return if (!isValidShortCode(shortCode))
-        {
-            null
-        }
-        else String.format(
-            Locale.US,
-            UUBluetoothConstants.BLUETOOTH_UUID_SHORTCODE_FORMAT,
-            shortCode
-        )
-    }
-
-    /**
-     * Creates a UUID object from a UUID short code string
-     *
-     * @param shortCode the short code
-     * @return a UUID, or null if the short code is not valid.
-     */
-    fun shortCodeToUuid(shortCode: String): UUID?
-    {
-        try
-        {
-            val str = shortCodeToFullUuidString(shortCode) ?: return null
-            return UUID.fromString(str)
-        }
-        catch (ex: Exception)
-        {
-            UULog.d(javaClass, "shortCodeToUuid", "", ex)
-        }
-
-        return null
-    }
-
-    /**
-     * Checks a string to see if it is a valid BTLE shortcode
-     *
-     * @param shortCode the string to check
-     * @return true if the string is a valid 2 byte hex value
-     */
-    fun isValidShortCode(shortCode: String?): Boolean
-    {
-        val hex = shortCode?.uuToHexData() ?: return false
-        return (hex.size == 2)
-    }
 
     /**
      * Returns a developer friendly string for a BluetoothGatt.GATT_* response code
@@ -413,4 +359,65 @@ object UUBluetooth
             bluetoothAdapter.listenUsingInsecureL2capChannel()
         }
     }
+}
+
+
+
+
+
+
+
+
+
+/**
+ * Formats a full 128-bit UUID string from a 16-bit short code string
+ *
+ * @param shortCode the BTLE short code.  Must be exactly 4 chars long
+ * @return a valid UUID string, or null if the short code is not valid.
+ */
+fun uuShortCodeToFullUuidString(shortCode: String): String
+{
+    return if (!uuIsValidShortCode(shortCode))
+    {
+        ""
+    }
+    else String.format(
+        Locale.US,
+        UUBluetoothConstants.BLUETOOTH_UUID_SHORTCODE_FORMAT,
+        shortCode
+    )
+}
+
+/**
+ * Creates a UUID object from a UUID short code string
+ *
+ * @param shortCode the short code
+ * @return a UUID, or throws an illegal argument exception if invalid.
+ */
+fun uuShortCodeToUuid(shortCode: String): UUID
+{
+    return uuUuidFromString(uuShortCodeToFullUuidString(shortCode))
+}
+
+/**
+ * Checks a string to see if it is a valid BTLE shortcode
+ *
+ * @param shortCode the string to check
+ * @return true if the string is a valid 2 byte hex value
+ */
+fun uuIsValidShortCode(shortCode: String?): Boolean
+{
+    val hex = shortCode?.uuToHexData() ?: return false
+    return (hex.size == 2)
+}
+
+/**
+ * Creates a non null UUID from a string.
+ *
+ * NOTE! this method just wraps UUID.fromString(string) with non null conversion.  It will throw if
+ * passed an invalid string.
+ */
+fun uuUuidFromString(string: String): UUID
+{
+    return UUID.fromString(string)!!
 }

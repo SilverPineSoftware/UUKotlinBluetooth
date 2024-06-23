@@ -46,18 +46,22 @@ android {
 
 dependencies {
 
-    implementation 'androidx.annotation:annotation:1.7.1'
-    implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.annotation:annotation:1.8.0'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.core:core-ktx:1.13.1'
 
     implementation "com.silverpine.uu:uu-core-ktx:${uu_core_version}"
 
     testImplementation 'junit:junit:4.13.2'
+    testImplementation "com.silverpine.uu:uu-core-ktx:${uu_core_version}"
     testImplementation "com.silverpine.uu:uu-test-ktx:${uu_test_version}"
 
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    androidTestImplementation "com.silverpine.uu:uu-core-ktx:${uu_core_version}"
+    androidTestImplementation "com.silverpine.uu:uu-ux-ktx:${uu_ux_version}"
     androidTestImplementation "com.silverpine.uu:uu-test-ktx:${uu_test_version}"
+    androidTestImplementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 }
 
 

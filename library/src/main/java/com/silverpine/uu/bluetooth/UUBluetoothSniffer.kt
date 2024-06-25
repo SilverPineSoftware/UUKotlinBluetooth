@@ -85,7 +85,7 @@ class UUSnifferSessionSummary
 
     val results: ArrayList<UUSnifferResult> = arrayListOf()
 
-    fun end(errorCode: Int? = null)
+    fun end()
     {
         endTime = System.currentTimeMillis()
     }

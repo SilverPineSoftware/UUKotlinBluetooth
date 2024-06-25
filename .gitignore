@@ -87,3 +87,4 @@ lint/tmp/
 /.idea/deploymentTargetDropDown.xml
 /.idea/androidTestResultsUserPreferences.xml
 .DS_Store
+/.idea/deploymentTargetSelector.xml

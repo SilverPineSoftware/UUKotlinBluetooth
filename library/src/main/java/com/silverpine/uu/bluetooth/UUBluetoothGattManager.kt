@@ -18,13 +18,13 @@ internal object UUBluetoothGattManager
             if (gattHashMap.containsKey(address))
             {
                 gatt = gattHashMap[address]
-                UULog.d(javaClass, "gattForPeripheral", "Found existing gatt for $address")
+                //UULog.d(javaClass, "gattForPeripheral", "Found existing gatt for $address")
             }
 
             if (gatt == null)
             {
                 gatt = UUBluetoothGatt(ctx, peripheral)
-                UULog.d(javaClass, "gattForPeripheral", "Creating new gatt for $address")
+                //UULog.d(javaClass, "gattForPeripheral", "Creating new gatt for $address")
                 gattHashMap[address] = gatt
             }
         }

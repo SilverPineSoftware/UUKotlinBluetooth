@@ -1270,6 +1270,7 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
             notifyServicesDiscovered(UUBluetoothError.gattStatusError("onServicesDiscovered", status))
         }
 
+        @Deprecated("Deprecated in Java")
         override fun onCharacteristicRead(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic, status: Int)
         {
             debugLog(
@@ -1301,6 +1302,7 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
             )
         }
 
+        @Deprecated("Deprecated in Java")
         override fun onCharacteristicChanged(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic
@@ -1312,6 +1314,7 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
             notifyCharacteristicChanged(characteristic)
         }
 
+        @Deprecated("Deprecated in Java")
         override fun onDescriptorRead(
             gatt: BluetoothGatt,
             descriptor: BluetoothGattDescriptor,

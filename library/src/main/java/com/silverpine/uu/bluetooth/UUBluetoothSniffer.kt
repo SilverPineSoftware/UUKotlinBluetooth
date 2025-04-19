@@ -8,6 +8,12 @@ import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
+import android.util.Log
+import com.silverpine.uu.core.uuFormatAsRfc3339
+import com.silverpine.uu.core.uuFormatAsRfc3339WithMillis
+import com.silverpine.uu.core.uuFormatAsRfc3339WithMillisUtc
+import com.silverpine.uu.core.uuNanoToRealTime
+import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.core.uuUtf8ByteArray
 import com.silverpine.uu.logging.UULog
 
@@ -39,11 +45,21 @@ class UUSnifferResult(val callbackType: Int, val scanResult: ScanResult)
     val macAddress: String = scanResult.device.address ?: ""
     val name: String = scanResult.device.name ?: ""
     val rssi: Int = scanResult.rssi
-    val periodicAdvertisingInterval: Int = scanResult.periodicAdvertisingInterval
-    val timestamp: Long = (scanResult.timestampNanos.toDouble() / 1000000.0).toLong()
-    //val foo = scanResult.scanRecord?.advertisingDataMap.get()
+    //val periodicAdvertisingInterval: Int = scanResult.periodicAdvertisingInterval
+    val timestamp: Long = scanResult.timestampNanos.uuNanoToRealTime() // (scanResult.timestampNanos.toDouble() / 1000000.0).toLong()
     val scanRecord = UUScanRecord(scanResult)
     var timestampDelta: Long = 0
+
+    fun print()
+    {
+        Log.d("updateAdvertisement",
+            "address: $macAddress, " +
+                    "name: ${name}, " +
+                    //"beaconCount: ${totalBeaconCount}, " +
+                    "timestamp: ${timestamp.uuFormatAsRfc3339WithMillis()}, " +
+                    "delta: ${timestampDelta}, " +
+                    "rssi: $rssi")
+    }
 
     fun csvLine(): ArrayList<String>
     {
@@ -53,9 +69,15 @@ class UUSnifferResult(val callbackType: Int, val scanResult: ScanResult)
         list.add(name)
         list.add("$rssi")
         list.add("${scanRecord.records.size}")
-        list.add("$periodicAdvertisingInterval")
-        list.add("$timestamp")
+
+        System.nanoTime()
+        list.add(timestamp.uuFormatAsRfc3339WithMillis())
         list.add("$timestampDelta")
+
+        scanRecord.records.forEach()
+        {
+            list.add("${it.dataType} - ${it.data.uuToHex()}")
+        }
 
         return list
     }
@@ -69,7 +91,6 @@ class UUSnifferResult(val callbackType: Int, val scanResult: ScanResult)
                 "name",
                 "rssi",
                 "scan_record_count",
-                "periodic_advertising_interval",
                 "timestamp",
                 "timestamp_delta"
             )
@@ -85,6 +106,8 @@ class UUSnifferSessionSummary
 
     val results: ArrayList<UUSnifferResult> = arrayListOf()
 
+    private val lastTimes: HashMap<String, Long> = hashMapOf()
+
     fun end()
     {
         endTime = System.currentTimeMillis()
@@ -94,7 +117,12 @@ class UUSnifferSessionSummary
     {
         synchronized(results)
         {
-            results.add(UUSnifferResult(callbackType, result))
+            val snifferResult = UUSnifferResult(callbackType, result)
+            val lastTimestamp = lastTimes.getOrDefault(snifferResult.macAddress, 0)
+            snifferResult.timestampDelta = snifferResult.timestamp - lastTimestamp
+            lastTimes[snifferResult.macAddress] = snifferResult.timestamp
+            snifferResult.print()
+            results.add(snifferResult)
         }
     }
 
@@ -158,6 +186,10 @@ class UUBluetoothSniffer(context: Context)
         override fun onScanResult(callbackType: Int, result: ScanResult?)
         {
             val actualResult = result ?: return
+
+//            if (result.device?.address != "00:17:55:D6:0C:06")
+//                return
+
             workingSummary.addResult(callbackType, actualResult)
         }
 
@@ -176,12 +208,13 @@ class UUBluetoothSniffer(context: Context)
         builder.setNumOfMatches(ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT)
         builder.setReportDelay(0)
         builder.setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+        builder.setLegacy(false)
         val settings = builder.build()
 
 
         val filters = ArrayList<ScanFilter>()
-//        filters.add(ScanFilter.Builder()
-//            .setDeviceAddress("00:00:00:00:00:00").build())
+        //filters.add(ScanFilter.Builder().setDeviceAddress("00:17:55:D6:0C:06").build())
+        //filters.add(ScanFilter.Builder().setDeviceAddress("00:17:55:D6:0C:06").build())
 
         workingSummary = UUSnifferSessionSummary()
         bluetoothScanner.startScan(filters, settings, scanCallback)

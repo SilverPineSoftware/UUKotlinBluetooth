@@ -4,7 +4,10 @@ import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.silverpine.uu.core.UUDate
 import com.silverpine.uu.core.UUTimer
+import com.silverpine.uu.core.uuFormatAsExtendedFileName
 import com.silverpine.uu.core.uuFormatDate
+import com.silverpine.uu.logging.UUConsoleLogger
+import com.silverpine.uu.logging.UULog
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
 import org.junit.FixMethodOrder
@@ -21,7 +24,9 @@ class BleSnifferTest: BaseTest()
     @Test
     fun runBleSniffer() = runBlocking()
     {
-        val timeout = 300 * UUDate.MILLIS_IN_ONE_SECOND
+        UULog.init(UUConsoleLogger())
+
+        val timeout = 20 * UUDate.Constants.millisInOneSecond
 
         startTest("BLE Sniffer Test")
 
@@ -46,7 +51,7 @@ class BleSnifferTest: BaseTest()
         val csvBytes = summary.toCsvBytes() ?: return@runBlocking
 
 
-        val filename = "sniff_results_${Date(System.currentTimeMillis()).uuFormatDate(UUDate.EXTENDED_FILE_NAME_FORMAT)}.csv"
+        val filename = "sniff_results_${System.currentTimeMillis().uuFormatAsExtendedFileName()}.csv"
         context.openFileOutput(filename, Context.MODE_PRIVATE).use()
         {
             it.write(csvBytes)

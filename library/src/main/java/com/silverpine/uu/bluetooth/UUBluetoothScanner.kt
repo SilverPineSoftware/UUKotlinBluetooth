@@ -14,6 +14,9 @@ import android.os.ParcelUuid
 import com.silverpine.uu.core.UUTimer
 import com.silverpine.uu.core.uuDispatch
 import com.silverpine.uu.core.uuDispatchMain
+import com.silverpine.uu.core.uuFormatAsRfc3339WithMillis
+import com.silverpine.uu.core.uuFormatDate
+import com.silverpine.uu.core.uuNanoToRealTime
 import com.silverpine.uu.logging.UULog
 import java.util.UUID
 
@@ -178,7 +181,14 @@ class UUBluetoothScanner<T : UUPeripheral>(context: Context, factory: UUPeripher
                 {
                     override fun onScanResult(callbackType: Int, result: ScanResult)
                     {
-                        //debugLog("startScan.onScanResult", "callbackType: " + callbackType + ", result: " + result.toString());
+//                        debugLog("startScan.onScanResult",
+//                            "callbackType: $callbackType, " +
+//                                    "timestamp: ${result.timestampNanos.uuNanoToRealTime().uuFormatAsRfc3339WithMillis()}, " +
+//                                    "rssi: ${result.rssi}, " +
+//                                    "name: ${result.device?.name}, " +
+//                                    "address: ${result.device?.address}, " +
+//                                    "result: $result")
+
                         handleScanResult(result)
                     }
 
@@ -251,7 +261,7 @@ class UUBluetoothScanner<T : UUPeripheral>(context: Context, factory: UUPeripher
             peripheral?.let()
             { p ->
 
-                p.updateAdvertisement(scanResult.rssi, safeGetScanRecord(scanResult))
+                p.updateAdvertisement(scanResult.rssi, scanResult.timestampNanos.uuNanoToRealTime(), safeGetScanRecord(scanResult))
 
                 if (shouldDiscoverPeripheral(p))
                 {

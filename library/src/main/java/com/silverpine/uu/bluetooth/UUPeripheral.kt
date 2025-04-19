@@ -12,6 +12,8 @@ import android.content.Context
 import android.os.Parcel
 import android.os.Parcelable
 import com.silverpine.uu.core.UUError
+import com.silverpine.uu.core.uuFormatAsRfc3339WithMillis
+import com.silverpine.uu.core.uuNanoToRealTime
 import com.silverpine.uu.core.uuReadUInt8
 import com.silverpine.uu.core.uuSubData
 import com.silverpine.uu.core.uuToHex
@@ -90,6 +92,10 @@ open class UUPeripheral() : Parcelable
         private set
     var lastAdvertisementTime: Long = 0
         private set
+
+    var lastAdvertisementDeltaTime: Long = 0
+        private set
+
     private var totalBeaconCount: Long = 0
     private var bluetoothGatt: BluetoothGatt? = null
     var negotiatedMtuSize: Int? = null
@@ -140,19 +146,28 @@ open class UUPeripheral() : Parcelable
         lastRssiUpdateTime = System.currentTimeMillis()
     }
 
-    open fun updateAdvertisement(rssi: Int, scanRecord: ByteArray?)
+    open fun updateAdvertisement(rssi: Int, timestamp: Long, scanRecord: ByteArray?)
     {
         this.scanRecord = scanRecord
         if (firstAdvertisementTime == 0L)
         {
-            firstAdvertisementTime = System.currentTimeMillis()
+            firstAdvertisementTime = timestamp
         }
 
-        debugLog("updateAdvertisement", totalBeaconCount.toString() + ", timeSinceLastAdvertisement: " + timeSinceLastUpdate + ", scanRecord: ${scanRecord?.uuToHex()}")
-        lastAdvertisementTime = System.currentTimeMillis()
+        //debugLog("updateAdvertisement", totalBeaconCount.toString() + ", timeSinceLastAdvertisement: " + timeSinceLastUpdate + ", scanRecord: ${scanRecord?.uuToHex()}")
+        lastAdvertisementDeltaTime = timestamp - lastAdvertisementTime
+        lastAdvertisementTime = timestamp
         ++totalBeaconCount
         updateRssi(rssi)
         parseScanRecord()
+
+        debugLog("updateAdvertisement",
+            "address: $address, " +
+                    "name: ${name}, " +
+                    "beaconCount: ${totalBeaconCount}, " +
+                    "timestamp: ${lastAdvertisementTime.uuFormatAsRfc3339WithMillis()}, " +
+                    "delta: ${lastAdvertisementDeltaTime}, " +
+                    "rssi: $rssi")
     }
 
     fun totalBeaconCount(): Long
@@ -173,7 +188,7 @@ open class UUPeripheral() : Parcelable
         {
             val bluetoothManager = UUBluetooth.requireApplicationContext().getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
             var state = bluetoothManager.getConnectionState(device, BluetoothProfile.GATT)
-            debugLog("getConnectionState", "Actual connection state is: $state (${ConnectionState.fromProfileConnectionState(state)})")
+            //debugLog("getConnectionState", "Actual connection state is: $state (${ConnectionState.fromProfileConnectionState(state)})")
             val gatt = uuGatt
 
             if (gatt != null)
@@ -496,7 +511,7 @@ open class UUPeripheral() : Parcelable
     private fun parseFlags(data: ByteArray)
     {
         flags = data
-        debugLog("parseFlags", "Flags are: ${flags?.uuToHex()}")
+        //debugLog("parseFlags", "Flags are: ${flags?.uuToHex()}")
     }
 
     private fun parseServiceUuid(data: ByteArray, length: Int)

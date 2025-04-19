@@ -69,6 +69,8 @@ class UUScanRecord(private val scanResult: ScanResult)
             val dataType = bytes.uuReadUInt8(index)
             index += Byte.SIZE_BYTES
 
+            UULog.d(javaClass, "parseScanRecord", "DataType: $dataType")
+
             val dataLength = length - 1
             val data = bytes.uuSubData(index, dataLength)
             if (data == null)

@@ -2,6 +2,7 @@ package com.silverpine.uu.bluetooth
 
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.le.ScanResult
+import android.os.Build
 import android.os.ParcelUuid
 
 internal class UUBluetoothAdvertisement(
@@ -38,9 +39,19 @@ internal class UUBluetoothAdvertisement(
     override val timestamp: Long
         get() = scanResult.timestampNanos
 
-    override val services: Array<ParcelUuid>?
-        get() = scanResult.scanRecord?.serviceUuids?.toTypedArray()
+    override val services: List<ParcelUuid>?
+        get() = scanResult.scanRecord?.serviceUuids
 
     override val serviceData: Map<ParcelUuid,ByteArray>?
         get() = scanResult.scanRecord?.serviceData
+
+    override val solicitedServices: List<ParcelUuid>?
+        get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+        {
+            scanResult.scanRecord?.serviceSolicitationUuids
+        }
+        else
+        {
+            null
+        }
 }

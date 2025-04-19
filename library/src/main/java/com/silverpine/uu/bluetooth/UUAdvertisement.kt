@@ -13,15 +13,7 @@ interface UUAdvertisement
     val primaryPhy: Int
     val secondaryPhy: Int
     val timestamp: Long
-    val services: Array<ParcelUuid>?
+    val services: List<ParcelUuid>?
     val serviceData: Map<ParcelUuid,ByteArray>?
-
-    // var overflowServices: [CBUUID]? { get }
-
-//    val solicitedServices: Array<UUID>?
-//        get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-//            advertisementData?.scanRecord?.serviceSolicitationUuids?.map { it.uuid }?.toTypedArray()
-//        } else {
-//            TODO("VERSION.SDK_INT < Q")
-//        }
+    val solicitedServices: List<ParcelUuid>?
 }

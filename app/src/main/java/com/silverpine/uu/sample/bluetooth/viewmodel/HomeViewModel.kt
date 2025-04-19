@@ -1,16 +1,13 @@
 package com.silverpine.uu.sample.bluetooth.viewmodel
 
 import android.os.Bundle
-import android.widget.Toast
 import com.silverpine.uu.bluetooth.UUBluetooth
-import com.silverpine.uu.bluetooth.UUBluetoothScanner
+import com.silverpine.uu.bluetooth.UUBluetoothScanSettings
 import com.silverpine.uu.bluetooth.UUBluetoothSniffer
-import com.silverpine.uu.bluetooth.UUDefaultPeripheralFactory
-import com.silverpine.uu.bluetooth.UUOutOfRangePeripheralFilter
 import com.silverpine.uu.bluetooth.UUPeripheral
-import com.silverpine.uu.bluetooth.UUPeripheralFilter
+import com.silverpine.uu.bluetooth.UUPeripheralScanner
+import com.silverpine.uu.bluetooth.defaultScanner
 import com.silverpine.uu.core.uuDispatchMain
-import com.silverpine.uu.core.uuReadUInt8
 import com.silverpine.uu.logging.UULog
 import com.silverpine.uu.sample.bluetooth.R
 import com.silverpine.uu.sample.bluetooth.operations.ReadDeviceInfoOperation
@@ -20,12 +17,13 @@ import com.silverpine.uu.sample.bluetooth.ui.l2cap.L2CapServerActivity
 import com.silverpine.uu.ux.UUAlertDialog
 import com.silverpine.uu.ux.UUButton
 import com.silverpine.uu.ux.UUMenuItem
-import com.silverpine.uu.ux.UUToast
 import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModel
 
 class HomeViewModel: RecyclerViewModel()
 {
-    private val scanner: UUBluetoothScanner<UUPeripheral> = UUBluetoothScanner(UUBluetooth.requireApplicationContext(), UUDefaultPeripheralFactory())
+    // private val scanner: UUBluetoothScanner<UUPeripheral> = UUBluetoothScanner(UUBluetooth.requireApplicationContext(), UUDefaultPeripheralFactory())
+
+    private val scanner: UUPeripheralScanner = UUBluetooth.defaultScanner
     private val sniffer: UUBluetoothSniffer = UUBluetoothSniffer(UUBluetooth.requireApplicationContext())
 
     private var lastUpdate: Long = 0
@@ -34,10 +32,10 @@ class HomeViewModel: RecyclerViewModel()
 
     fun start()
     {
-        scanner.scanDelayedCallback =
+        /*scanner.scanDelayedCallback =
         { delayMillis ->
             onToast(UUToast("Scanning too frequently. Scan will resume in $delayMillis milliseconds", Toast.LENGTH_SHORT))
-        }
+        }*/
 
         stopScanning()
         updateMenu()
@@ -79,18 +77,20 @@ class HomeViewModel: RecyclerViewModel()
 
         //adapter.update(listOf())
 
-        val filters: ArrayList<UUPeripheralFilter<UUPeripheral>> = arrayListOf()
-        //filters.add(RequireMinimumRssiPeripheralFilter(-70))
-        //filters.add(RequireManufacturingDataPeripheralFilter())
-        //filters.add(IgnoreAppleBeaconsPeripheralFilter())
-        //filters.add(RequireNoNamePeripheralFilter())
-        //filters.add(RequireNamePeripheralFilter())
-        //filters.add(MacAddressFilter(listOf("00:11:22:33:44:55")))
+        val settings = UUBluetoothScanSettings()
 
-        val outOfRangeFilters: ArrayList<UUOutOfRangePeripheralFilter<UUPeripheral>> = arrayListOf()
+//        val filters: ArrayList<UUPeripheralFilter<UUPeripheral>> = arrayListOf()
+//        //filters.add(RequireMinimumRssiPeripheralFilter(-70))
+//        //filters.add(RequireManufacturingDataPeripheralFilter())
+//        //filters.add(IgnoreAppleBeaconsPeripheralFilter())
+//        //filters.add(RequireNoNamePeripheralFilter())
+//        //filters.add(RequireNamePeripheralFilter())
+//        //filters.add(MacAddressFilter(listOf("00:11:22:33:44:55")))
+//
+//        val outOfRangeFilters: ArrayList<UUOutOfRangePeripheralFilter<UUPeripheral>> = arrayListOf()
         //outOfRangeFilters.add(OutOfRangeFilter(30000))
 
-        scanner.startScanning(null, filters, outOfRangeFilters)
+        scanner.startScan(settings)
         { list ->
 
             val timeSinceLastUpdate = System.currentTimeMillis() - this.lastUpdate
@@ -250,7 +250,7 @@ class HomeViewModel: RecyclerViewModel()
     {
         //Log.d(TAG, "stopScanning")
 
-        scanner.stopScanning()
+        scanner.stopScan()
         updateMenu()
     }
 
@@ -259,6 +259,7 @@ class HomeViewModel: RecyclerViewModel()
         gotoActivity(L2CapServerActivity::class.java, null)
     }
 
+    /*
     inner class RequireNamePeripheralFilter: UUPeripheralFilter<UUPeripheral>
     {
         override fun shouldDiscoverPeripheral(peripheral: UUPeripheral): UUPeripheralFilter.Result
@@ -351,5 +352,5 @@ class HomeViewModel: RecyclerViewModel()
                 UUOutOfRangePeripheralFilter.Result.InRange
             }
         }
-    }
+    }*/
 }

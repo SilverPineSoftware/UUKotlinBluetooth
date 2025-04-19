@@ -1,5 +1,5 @@
 package com.silverpine.uu.bluetooth
-
+/*
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
@@ -485,4 +485,4 @@ class UUBluetoothScanner<T : UUPeripheral>(context: Context, factory: UUPeripher
             UULog.d(javaClass, method, "", exception)
         }
     }
-}
+}*/

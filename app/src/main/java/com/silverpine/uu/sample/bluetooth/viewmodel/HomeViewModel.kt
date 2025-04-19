@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.widget.Toast
 import com.silverpine.uu.bluetooth.UUBluetooth
 import com.silverpine.uu.bluetooth.UUBluetoothScanner
+import com.silverpine.uu.bluetooth.UUBluetoothSniffer
 import com.silverpine.uu.bluetooth.UUDefaultPeripheralFactory
 import com.silverpine.uu.bluetooth.UUOutOfRangePeripheralFilter
 import com.silverpine.uu.bluetooth.UUPeripheral
@@ -25,8 +26,11 @@ import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModel
 class HomeViewModel: RecyclerViewModel()
 {
     private val scanner: UUBluetoothScanner<UUPeripheral> = UUBluetoothScanner(UUBluetooth.requireApplicationContext(), UUDefaultPeripheralFactory())
+    private val sniffer: UUBluetoothSniffer = UUBluetoothSniffer(UUBluetooth.requireApplicationContext())
 
     private var lastUpdate: Long = 0
+
+
 
     fun start()
     {
@@ -53,10 +57,21 @@ class HomeViewModel: RecyclerViewModel()
         }
 
         list.add(UUMenuItem(R.string.open_l2cap_server, this::openL2CapServer))
+        list.add(UUMenuItem("Start Sniffer", this::startSniffer))
+        list.add(UUMenuItem("Stop Sniffer", this::stopSniffer))
 
         return list
     }
 
+    private fun startSniffer()
+    {
+        sniffer.start()
+    }
+
+    private fun stopSniffer()
+    {
+        sniffer.stop()
+    }
 
     private fun startScanning()
     {
@@ -65,14 +80,15 @@ class HomeViewModel: RecyclerViewModel()
         //adapter.update(listOf())
 
         val filters: ArrayList<UUPeripheralFilter<UUPeripheral>> = arrayListOf()
-        filters.add(RequireMinimumRssiPeripheralFilter(-70))
+        //filters.add(RequireMinimumRssiPeripheralFilter(-70))
         //filters.add(RequireManufacturingDataPeripheralFilter())
         //filters.add(IgnoreAppleBeaconsPeripheralFilter())
         //filters.add(RequireNoNamePeripheralFilter())
-        filters.add(RequireNamePeripheralFilter())
+        //filters.add(RequireNamePeripheralFilter())
+        //filters.add(MacAddressFilter(listOf("00:11:22:33:44:55")))
 
         val outOfRangeFilters: ArrayList<UUOutOfRangePeripheralFilter<UUPeripheral>> = arrayListOf()
-        outOfRangeFilters.add(OutOfRangeFilter(30000))
+        //outOfRangeFilters.add(OutOfRangeFilter(30000))
 
         scanner.startScanning(null, filters, outOfRangeFilters)
         { list ->

@@ -7,7 +7,7 @@ import androidx.annotation.RequiresApi
 import com.silverpine.uu.bluetooth.UUBluetooth
 import com.silverpine.uu.bluetooth.UUL2CapClient
 import com.silverpine.uu.bluetooth.UUPeripheral
-import com.silverpine.uu.core.UUDate
+import com.silverpine.uu.core.UUDate.Constants.millisInOneMinute
 import com.silverpine.uu.core.UUError
 import com.silverpine.uu.core.UURandom
 import com.silverpine.uu.core.UUResources
@@ -143,7 +143,7 @@ class L2CapClientViewModel: L2CapBaseViewModel()
 
         appendOutput("Writing Image, ${tx.size} bytes")
         val start = System.currentTimeMillis()
-        channel.sendCommand(tx,UUDate.MILLIS_IN_ONE_MINUTE * 5, UUDate.MILLIS_IN_ONE_MINUTE * 5, L2CapCommand.HEADER_SIZE)
+        channel.sendCommand(tx,millisInOneMinute * 5, millisInOneMinute * 5, L2CapCommand.HEADER_SIZE)
         { _, rxErr ->
 
             val duration = System.currentTimeMillis() - start
@@ -157,7 +157,7 @@ class L2CapClientViewModel: L2CapBaseViewModel()
         val tx = UURandom.bytes(count)
         appendOutput("Writing ${tx.size} random bytes")
         val start = System.currentTimeMillis()
-        channel.write(tx, UUDate.MILLIS_IN_ONE_MINUTE * 5)
+        channel.write(tx, millisInOneMinute * 5)
         { txErr ->
             val duration = System.currentTimeMillis() - start
             appendOutput("Write random bytes done, took $duration millis, err: $txErr")

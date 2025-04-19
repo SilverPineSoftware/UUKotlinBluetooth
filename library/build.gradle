@@ -32,9 +32,14 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
+        sourceCompatibility java_version
+        targetCompatibility java_version
+    }
+
+    kotlinOptions {
+        jvmTarget = java_version
     }
 
     buildFeatures {
@@ -46,9 +51,9 @@ android {
 
 dependencies {
 
-    implementation 'androidx.annotation:annotation:1.8.0'
+    implementation 'androidx.annotation:annotation:1.9.1'
     implementation 'androidx.appcompat:appcompat:1.7.0'
-    implementation 'androidx.core:core-ktx:1.13.1'
+    implementation 'androidx.core:core-ktx:1.16.0'
 
     implementation "com.silverpine.uu:uu-core-ktx:${uu_core_version}"
 
@@ -56,12 +61,12 @@ dependencies {
     testImplementation "com.silverpine.uu:uu-core-ktx:${uu_core_version}"
     testImplementation "com.silverpine.uu:uu-test-ktx:${uu_test_version}"
 
-    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
     androidTestImplementation "com.silverpine.uu:uu-core-ktx:${uu_core_version}"
     androidTestImplementation "com.silverpine.uu:uu-ux-ktx:${uu_ux_version}"
     androidTestImplementation "com.silverpine.uu:uu-test-ktx:${uu_test_version}"
-    androidTestImplementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    androidTestImplementation 'androidx.constraintlayout:constraintlayout:2.2.1'
 }
 
 

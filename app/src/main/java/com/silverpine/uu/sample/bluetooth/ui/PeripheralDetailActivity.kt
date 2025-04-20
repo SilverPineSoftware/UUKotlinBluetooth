@@ -38,8 +38,6 @@ class PeripheralDetailActivity : UURecyclerActivity()
 
         peripheral = p
 
-        //peripheral = intent.uuRequireParcelable("peripheral")
-
         title = peripheral.name
     }
 
@@ -55,9 +53,9 @@ class PeripheralDetailActivity : UURecyclerActivity()
         if (viewModel is ServiceViewModel)
         {
             val intent = Intent(applicationContext, ServiceDetailActivity::class.java)
-            // intent.putExtra("peripheral", peripheral)
+            intent.putExtra("peripheral.identifier", peripheral.identifier)
             intent.putExtra("service", viewModel.model)
-            intent.putExtra("serviceUuid", viewModel.model.uuid.toString())
+            // intent.putExtra("serviceUuid", viewModel.model.uuid.toString())
             startActivity(intent)
         }
     }

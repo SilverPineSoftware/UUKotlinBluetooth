@@ -6,8 +6,10 @@ import android.os.Bundle
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.recyclerview.widget.RecyclerView
+import com.silverpine.uu.bluetooth.UUBluetooth
 import com.silverpine.uu.bluetooth.UUPeripheral
 import com.silverpine.uu.bluetooth.UUPeripheralConnectionState
+import com.silverpine.uu.bluetooth.defaultScanner
 import com.silverpine.uu.bluetooth.uuCanReadData
 import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.sample.bluetooth.BR
@@ -18,6 +20,7 @@ import com.silverpine.uu.sample.bluetooth.viewmodel.ServiceViewModel
 import com.silverpine.uu.ux.UUMenuHandler
 import com.silverpine.uu.ux.UURecyclerActivity
 import com.silverpine.uu.ux.uuRequireParcelable
+import com.silverpine.uu.ux.uuRequireString
 import com.silverpine.uu.ux.uuShowToast
 import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModel
 import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModelMapping
@@ -33,8 +36,13 @@ class ServiceDetailActivity: UURecyclerActivity()
     {
         super.onCreate(savedInstanceState)
 
-        peripheral = intent.uuRequireParcelable("peripheral")
-        service = intent.uuRequireService(peripheral,"serviceUuid")
+        val peripheralIdentifier = intent.uuRequireString("peripheral.identifier")
+        val p = UUBluetooth.defaultScanner.getPeripheral(peripheralIdentifier)
+            ?: throw RuntimeException("Expect peripheral $peripheralIdentifier to exist!")
+
+        peripheral = p
+
+        service = intent.uuRequireParcelable("service")
         title = peripheral.name
     }
 

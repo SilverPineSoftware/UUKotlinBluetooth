@@ -1,12 +1,14 @@
 package com.silverpine.uu.sample.bluetooth.ui.l2cap
 
 import android.annotation.SuppressLint
+import android.bluetooth.BluetoothGattService
 import android.os.Build
 import androidx.annotation.RawRes
 import androidx.annotation.RequiresApi
 import com.silverpine.uu.bluetooth.UUBluetooth
 import com.silverpine.uu.bluetooth.UUL2CapClient
 import com.silverpine.uu.bluetooth.UUPeripheral
+import com.silverpine.uu.bluetooth.UUPeripheralConnectionState
 import com.silverpine.uu.core.UUDate.Constants.millisInOneMinute
 import com.silverpine.uu.core.UUError
 import com.silverpine.uu.core.UURandom
@@ -27,6 +29,8 @@ class L2CapClientViewModel: L2CapBaseViewModel()
     private lateinit var peripheral: UUPeripheral
     private lateinit var channel: UUL2CapClient
     private var pingCount: Int = 0
+
+    private var discoveredServices: List<BluetoothGattService>? = null
 
     fun update(peripheral: UUPeripheral)
     {
@@ -211,7 +215,7 @@ class L2CapClientViewModel: L2CapBaseViewModel()
             list.add(UUMenuItem(R.string.connect_l2cap, this::onConnect))
         }
 
-        if (peripheral.connectionState != UUPeripheral.ConnectionState.Connected)
+        if (peripheral.peripheralState != UUPeripheralConnectionState.Connected)
         {
             list.add(UUMenuItem(R.string.connect_gatt, this::onConnectGatt))
         }
@@ -229,7 +233,7 @@ class L2CapClientViewModel: L2CapBaseViewModel()
     private fun onConnectGatt()
     {
         appendOutput("Connecting to GATT Layer...")
-        peripheral.connect(10000L, 10000L,
+        peripheral.connect(10000L,
         {
             appendOutput("GATT Layer was connected")
             updateMenu()
@@ -243,18 +247,20 @@ class L2CapClientViewModel: L2CapBaseViewModel()
     private fun onDisconnectGatt()
     {
         appendOutput("Disconnecting GATT Layer")
-        peripheral.disconnect(null)
+        peripheral.disconnect(10000) //null)
         updateMenu()
     }
 
     private fun onDiscoverGattServices()
     {
         appendOutput("Discovering GATT Services")
-        peripheral.discoverServices(10000L)
+        peripheral.discoverServices(null, 10000L)
         { services, error ->
-            appendOutput("Discover Services completed, found ${services.size} services, error: $error")
+            appendOutput("Discover Services completed, found ${services?.size} services, error: $error")
 
-            services.forEach()
+            this.discoveredServices = services
+
+            services?.forEach()
             {
                 appendOutput("Service: ${it.uuid}, ${UUBluetooth.bluetoothSpecName(it.uuid)}")
             }
@@ -265,17 +271,17 @@ class L2CapClientViewModel: L2CapBaseViewModel()
 
     private fun onReadPsmChannel()
     {
-        val service = peripheral.discoveredServices().firstOrNull { it.uuid == L2CapConstants.UU_L2CAP_SERVICE_UUID }
+        val service = discoveredServices?.firstOrNull { it.uuid == L2CapConstants.UU_L2CAP_SERVICE_UUID }
         val psmCharacteristic = service?.characteristics?.firstOrNull { it.uuid == L2CapConstants.UU_L2CAP_PSM_CHARACTERISTIC_UUID }
         psmCharacteristic?.let()
         {
-            peripheral.readCharacteristic(it, 10000L)
+            peripheral.readValue(it, 10000L)
             { peripheral, characteristic, error ->
 
                 error?.let()
                 { err ->
                     appendOutput("Failed to read PSM: $err")
-                    return@let
+                    return@readValue
                 }
 
                 val psm = characteristic.value.uuReadInt32(ByteOrder.LITTLE_ENDIAN, 0)
@@ -286,17 +292,17 @@ class L2CapClientViewModel: L2CapBaseViewModel()
 
     private fun onReadChannelEncryptedFlag()
     {
-        val service = peripheral.discoveredServices().firstOrNull { it.uuid == L2CapConstants.UU_L2CAP_SERVICE_UUID }
+        val service = discoveredServices?.firstOrNull { it.uuid == L2CapConstants.UU_L2CAP_SERVICE_UUID }
         val psmCharacteristic = service?.characteristics?.firstOrNull { it.uuid == L2CapConstants.UU_L2CAP_CHANNEL_ENCRYPTED_CHARACTERISTIC_UUID }
         psmCharacteristic?.let()
         {
-            peripheral.readCharacteristic(it, 10000L)
+            peripheral.readValue(it, 10000L)
             { peripheral, characteristic, error ->
 
                 error?.let()
                 { err ->
                     appendOutput("Failed to read channel encrypted: $err")
-                    return@let
+                    return@readValue
                 }
 
                 val secure = characteristic.value.uuReadUInt8(0)

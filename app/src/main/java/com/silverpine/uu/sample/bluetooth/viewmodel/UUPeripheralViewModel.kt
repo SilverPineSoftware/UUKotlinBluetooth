@@ -1,5 +1,6 @@
 package com.silverpine.uu.sample.bluetooth.viewmodel
 
+import android.os.ParcelUuid
 import android.text.TextUtils
 import android.view.View
 import androidx.lifecycle.LiveData
@@ -29,13 +30,13 @@ class UUPeripheralViewModel(val model: UUPeripheral): UUAdapterItemViewModel()
     init
     {
         _friendlyName.value = "${model.name}"
-        _macAddress.value = "${model.address}\n${TextUtils.join("\n", model.serviceUuids)}"
+        _macAddress.value = "${model.identifier}\n${TextUtils.join("\n", model.advertisement.services?.map { it.uuid }?.toList() ?: ArrayList<ParcelUuid>(0))}"
 
-        _connectionState.value = "${model.connectionState}"
+        _connectionState.value = "${model.peripheralState}"
         _rssi.value = "${model.rssi}"
         _timeSinceLastUpdate.value = "${model.timeSinceLastUpdate}"
 
-        model.manufacturingData?.let()
+        model.advertisement.manufacturingData?.let()
         {
             _manufacturingData.value = it.uuToHex()
         } ?: run()

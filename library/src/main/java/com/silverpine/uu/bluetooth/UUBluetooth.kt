@@ -24,6 +24,13 @@ import java.util.UUID
 @SuppressWarnings("unused")
 object UUBluetooth
 {
+    object Constants
+    {
+        /**
+         * Special constant used to indicate that an RSSI reading is not available.
+         */
+        val noRssi: Int = 127
+    }
     /**
      * Gets the current framework version
      *

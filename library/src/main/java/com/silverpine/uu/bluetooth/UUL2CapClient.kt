@@ -37,14 +37,14 @@ class UUL2CapClient(private val peripheral: UUPeripheral): UUL2CapChannel()
             {
                 val sock = if (secure)
                 {
-                    peripheral.bluetoothDevice.createL2capChannel(psm)
+                    peripheral.createL2capChannel(psm)
                 }
                 else
                 {
-                    peripheral.bluetoothDevice.createInsecureL2capChannel(psm)
+                    peripheral.createInsecureL2capChannel(psm)
                 }
 
-                sock.connect()
+                sock?.connect()
                 socket = sock
             }
             catch (ex: Exception)

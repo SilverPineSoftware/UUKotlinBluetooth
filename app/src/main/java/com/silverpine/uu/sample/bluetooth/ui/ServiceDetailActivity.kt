@@ -7,6 +7,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.recyclerview.widget.RecyclerView
 import com.silverpine.uu.bluetooth.UUPeripheral
+import com.silverpine.uu.bluetooth.UUPeripheralConnectionState
 import com.silverpine.uu.bluetooth.uuCanReadData
 import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.sample.bluetooth.BR
@@ -52,7 +53,7 @@ class ServiceDetailActivity: UURecyclerActivity()
 
     override fun populateMenu(menuHandler: UUMenuHandler)
     {
-        if (peripheral.connectionState == UUPeripheral.ConnectionState.Connected)
+        if (peripheral.peripheralState == UUPeripheralConnectionState.Connected)
         {
             menuHandler.add(R.string.disconnect, this::handleDisconnect)
             menuHandler.add(R.string.read_all, this::handleReadAll)
@@ -70,7 +71,7 @@ class ServiceDetailActivity: UURecyclerActivity()
 
     private fun handleConnect()
     {
-        peripheral.connect(60000, 10000, {
+        peripheral.connect(60000, {
 
             Log.d("LOG", "Peripheral connected")
             uuShowToast("Connected")
@@ -87,7 +88,7 @@ class ServiceDetailActivity: UURecyclerActivity()
 
     private fun handleDisconnect()
     {
-        peripheral.disconnect(null)
+        peripheral.disconnect(10000) //null)
     }
 
     private fun handleReadAll()
@@ -101,10 +102,10 @@ class ServiceDetailActivity: UURecyclerActivity()
         val char = list.removeFirstOrNull()
         char?.let()
         { chr ->
-            peripheral.readCharacteristic(chr, 10000)
+            peripheral.readValue(chr, 10000)
             { _, updatedChar, _ ->
 
-                val vm = charViewModels.firstOrNull { it.model.uuid == chr.uuid  } ?: return@readCharacteristic
+                val vm = charViewModels.firstOrNull { it.model.uuid == chr.uuid  } ?: return@readValue
 
                 uuDispatchMain()
                 {

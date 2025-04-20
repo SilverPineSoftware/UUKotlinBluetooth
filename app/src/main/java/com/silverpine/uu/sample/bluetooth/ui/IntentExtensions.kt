@@ -9,6 +9,8 @@ fun Intent.uuRequireService(peripheral: UUPeripheral, key: String): BluetoothGat
 {
     val serviceUUid = uuRequireString("serviceUuid")
 
-    return peripheral.getDiscoveredService(serviceUUid)
-        ?: throw RuntimeException("Unable to get discovered service with UUID $serviceUUid")
+    // TODO: Implement this
+    throw throw RuntimeException("Unable to get discovered service with UUID $serviceUUid")
+//    return peripheral.getDiscoveredService(serviceUUid)
+//        ?: throw RuntimeException("Unable to get discovered service with UUID $serviceUUid")
 }

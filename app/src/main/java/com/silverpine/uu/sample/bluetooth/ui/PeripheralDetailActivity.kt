@@ -5,19 +5,22 @@ import android.os.Bundle
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.recyclerview.widget.RecyclerView
+import com.silverpine.uu.bluetooth.UUBluetooth
 import com.silverpine.uu.bluetooth.UUPeripheral
+import com.silverpine.uu.bluetooth.UUPeripheralConnectionState
+import com.silverpine.uu.bluetooth.defaultScanner
 import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.sample.bluetooth.BR
 import com.silverpine.uu.sample.bluetooth.R
 import com.silverpine.uu.sample.bluetooth.viewmodel.LabelValueViewModel
 import com.silverpine.uu.sample.bluetooth.viewmodel.SectionHeaderViewModel
 import com.silverpine.uu.sample.bluetooth.viewmodel.ServiceViewModel
-import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModel
-import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModelMapping
 import com.silverpine.uu.ux.UUMenuHandler
 import com.silverpine.uu.ux.UURecyclerActivity
-import com.silverpine.uu.ux.uuRequireParcelable
+import com.silverpine.uu.ux.uuRequireString
 import com.silverpine.uu.ux.uuShowToast
+import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModel
+import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModelMapping
 
 class PeripheralDetailActivity : UURecyclerActivity()
 {
@@ -26,7 +29,13 @@ class PeripheralDetailActivity : UURecyclerActivity()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        peripheral = intent.uuRequireParcelable("peripheral")
+        val peripheralIdentifier = intent.uuRequireString("peripheral.identifier")
+        val p = UUBluetooth.defaultScanner.getPeripheral(peripheralIdentifier)
+            ?: throw RuntimeException("Expect peripheral ${peripheralIdentifier} to exist!")
+
+        peripheral = p
+
+        //peripheral = intent.uuRequireParcelable("peripheral")
 
         title = peripheral.name
     }
@@ -43,7 +52,7 @@ class PeripheralDetailActivity : UURecyclerActivity()
         if (viewModel is ServiceViewModel)
         {
             val intent = Intent(applicationContext, ServiceDetailActivity::class.java)
-            intent.putExtra("peripheral", peripheral)
+            // intent.putExtra("peripheral", peripheral)
             intent.putExtra("service", viewModel.model)
             intent.putExtra("serviceUuid", viewModel.model.uuid.toString())
             startActivity(intent)
@@ -58,7 +67,7 @@ class PeripheralDetailActivity : UURecyclerActivity()
 
     override fun populateMenu(menuHandler: UUMenuHandler)
     {
-        if (peripheral.connectionState == UUPeripheral.ConnectionState.Connected)
+        if (peripheral.peripheralState == UUPeripheralConnectionState.Connected)
         {
             menuHandler.add(R.string.disconnect, this::handleDisconnect)
             menuHandler.add(R.string.discover_services, this::handleDiscoverServices)
@@ -71,7 +80,7 @@ class PeripheralDetailActivity : UURecyclerActivity()
 
     private fun handleConnect()
     {
-        peripheral.connect(60000, 10000,
+        peripheral.connect(60000,
             {
 
             Log.d("LOG", "Peripheral connected")
@@ -89,7 +98,7 @@ class PeripheralDetailActivity : UURecyclerActivity()
 
     private fun handleDiscoverServices()
     {
-        peripheral.discoverServices(60000)
+        peripheral.discoverServices(null, 60000)
         { services, error ->
             uuShowToast("Found ${services?.size ?: 0} services")
 
@@ -99,7 +108,7 @@ class PeripheralDetailActivity : UURecyclerActivity()
 
     private fun handleDisconnect()
     {
-        peripheral.disconnect(null)
+        peripheral.disconnect(10000) //null)
     }
 
     private fun refreshUi()
@@ -108,14 +117,15 @@ class PeripheralDetailActivity : UURecyclerActivity()
         {
             val tmp = ArrayList<UUAdapterItemViewModel>()
             tmp.add(SectionHeaderViewModel(R.string.info))
-            tmp.add(LabelValueViewModel(R.string.address_label.load(), peripheral.address))
+            tmp.add(LabelValueViewModel(R.string.address_label.load(), peripheral.identifier))
             tmp.add(LabelValueViewModel(R.string.name_label.load(), peripheral.name))
-            tmp.add(LabelValueViewModel(R.string.state_label.load(), peripheral.connectionState.name))
+            tmp.add(LabelValueViewModel(R.string.state_label.load(), peripheral.peripheralState.name))
             tmp.add(LabelValueViewModel(R.string.rssi_label.load(), "${peripheral.rssi}"))
             tmp.add(LabelValueViewModel(R.string.mtu_size_label.load(), "${peripheral.negotiatedMtuSize}"))
 
             tmp.add(SectionHeaderViewModel(R.string.services))
-            tmp.addAll(peripheral.discoveredServices().map { ServiceViewModel(it) })
+            // TODO: fix
+            // tmp.addAll(peripheral.discoveredServices().map { ServiceViewModel(it) })
             adapter.update(tmp)
         }
     }

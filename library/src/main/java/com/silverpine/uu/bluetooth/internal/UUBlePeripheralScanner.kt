@@ -1,4 +1,4 @@
-package com.silverpine.uu.bluetooth
+package com.silverpine.uu.bluetooth.internal
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
@@ -7,6 +7,12 @@ import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.content.Context
+import com.silverpine.uu.bluetooth.UUBluetoothScanSettings
+import com.silverpine.uu.bluetooth.UUPeripheral
+import com.silverpine.uu.bluetooth.UUPeripheralScanner
+import com.silverpine.uu.bluetooth.buildScanSettings
+import com.silverpine.uu.bluetooth.buildUuidFilters
+import com.silverpine.uu.bluetooth.callbackThrottleMillis
 import com.silverpine.uu.logging.UULog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -116,6 +122,14 @@ class UUBlePeripheralScanner(context: Context) : UUPeripheralScanner
         bluetoothLeScanner.stopScan(scanCallback)
     }
 
+    override fun getPeripheral(identifier: String): UUPeripheral?
+    {
+        synchronized(nearbyPeripheralMap)
+        {
+            return nearbyPeripheralMap[identifier]
+        }
+    }
+
     private fun clearNearbyPeripherals()
     {
         synchronized(nearbyPeripheralMap) {
@@ -153,7 +167,7 @@ class UUBlePeripheralScanner(context: Context) : UUPeripheralScanner
 
         synchronized(nearbyPeripheralMap)
         {
-            val existing = nearbyPeripheralMap[advertisement.address] ?: UUPeripheral(advertisement.device)
+            val existing = nearbyPeripheralMap[advertisement.address] ?: UUBluetoothDevicePeripheral(advertisement)
 
             //existing.update(advertisement)
 

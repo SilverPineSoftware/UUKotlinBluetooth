@@ -126,7 +126,7 @@ class HomeViewModel: RecyclerViewModel()
         items.add(UUButton("Start L2Cap Client") { gotoL2CapClient(peripheral) })
 
         val dlg = UUAlertDialog()
-        dlg.title = "Choose an action for ${peripheral.name} - ${peripheral.address}"
+        dlg.title = "Choose an action for ${peripheral.name} - ${peripheral.identifier}"
         dlg.items = items
 
         showAlertDialog(dlg)
@@ -135,7 +135,7 @@ class HomeViewModel: RecyclerViewModel()
     private fun gotoPeripheralServices(peripheral: UUPeripheral)
     {
         val args = Bundle()
-        args.putParcelable("peripheral", peripheral)
+        args.putString("peripheral.identifier", peripheral.identifier)
 
         gotoActivity(PeripheralDetailActivity::class.java, args)
     }
@@ -143,7 +143,7 @@ class HomeViewModel: RecyclerViewModel()
     private fun gotoL2CapClient(peripheral: UUPeripheral)
     {
         val args = Bundle()
-        args.putParcelable("peripheral", peripheral)
+        args.putString("peripheral.identifier", peripheral.identifier)
 
         gotoActivity(L2CapClientActivity::class.java, args)
     }
@@ -219,8 +219,8 @@ class HomeViewModel: RecyclerViewModel()
         return Comparator()
         { lhs: UUPeripheralViewModel, rhs: UUPeripheralViewModel ->
 
-            val lhsValue = lhs.model.lastRssiUpdateTime
-            val rhsValue = rhs.model.lastRssiUpdateTime
+            val lhsValue = lhs.model.timeSinceLastUpdate
+            val rhsValue = rhs.model.timeSinceLastUpdate
 
             if (lhsValue > rhsValue)
             {
@@ -239,8 +239,8 @@ class HomeViewModel: RecyclerViewModel()
         return Comparator()
         { lhs: UUPeripheralViewModel, rhs: UUPeripheralViewModel ->
 
-            val lhsValue = lhs.model.address ?: ""
-            val rhsValue = rhs.model.address ?: ""
+            val lhsValue = lhs.model.identifier
+            val rhsValue = rhs.model.identifier
 
             lhsValue.compareTo(rhsValue)
         }

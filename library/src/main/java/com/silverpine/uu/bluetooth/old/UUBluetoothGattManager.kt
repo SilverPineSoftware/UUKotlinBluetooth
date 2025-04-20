@@ -1,5 +1,6 @@
-package com.silverpine.uu.bluetooth
+package com.silverpine.uu.bluetooth.old
 
+/*
 import com.silverpine.uu.core.uuIsNotEmpty
 import com.silverpine.uu.logging.UULog
 
@@ -32,3 +33,5 @@ internal object UUBluetoothGattManager
         return gatt
     }
 }
+
+*/

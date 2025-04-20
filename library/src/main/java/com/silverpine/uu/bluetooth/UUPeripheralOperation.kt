@@ -29,15 +29,23 @@ import java.util.UUID
 
 abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral: T)
 {
+    object Defaults
+    {
+        const val ConnectTimeout = 60000
+        const val DisconnectTimeout = 10000
+        const val ServiceDiscoveryTimeout = 60000
+        const val OperationTimeout = 60000
+    }
+
     private var operationCallback: ((UUError?)->Unit)? = null
     val discoveredServices = ArrayList<BluetoothGattService>()
     val discoveredCharacteristics = ArrayList<BluetoothGattCharacteristic>()
     private val servicesNeedingCharacteristicDiscovery = ArrayList<BluetoothGattService>()
-    var connectTimeout = UUPeripheral.Defaults.ConnectTimeout.toLong()
-    var disconnectTimeout = UUPeripheral.Defaults.DisconnectTimeout.toLong()
-    var serviceDiscoveryTimeout = UUPeripheral.Defaults.ServiceDiscoveryTimeout.toLong()
-    protected val readTimeout = UUPeripheral.Defaults.OperationTimeout.toLong()
-    protected val writeTimeout = UUPeripheral.Defaults.OperationTimeout.toLong()
+    var connectTimeout = Defaults.ConnectTimeout.toLong()
+    var disconnectTimeout = Defaults.DisconnectTimeout.toLong()
+    var serviceDiscoveryTimeout = Defaults.ServiceDiscoveryTimeout.toLong()
+    protected val readTimeout = Defaults.OperationTimeout.toLong()
+    protected val writeTimeout = Defaults.OperationTimeout.toLong()
 
     val connectMetric = UUTimedMetric("connect")
     val serviceDiscoveryMetric = UUTimedMetric("service_discovery")
@@ -85,12 +93,12 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
         requireDiscoveredCharacteristic(toCharacteristic)
         { characteristic ->
 
-            peripheral.writeCharacteristic(characteristic, data, writeTimeout)
-            { _, _, error: UUError? ->
+            peripheral.writeValue(data, characteristic, writeTimeout)
+            { peripheral, char, error ->
                 if (error != null)
                 {
                     end(error)
-                    return@writeCharacteristic
+                    return@writeValue
                 }
 
                 completion()
@@ -103,8 +111,14 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
         requireDiscoveredCharacteristic(toCharacteristic)
         { characteristic ->
 
-            peripheral.writeCharacteristic(characteristic, data, writeTimeout)
-            { _, _, error: UUError? ->
+            peripheral.writeValue(data, characteristic, writeTimeout)
+            { peripheral, char, error ->
+                if (error != null)
+                {
+                    end(error)
+                    return@writeValue
+                }
+
                 completion(error)
             }
         }
@@ -114,13 +128,13 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
     {
         requireDiscoveredCharacteristic(toCharacteristic)
         { characteristic ->
-            peripheral.writeCharacteristicWithoutResponse(characteristic, data, writeTimeout)
+            peripheral.writeValueWithoutResponse(data, characteristic)
             { _, _, error: UUError? ->
 
                 if (error != null)
                 {
                     end(error)
-                    return@writeCharacteristicWithoutResponse
+                    return@writeValueWithoutResponse
                 }
 
                 completion()
@@ -132,13 +146,13 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
     {
         requireDiscoveredCharacteristic(fromCharacteristic)
         { characteristic ->
-            peripheral.readCharacteristic(characteristic, readTimeout)
+            peripheral.readValue(characteristic, readTimeout)
             { _, _, error: UUError? ->
 
                 if (error != null)
                 {
                     end(error)
-                    return@readCharacteristic
+                    return@readValue
                 }
 
                 completion(characteristic.value)
@@ -393,7 +407,7 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
         overallTimeMetric.start()
 
         operationCallback = completion
-        peripheral.connect(connectTimeout, disconnectTimeout, { handleConnected() })
+        peripheral.connect(connectTimeout, { handleConnected() })
         { disconnectError: UUError? ->
             handleDisconnection(
                 disconnectError
@@ -405,7 +419,8 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
     {
         UULog.d(javaClass, "end", "${javaClass.simpleName}, Ending operation, error: $error")
         //debug(javaClass, "end", "**** Ending Operation with error: " + UUString.safeToString(error))
-        peripheral.disconnect(error)
+        // peripheral.disconnect(error)
+        peripheral.disconnect(disconnectTimeout)
     }
 
     fun interrupt()
@@ -423,7 +438,7 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
 
         serviceDiscoveryMetric.start()
 
-        peripheral.discoverServices(serviceDiscoveryTimeout)
+        peripheral.discoverServices(null, serviceDiscoveryTimeout)
         { services, error ->
 
             if (error != null)
@@ -436,15 +451,18 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
             discoveredCharacteristics.clear()
             servicesNeedingCharacteristicDiscovery.clear()
 
-            if (services.isEmpty())
+            if (services?.isEmpty() == true)
             {
                 val err = operationFailedError("No Services Found")
                 end(err)
                 return@discoverServices
             }
 
-            discoveredServices.addAll(services)
-            servicesNeedingCharacteristicDiscovery.addAll(services)
+            services?.let()
+            {
+                discoveredServices.addAll(services)
+                servicesNeedingCharacteristicDiscovery.addAll(services)
+            }
 
             serviceDiscoveryMetric.end()
             UULog.d(javaClass, "handleConnected", "Service Discovery took ${connectMetric.duration} ms")
@@ -514,26 +532,30 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
         requireDiscoveredCharacteristic(characteristicUuid)
         { characteristic ->
 
-            peripheral.setNotifyState(characteristic, true, readTimeout,
-                { _, characteristic1: BluetoothGattCharacteristic, error: UUError? ->
-                    if (error != null)
-                    {
-                        end(error)
-                        return@setNotifyState
-                    }
+            peripheral.setNotifyValue(true, characteristic, readTimeout,
+                notifyHandler =
+                    { p, chr, error ->
 
-                    dataChanged(characteristic1.value)
-                })
-                { _, _, error: UUError? ->
+                        if (error != null)
+                        {
+                            end(error)
+                            return@setNotifyValue
+                        }
 
-                    if (error != null)
-                    {
-                        end(error)
-                        return@setNotifyState
-                    }
+                        dataChanged(chr.value)
 
-                    completion()
-                }
+                    },
+                completion =
+                    { p, chr, error ->
+
+                        if (error != null)
+                        {
+                            end(error)
+                            return@setNotifyValue
+                        }
+
+                        completion()
+                    })
         }
     }
 
@@ -541,6 +563,22 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
     {
         requireDiscoveredCharacteristic(characteristicUuid)
         { characteristic ->
+
+            peripheral.setNotifyValue(false, characteristic, readTimeout,
+                notifyHandler = null,
+                completion =
+                    { p, chr, error ->
+
+                        if (error != null)
+                        {
+                            end(error)
+                            return@setNotifyValue
+                        }
+
+                        completion()
+                    })
+
+            /*
             peripheral.setNotifyState(characteristic, false, readTimeout, null)
             { _, _, error: UUError? ->
 
@@ -551,7 +589,7 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
                 }
 
                 completion()
-            }
+            }*/
         }
     }
 }

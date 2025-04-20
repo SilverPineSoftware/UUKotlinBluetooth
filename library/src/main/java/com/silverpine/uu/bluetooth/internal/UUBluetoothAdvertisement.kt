@@ -1,9 +1,10 @@
-package com.silverpine.uu.bluetooth
+package com.silverpine.uu.bluetooth.internal
 
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.le.ScanResult
 import android.os.Build
 import android.os.ParcelUuid
+import com.silverpine.uu.bluetooth.UUAdvertisement
 
 internal class UUBluetoothAdvertisement(
     private val scanResult: ScanResult,

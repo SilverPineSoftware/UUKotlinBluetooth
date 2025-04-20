@@ -1,4 +1,7 @@
-package com.silverpine.uu.bluetooth
+package com.silverpine.uu.bluetooth.old
+
+/*
+
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
@@ -1405,3 +1408,5 @@ internal class UUBluetoothGatt(private val context: Context, peripheral: UUPerip
         closeGatt()
     }
 }
+
+*/

@@ -95,7 +95,7 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: B
 
     fun readData()
     {
-        peripheral.readCharacteristic(model, 60000)
+        peripheral.readValue(model, 60000)
         { p, updatedCharacteristic, error ->
 
             uuDispatchMain()
@@ -109,8 +109,9 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: B
     {
         val isNotifying = model.uuIsNotifying()
 
-        peripheral.setNotifyState(model,
+        peripheral.setNotifyValue(
             !isNotifying,
+            model,
             30000,
             { peripheral, characteristic, error -> //UULog.debug(javaClass, "setNotify.characteristicChanged",
                 //  "Characteristic changed, characteristic: " + characteristic.uuid +
@@ -143,7 +144,7 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: B
 
             Log.d("DEBUG", "Writing $hex")
 
-            peripheral.writeCharacteristic(model, tx!!, 10000)
+            peripheral.writeValue(tx!!, model, 10000)
             { p, c, e ->
 
                 uuDispatchMain()
@@ -163,7 +164,7 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: B
 
             Log.d("DEBUG", "Writing WWOR $hex")
 
-            peripheral.writeCharacteristicWithoutResponse(model, tx!!, 10000)
+            peripheral.writeValueWithoutResponse(tx!!, model)
             { p, c, e ->
 
                 uuDispatchMain()

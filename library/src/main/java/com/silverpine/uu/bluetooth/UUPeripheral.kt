@@ -40,7 +40,6 @@ interface UUPeripheral
     fun disconnect(timeout: Long)
 
     fun discoverServices(
-        serviceUUIDs: List<ParcelUuid>?,
         timeout: Long,
         completion: UUDiscoverServicesCompletionBlock)
 

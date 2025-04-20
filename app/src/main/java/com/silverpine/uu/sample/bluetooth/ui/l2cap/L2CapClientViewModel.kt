@@ -254,7 +254,7 @@ class L2CapClientViewModel: L2CapBaseViewModel()
     private fun onDiscoverGattServices()
     {
         appendOutput("Discovering GATT Services")
-        peripheral.discoverServices(null, 10000L)
+        peripheral.discoverServices( 10000L)
         { services, error ->
             appendOutput("Discover Services completed, found ${services?.size} services, error: $error")
 

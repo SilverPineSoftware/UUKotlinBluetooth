@@ -1,12 +1,11 @@
-package com.silverpine.uu.bluetooth
+package com.silverpine.uu.bluetooth.internal
 
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
-import com.silverpine.uu.bluetooth.internal.uuHashLookup
 import java.util.Locale
 
-internal enum class PeripheralTimerBucket
+internal enum class BluetoothGattTimerBucket
 {
     Connect,
     ServiceDiscovery,
@@ -21,12 +20,12 @@ internal enum class PeripheralTimerBucket
     RequestMtu,
 }
 
-internal fun UUPeripheral.timerId(bucket: PeripheralTimerBucket): String
+internal fun UUBluetoothGatt.timerId(bucket: BluetoothGattTimerBucket): String
 {
-    return String.format(Locale.US, "%s__%s", identifier, bucket.name)
+    return String.format(Locale.US, "%s__%s", rootTimerId, bucket.name)
 }
 
-internal fun BluetoothDevice.uuCharacteristicTimerId(characteristic: BluetoothGattCharacteristic, bucket: PeripheralTimerBucket): String
+internal fun BluetoothDevice.uuCharacteristicTimerId(characteristic: BluetoothGattCharacteristic, bucket: BluetoothGattTimerBucket): String
 {
     return String.format(
         Locale.US,
@@ -37,7 +36,7 @@ internal fun BluetoothDevice.uuCharacteristicTimerId(characteristic: BluetoothGa
     )
 }
 
-internal fun BluetoothDevice.uuDescriptorTimerId(descriptor: BluetoothGattDescriptor, bucket: PeripheralTimerBucket): String
+internal fun BluetoothDevice.uuDescriptorTimerId(descriptor: BluetoothGattDescriptor, bucket: BluetoothGattTimerBucket): String
 {
     return String.format(
         Locale.US,
@@ -48,14 +47,14 @@ internal fun BluetoothDevice.uuDescriptorTimerId(descriptor: BluetoothGattDescri
     )
 }
 
-internal val UUPeripheral.connectWatchdogTimerId: String
-    get() = timerId(PeripheralTimerBucket.Connect)
+internal val UUBluetoothGatt.connectWatchdogTimerId: String
+    get() = timerId(BluetoothGattTimerBucket.Connect)
 
-internal val UUPeripheral.disconnectWatchdogTimerId: String
-    get() = timerId(PeripheralTimerBucket.Disconnect)
+internal val UUBluetoothGatt.disconnectWatchdogTimerId: String
+    get() = timerId(BluetoothGattTimerBucket.Disconnect)
 
-internal val UUPeripheral.serviceDiscoveryWatchdogTimerId: String
-    get() = timerId(PeripheralTimerBucket.ServiceDiscovery)
+internal val UUBluetoothGatt.serviceDiscoveryWatchdogTimerId: String
+    get() = timerId(BluetoothGattTimerBucket.ServiceDiscovery)
 
 
 /*

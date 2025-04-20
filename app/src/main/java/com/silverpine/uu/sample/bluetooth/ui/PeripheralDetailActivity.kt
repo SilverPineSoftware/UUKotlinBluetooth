@@ -1,5 +1,6 @@
 package com.silverpine.uu.sample.bluetooth.ui
 
+import android.bluetooth.BluetoothGattService
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -26,12 +27,14 @@ class PeripheralDetailActivity : UURecyclerActivity()
 {
     private lateinit var peripheral: UUPeripheral
 
+    private var discoveredServices: List<BluetoothGattService> = listOf()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         val peripheralIdentifier = intent.uuRequireString("peripheral.identifier")
         val p = UUBluetooth.defaultScanner.getPeripheral(peripheralIdentifier)
-            ?: throw RuntimeException("Expect peripheral ${peripheralIdentifier} to exist!")
+            ?: throw RuntimeException("Expect peripheral $peripheralIdentifier to exist!")
 
         peripheral = p
 
@@ -98,10 +101,11 @@ class PeripheralDetailActivity : UURecyclerActivity()
 
     private fun handleDiscoverServices()
     {
-        peripheral.discoverServices(null, 60000)
+        peripheral.discoverServices( 60000)
         { services, error ->
             uuShowToast("Found ${services?.size ?: 0} services")
 
+            this.discoveredServices = services ?: listOf()
             refreshUi()
         }
     }
@@ -124,8 +128,7 @@ class PeripheralDetailActivity : UURecyclerActivity()
             tmp.add(LabelValueViewModel(R.string.mtu_size_label.load(), "${peripheral.negotiatedMtuSize}"))
 
             tmp.add(SectionHeaderViewModel(R.string.services))
-            // TODO: fix
-            // tmp.addAll(peripheral.discoveredServices().map { ServiceViewModel(it) })
+            tmp.addAll(discoveredServices.map { ServiceViewModel(it) })
             adapter.update(tmp)
         }
     }

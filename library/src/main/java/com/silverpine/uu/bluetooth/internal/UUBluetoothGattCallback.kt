@@ -1,18 +1,12 @@
-package com.silverpine.uu.bluetooth
+package com.silverpine.uu.bluetooth.internal
 
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
-import com.silverpine.uu.bluetooth.internal.UUDataCallback
-import com.silverpine.uu.bluetooth.internal.UUDataErrorCallback
-import com.silverpine.uu.bluetooth.internal.UUErrorCallback
-import com.silverpine.uu.bluetooth.internal.UUIntErrorCallback
-import com.silverpine.uu.bluetooth.internal.UUIntIntCallback
-import com.silverpine.uu.bluetooth.internal.UUIntIntErrorCallback
-import com.silverpine.uu.bluetooth.internal.UUServiceListCallback
-import com.silverpine.uu.bluetooth.internal.UUVoidCallback
-import com.silverpine.uu.bluetooth.internal.uuHashLookup
+import android.bluetooth.BluetoothGattService
+import com.silverpine.uu.bluetooth.UUBluetoothError
+import com.silverpine.uu.core.UUError
 import com.silverpine.uu.core.uuDispatch
 
 internal class UUBluetoothGattCallback : BluetoothGattCallback()
@@ -154,6 +148,11 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
 
     override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int)
     {
+        notifyServicesDiscovered(gatt.services, UUBluetoothError.gattStatusError("onServicesDiscovered", status))
+    }
+
+    fun notifyServicesDiscovered(services: List<BluetoothGattService>?, error: UUError?)
+    {
         val block = servicesDiscoveredCallback
         servicesDiscoveredCallback = null
 
@@ -161,7 +160,7 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
         {
             uuDispatch()
             {
-                it(gatt.services, UUBluetoothError.gattStatusError("onServicesDiscovered", status))
+                it(services, error)
             }
         }
     }

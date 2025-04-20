@@ -2,6 +2,8 @@ package com.silverpine.uu.bluetooth.internal
 
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
+import android.bluetooth.BluetoothGattService
+import com.silverpine.uu.bluetooth.UUDiscoverServicesCompletionBlock
 import com.silverpine.uu.bluetooth.UUPeripheralConnectedBlock
 import com.silverpine.uu.bluetooth.UUPeripheralDisconnectedBlock
 import com.silverpine.uu.core.UUError
@@ -36,11 +38,6 @@ internal fun BluetoothGattDescriptor?.uuHashLookup(): String
     return "${this?.characteristic?.uuSafeUuidString()}-${this?.uuSafeUuidString()}"
 }
 
-internal fun UUPeripheralDisconnectedBlock.uuSafeInvoke(error: UUError?)
-{
-
-}
-
 internal fun UUPeripheralConnectedBlock.safeNotify()
 {
     try
@@ -58,6 +55,18 @@ internal fun UUPeripheralDisconnectedBlock.safeNotify(error: UUError?)
     try
     {
         this(error)
+    }
+    catch (ex: Exception)
+    {
+        UULog.d(javaClass, "safeNotify", "", ex)
+    }
+}
+
+internal fun UUDiscoverServicesCompletionBlock.safeNotify(services: List<BluetoothGattService>?, error: UUError?)
+{
+    try
+    {
+        this(services, error)
     }
     catch (ex: Exception)
     {

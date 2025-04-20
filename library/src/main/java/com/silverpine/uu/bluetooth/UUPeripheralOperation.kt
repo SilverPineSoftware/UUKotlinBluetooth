@@ -438,7 +438,7 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
 
         serviceDiscoveryMetric.start()
 
-        peripheral.discoverServices(null, serviceDiscoveryTimeout)
+        peripheral.discoverServices(serviceDiscoveryTimeout)
         { services, error ->
 
             if (error != null)

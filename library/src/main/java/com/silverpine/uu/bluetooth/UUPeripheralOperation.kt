@@ -146,16 +146,18 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
     {
         requireDiscoveredCharacteristic(fromCharacteristic)
         { characteristic ->
-            peripheral.readValue(characteristic, readTimeout)
-            { _, _, error: UUError? ->
+
+
+            peripheral.readCharacteristic(characteristic.service.uuid, characteristic.uuid, readTimeout)
+            { data, error ->
 
                 if (error != null)
                 {
                     end(error)
-                    return@readValue
+                    return@readCharacteristic
                 }
 
-                completion(characteristic.value)
+                completion(data)
             }
         }
     }

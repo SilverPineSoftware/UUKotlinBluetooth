@@ -55,7 +55,7 @@ class PeripheralDetailActivity : UURecyclerActivity()
             val intent = Intent(applicationContext, ServiceDetailActivity::class.java)
             intent.putExtra("peripheral.identifier", peripheral.identifier)
             intent.putExtra("service", viewModel.model)
-            // intent.putExtra("serviceUuid", viewModel.model.uuid.toString())
+            intent.putExtra("serviceUuid", viewModel.model.uuid.toString())
             startActivity(intent)
         }
     }

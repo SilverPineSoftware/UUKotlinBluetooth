@@ -6,9 +6,6 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothSocket
-import android.os.ParcelUuid
-import com.silverpine.uu.bluetooth.UUDiscoverCharacteristicsCompletionBlock
-import com.silverpine.uu.bluetooth.UUDiscoverDescriptorsCompletionBlock
 import com.silverpine.uu.bluetooth.UUDiscoverServicesCompletionBlock
 import com.silverpine.uu.bluetooth.UUPeripheral
 import com.silverpine.uu.bluetooth.UUPeripheralCharacteristicErrorBlock
@@ -16,8 +13,8 @@ import com.silverpine.uu.bluetooth.UUPeripheralConnectedBlock
 import com.silverpine.uu.bluetooth.UUPeripheralConnectionState
 import com.silverpine.uu.bluetooth.UUPeripheralDescriptorErrorBlock
 import com.silverpine.uu.bluetooth.UUPeripheralDisconnectedBlock
-import com.silverpine.uu.bluetooth.UUPeripheralErrorBlock
 import com.silverpine.uu.bluetooth.UUPeripheralIntegerErrorBlock
+import java.util.UUID
 
 @SuppressLint("MissingPermission")
 internal class UUBluetoothDevicePeripheral(
@@ -86,6 +83,8 @@ internal class UUBluetoothDevicePeripheral(
         gatt.discoverServices(timeout, completion)
     }
 
+    /*
+
     override fun discoverCharacteristics(
         characteristicUUIDs: List<ParcelUuid>?,
         service: BluetoothGattService,
@@ -112,6 +111,7 @@ internal class UUBluetoothDevicePeripheral(
         TODO("Not yet implemented")
     }
 
+
     override fun discover(
         characteristics: List<ParcelUuid>?,
         serviceUuid: ParcelUuid,
@@ -119,7 +119,7 @@ internal class UUBluetoothDevicePeripheral(
         completion: UUDiscoverCharacteristicsCompletionBlock
     ) {
         TODO("Not yet implemented")
-    }
+    } */
 
     override fun setNotifyValue(
         enabled: Boolean,
@@ -131,12 +131,14 @@ internal class UUBluetoothDevicePeripheral(
         TODO("Not yet implemented")
     }
 
-    override fun readValue(
-        characteristic: BluetoothGattCharacteristic,
+    override fun readCharacteristic(
+        serviceUuid: UUID,
+        uuid: UUID,
         timeout: Long,
-        completion: UUPeripheralCharacteristicErrorBlock
-    ) {
-        TODO("Not yet implemented")
+        completion: UUDataErrorCallback)
+    {
+        val gatt = UUBluetoothGatt.get(bluetoothDevice)
+        gatt.readCharacteristic(serviceUuid, uuid, timeout, completion)
     }
 
     override fun readValue(

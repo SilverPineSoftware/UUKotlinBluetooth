@@ -1,9 +1,7 @@
 package com.silverpine.uu.bluetooth.internal
 
-import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothGattCharacteristic
-import android.bluetooth.BluetoothGattDescriptor
 import java.util.Locale
+import java.util.UUID
 
 internal enum class BluetoothGattTimerBucket
 {
@@ -25,27 +23,32 @@ internal fun UUBluetoothGatt.timerId(bucket: BluetoothGattTimerBucket): String
     return String.format(Locale.US, "%s__%s", rootTimerId, bucket.name)
 }
 
-internal fun BluetoothDevice.uuCharacteristicTimerId(characteristic: BluetoothGattCharacteristic, bucket: BluetoothGattTimerBucket): String
+internal fun UUBluetoothGatt.timerId(uuid: UUID, bucket: BluetoothGattTimerBucket): String
+{
+    return String.format(Locale.US, "%s__%s__%s", rootTimerId, uuid.uuToLowercaseString(), bucket.name)
+}
+/*
+internal fun UUBluetoothGatt.characteristicTimerId(characteristic: BluetoothGattCharacteristic, bucket: BluetoothGattTimerBucket): String
 {
     return String.format(
         Locale.US,
         "%s__ch_%s__%s",
-        address,
+        rootTimerId,
         characteristic.uuHashLookup(),
         bucket.name
     )
 }
 
-internal fun BluetoothDevice.uuDescriptorTimerId(descriptor: BluetoothGattDescriptor, bucket: BluetoothGattTimerBucket): String
+internal fun UUBluetoothGatt.descriptorTimerId(descriptor: BluetoothGattDescriptor, bucket: BluetoothGattTimerBucket): String
 {
     return String.format(
         Locale.US,
         "%s__de_%s__%s",
-        address,
+        rootTimerId,
         descriptor.uuHashLookup(),
         bucket.name
     )
-}
+}*/
 
 internal val UUBluetoothGatt.connectWatchdogTimerId: String
     get() = timerId(BluetoothGattTimerBucket.Connect)
@@ -56,52 +59,36 @@ internal val UUBluetoothGatt.disconnectWatchdogTimerId: String
 internal val UUBluetoothGatt.serviceDiscoveryWatchdogTimerId: String
     get() = timerId(BluetoothGattTimerBucket.ServiceDiscovery)
 
-
-/*
-private fun setNotifyStateWatchdogTimerId(characteristic: BluetoothGattCharacteristic): String
+internal fun UUBluetoothGatt.setNotifyStateWatchdogTimerId(uuid: UUID): String
 {
-    return formatCharacteristicTimerId(characteristic,
-        UUBluetoothGatt.CHARACTERISTIC_NOTIFY_STATE_WATCHDOG_BUCKET
-    )
+    return timerId(uuid, BluetoothGattTimerBucket.CharacteristicNotifyState)
 }
 
-private fun readCharacteristicWatchdogTimerId(characteristic: BluetoothGattCharacteristic): String
+internal fun UUBluetoothGatt.readCharacteristicWatchdogTimerId(uuid: UUID): String
 {
-    return formatCharacteristicTimerId(characteristic,
-        UUBluetoothGatt.READ_CHARACTERISTIC_WATCHDOG_BUCKET
-    )
+    return timerId(uuid, BluetoothGattTimerBucket.ReadCharacteristic)
 }
 
-private fun readDescritporWatchdogTimerId(descriptor: BluetoothGattDescriptor): String
+internal fun UUBluetoothGatt.readDescriptorWatchdogTimerId(uuid: UUID): String
 {
-    return formatDescriptorTimerId(descriptor, UUBluetoothGatt.READ_DESCRIPTOR_WATCHDOG_BUCKET)
+    return timerId(uuid, BluetoothGattTimerBucket.ReadDescriptor)
 }
 
-private fun writeCharacteristicWatchdogTimerId(characteristic: BluetoothGattCharacteristic): String
+internal fun UUBluetoothGatt.writeCharacteristicWatchdogTimerId(uuid: UUID): String
 {
-    return formatCharacteristicTimerId(characteristic,
-        UUBluetoothGatt.WRITE_CHARACTERISTIC_WATCHDOG_BUCKET
-    )
+    return timerId(uuid, BluetoothGattTimerBucket.WriteCharacteristic)
 }
 
-private fun writeDescriptorWatchdogTimerId(descriptor: BluetoothGattDescriptor): String
+internal fun UUBluetoothGatt.writeDescriptorWatchdogTimerId(uuid: UUID): String
 {
-    return formatDescriptorTimerId(descriptor, UUBluetoothGatt.WRITE_DESCRIPTOR_WATCHDOG_BUCKET)
+    return timerId(uuid, BluetoothGattTimerBucket.WriteDescriptor)
 }
 
-private fun readRssiWatchdogTimerId(): String
-{
-    return formatPeripheralTimerId(UUBluetoothGatt.READ_RSSI_WATCHDOG_BUCKET)
-}
+internal val UUBluetoothGatt.readRssiWatchdogTimerId: String
+    get() = timerId(BluetoothGattTimerBucket.ReadRssi)
 
-private fun requestMtuWatchdogTimerId(): String
-{
-    return formatPeripheralTimerId(UUBluetoothGatt.REQUEST_MTU_WATCHDOG_BUCKET)
-}
+internal val UUBluetoothGatt.requestMtuWatchdogTimerId: String
+    get() = timerId(BluetoothGattTimerBucket.RequestMtu)
 
-private fun pollRssiTimerId(): String
-{
-    return formatPeripheralTimerId(UUBluetoothGatt.POLL_RSSI_BUCKET)
-}
-
-*/
+internal val UUBluetoothGatt.pollRssiTimerId: String
+    get() = timerId(BluetoothGattTimerBucket.PollRssi)

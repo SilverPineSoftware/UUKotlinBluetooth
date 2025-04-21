@@ -7,16 +7,13 @@ import androidx.databinding.BindingAdapter
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.silverpine.uu.bluetooth.UUBluetooth
-import com.silverpine.uu.bluetooth.UUBluetoothConstants
 import com.silverpine.uu.bluetooth.UUPeripheral
 import com.silverpine.uu.bluetooth.uuCanReadData
 import com.silverpine.uu.bluetooth.uuCanToggleNotify
 import com.silverpine.uu.bluetooth.uuCanWriteData
 import com.silverpine.uu.bluetooth.uuCanWriteWithoutResponse
-import com.silverpine.uu.bluetooth.uuHasExtendedProperties
 import com.silverpine.uu.bluetooth.uuIsNotifying
 import com.silverpine.uu.core.uuDispatchMain
-import com.silverpine.uu.core.uuIsNull
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.core.uuToHexData
 import com.silverpine.uu.sample.bluetooth.R
@@ -51,6 +48,8 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: B
 
     var index = 0
 
+    private var characteristicData: ByteArray? = null
+
     init
     {
         _uuid.value = "${model.uuid}"
@@ -68,7 +67,7 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: B
 
     private fun formatData(): String?
     {
-        return formatData(model.value)
+        return formatData(characteristicData)
     }
 
     private fun formatData(value: ByteArray?): String?
@@ -95,8 +94,11 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: B
 
     fun readData()
     {
-        peripheral.readValue(model, 60000)
-        { p, updatedCharacteristic, error ->
+        peripheral.readCharacteristic(model.service.uuid, model.uuid, 60000)
+        { data, error ->
+
+            this.characteristicData = data
+            Log.d("foo", "RX: ${this.characteristicData?.uuToHex()}")
 
             uuDispatchMain()
             {

@@ -8,6 +8,7 @@ import android.bluetooth.BluetoothGattService
 import com.silverpine.uu.bluetooth.UUBluetoothError
 import com.silverpine.uu.core.UUError
 import com.silverpine.uu.core.uuDispatch
+import java.util.UUID
 
 internal class UUBluetoothGattCallback : BluetoothGattCallback()
 {
@@ -46,20 +47,33 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
         serviceChangedCallback = null
     }
 
-    fun registerReadCharacteristicCallback(characteristic: BluetoothGattCharacteristic, callback: UUDataErrorCallback)
+    fun registerReadCharacteristicCallback(uuid: UUID, callback: UUDataErrorCallback)
     {
         synchronized(readCharacteristicCallbacks)
         {
-            readCharacteristicCallbacks[characteristic.uuHashLookup()] = callback
+            readCharacteristicCallbacks[uuid.uuToLowercaseString()] = callback
         }
     }
 
-    fun clearReadCharacteristicCallback(characteristic: BluetoothGattCharacteristic)
+    fun clearReadCharacteristicCallback(uuid: UUID)
     {
         synchronized(readCharacteristicCallbacks)
         {
-            readCharacteristicCallbacks.remove(characteristic.uuHashLookup())
+            readCharacteristicCallbacks.remove(uuid.uuToLowercaseString())
         }
+    }
+
+    private fun popReadCharacteristicCallback(uuid: UUID): UUDataErrorCallback?
+    {
+        val block: UUDataErrorCallback?
+        synchronized(readCharacteristicCallbacks)
+        {
+            val id = uuid.uuToLowercaseString()
+            block = readCharacteristicCallbacks[id]
+            readCharacteristicCallbacks.remove(id)
+        }
+
+        return block
     }
 
     fun registerCharacteristicDataChangedCallback(characteristic: BluetoothGattCharacteristic, callback: UUDataCallback)
@@ -198,6 +212,22 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
             uuDispatch()
             {
                 it(value, UUBluetoothError.gattStatusError("onCharacteristicRead", status))
+            }
+        }
+    }
+
+    fun notifyCharacteristicRead(
+        uuid: UUID,
+        value: ByteArray?,
+        error: UUError?)
+    {
+        val block = popReadCharacteristicCallback(uuid)
+
+        block?.let()
+        {
+            uuDispatch()
+            {
+                it(value, error)
             }
         }
     }

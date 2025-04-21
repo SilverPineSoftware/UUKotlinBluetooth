@@ -5,7 +5,9 @@ import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothSocket
 import android.os.ParcelUuid
+import com.silverpine.uu.bluetooth.internal.UUDataErrorCallback
 import com.silverpine.uu.core.UUError
+import java.util.UUID
 
 typealias UUPeripheralConnectedBlock = (()->Unit)
 typealias UUPeripheralDisconnectedBlock = ((UUError?)->Unit)
@@ -43,28 +45,28 @@ interface UUPeripheral
         timeout: Long,
         completion: UUDiscoverServicesCompletionBlock)
 
-    fun discoverCharacteristics(
-        characteristicUUIDs: List<ParcelUuid>?,
-        service: BluetoothGattService,
-        timeout: Long,
-        completion: UUDiscoverCharacteristicsCompletionBlock)
-
-    fun discoverIncludedServices(
-        includedServiceUUIDs: List<ParcelUuid>?,
-        service: BluetoothGattService,
-        timeout: Long,
-        completion: UUPeripheralErrorBlock)
-
-    fun discoverDescriptorsForCharacteristic(
-        characteristic: BluetoothGattCharacteristic,
-        timeout: Long,
-        completion: UUDiscoverDescriptorsCompletionBlock)
-
-    fun discover(
-        characteristics: List<ParcelUuid>?,
-        serviceUuid: ParcelUuid,
-        timeout: Long,
-        completion: UUDiscoverCharacteristicsCompletionBlock)
+//    fun discoverCharacteristics(
+//        characteristicUUIDs: List<ParcelUuid>?,
+//        service: BluetoothGattService,
+//        timeout: Long,
+//        completion: UUDiscoverCharacteristicsCompletionBlock)
+//
+//    fun discoverIncludedServices(
+//        includedServiceUUIDs: List<ParcelUuid>?,
+//        service: BluetoothGattService,
+//        timeout: Long,
+//        completion: UUPeripheralErrorBlock)
+//
+//    fun discoverDescriptorsForCharacteristic(
+//        characteristic: BluetoothGattCharacteristic,
+//        timeout: Long,
+//        completion: UUDiscoverDescriptorsCompletionBlock)
+//
+//    fun discover(
+//        characteristics: List<ParcelUuid>?,
+//        serviceUuid: ParcelUuid,
+//        timeout: Long,
+//        completion: UUDiscoverCharacteristicsCompletionBlock)
 
     fun setNotifyValue(
         enabled: Boolean,
@@ -73,10 +75,11 @@ interface UUPeripheral
         notifyHandler: UUPeripheralCharacteristicErrorBlock?,
         completion: UUPeripheralCharacteristicErrorBlock)
 
-    fun readValue(
-        characteristic: BluetoothGattCharacteristic,
+    fun readCharacteristic(
+        serviceUuid: UUID,
+        uuid: UUID,
         timeout: Long,
-        completion: UUPeripheralCharacteristicErrorBlock)
+        completion: UUDataErrorCallback)
 
     fun readValue(
         descriptor: BluetoothGattDescriptor,

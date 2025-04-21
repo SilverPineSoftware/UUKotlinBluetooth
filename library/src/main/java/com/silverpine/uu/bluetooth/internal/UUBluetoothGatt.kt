@@ -19,9 +19,11 @@ import com.silverpine.uu.bluetooth.UUPeripheralDisconnectedBlock
 import com.silverpine.uu.core.UUError
 import com.silverpine.uu.core.UUTimer
 import com.silverpine.uu.core.uuDispatchMain
+import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.logging.UULog
 import java.io.Closeable
 import java.util.Locale
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 @SuppressLint("MissingPermission")
@@ -112,8 +114,7 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
         disconnectedCallback =
         { error ->
             debugLog("connect", "Disconnected from: $bluetoothDevice, error: $error")
-            cleanupAfterDisconnect()
-            notifyDisconnected(error)
+            notifyDisconnection(disconnected, error)
         }
 
         bluetoothGattCallback.connectionStateChangedCallback =
@@ -222,6 +223,60 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
         }
     }
 
+    fun readCharacteristic(
+        serviceUuid: UUID,
+        uuid: UUID,
+        timeout: Long,
+        completion: UUDataErrorCallback)
+    {
+        val timerId = readCharacteristicWatchdogTimerId(uuid)
+
+        val callback: UUDataErrorCallback =
+        { data: ByteArray?,
+          error: UUError? ->
+            debugLog(
+                "readCharacteristic",
+                "Read characteristic complete: $bluetoothDevice, error: $error, data: ${data?.uuToHex()}")
+            UUTimer.cancelActiveTimer(timerId)
+            bluetoothGattCallback.clearReadCharacteristicCallback(uuid)
+            completion.safeNotify(data, error)
+        }
+
+        bluetoothGattCallback.registerReadCharacteristicCallback(uuid, callback)
+
+        startTimeoutWatchdog(timerId, timeout)
+
+        val gatt = bluetoothGatt
+
+        if (gatt == null)
+        {
+            debugLog("readCharacteristic", "bluetoothGatt is null!")
+            bluetoothGattCallback.notifyCharacteristicRead(uuid, null, UUBluetoothError.notConnectedError())
+            return
+        }
+
+        val characteristic = gatt.getService(serviceUuid).characteristics.firstOrNull { it.uuid == uuid }
+
+        if (characteristic == null)
+        {
+            debugLog("readCharacteristic", "characteristic is null!")
+            bluetoothGattCallback.notifyCharacteristicRead(uuid, null, UUBluetoothError.missingRequiredCharacteristic(uuid))
+            return
+        }
+
+        uuDispatchMain()
+        {
+            debugLog("readCharacteristic", "characteristic: " + characteristic.uuid)
+            val success = gatt.readCharacteristic(characteristic)
+            debugLog("readCharacteristic", "readCharacteristic returned $success")
+
+            if (!success)
+            {
+                bluetoothGattCallback.notifyCharacteristicRead(uuid, null, UUBluetoothError.operationFailedError("readCharacteristic"))
+            }
+        }
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Closeable Implementation
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -259,7 +314,27 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
         }
     }
 
+    private fun notifyDisconnection(callback: UUErrorCallback, error: UUError?)
+    {
+        cancelAllTimers()
+        cleanupAfterDisconnect()
+
+        bluetoothGatt?.uuSafeClose()
+        bluetoothGatt = null
+
+        callback.safeNotify(error)
+        disconnectedCallback = null
+    }
+
     private fun notifyDisconnected(error: UUError?)
+    {
+        disconnectedCallback?.let()
+        {
+            notifyDisconnection(it, error)
+        }
+    }
+
+    /*private fun notifyDisconnected(error: UUError?)
     {
         //      closeGatt()
         cancelAllTimers()
@@ -273,7 +348,9 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
         val block = disconnectedCallback
         disconnectedCallback = null
         block?.safeNotify(error)
-    }
+
+        cleanupAfterDisconnect()
+    }*/
 
     fun disconnect(error: UUError?)
     {

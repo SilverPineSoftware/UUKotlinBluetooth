@@ -275,16 +275,16 @@ class L2CapClientViewModel: L2CapBaseViewModel()
         val psmCharacteristic = service?.characteristics?.firstOrNull { it.uuid == L2CapConstants.UU_L2CAP_PSM_CHARACTERISTIC_UUID }
         psmCharacteristic?.let()
         {
-            peripheral.readValue(it, 10000L)
-            { peripheral, characteristic, error ->
+            peripheral.readCharacteristic(it.service.uuid, it.uuid, 10000L)
+            { data, error ->
 
                 error?.let()
                 { err ->
                     appendOutput("Failed to read PSM: $err")
-                    return@readValue
+                    return@readCharacteristic
                 }
 
-                val psm = characteristic.value.uuReadInt32(ByteOrder.LITTLE_ENDIAN, 0)
+                val psm = data?.uuReadInt32(ByteOrder.LITTLE_ENDIAN, 0)
                 appendOutput("PSM Value: $psm")
             }
         }
@@ -296,16 +296,16 @@ class L2CapClientViewModel: L2CapBaseViewModel()
         val psmCharacteristic = service?.characteristics?.firstOrNull { it.uuid == L2CapConstants.UU_L2CAP_CHANNEL_ENCRYPTED_CHARACTERISTIC_UUID }
         psmCharacteristic?.let()
         {
-            peripheral.readValue(it, 10000L)
-            { peripheral, characteristic, error ->
+            peripheral.readCharacteristic(it.service.uuid, it.uuid, 10000L)
+            { data, error ->
 
                 error?.let()
                 { err ->
                     appendOutput("Failed to read channel encrypted: $err")
-                    return@readValue
+                    return@readCharacteristic
                 }
 
-                val secure = characteristic.value.uuReadUInt8(0)
+                val secure = data?.uuReadUInt8(0)
                 appendOutput("Channel Secure: $secure")
             }
         }

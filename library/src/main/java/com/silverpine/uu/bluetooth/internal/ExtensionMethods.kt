@@ -73,3 +73,15 @@ internal fun UUDiscoverServicesCompletionBlock.safeNotify(services: List<Bluetoo
         UULog.d(javaClass, "safeNotify", "", ex)
     }
 }
+
+internal fun UUDataErrorCallback.safeNotify(data: ByteArray?, error: UUError?)
+{
+    try
+    {
+        this(data, error)
+    }
+    catch (ex: Exception)
+    {
+        UULog.d(javaClass, "safeNotify", "", ex)
+    }
+}

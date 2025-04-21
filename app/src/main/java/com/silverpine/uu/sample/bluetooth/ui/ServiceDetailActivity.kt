@@ -110,14 +110,14 @@ class ServiceDetailActivity: UURecyclerActivity()
         val char = list.removeFirstOrNull()
         char?.let()
         { chr ->
-            peripheral.readValue(chr, 10000)
-            { _, updatedChar, _ ->
+            peripheral.readCharacteristic(service.uuid, chr.uuid, 10000)
+            { data, error ->
 
-                val vm = charViewModels.firstOrNull { it.model.uuid == chr.uuid  } ?: return@readValue
+                val vm = charViewModels.firstOrNull { it.model.uuid == chr.uuid  } ?: return@readCharacteristic
 
                 uuDispatchMain()
                 {
-                    vm.updateData(updatedChar.value)
+                    vm.updateData(data)
                     adapter.notifyItemChanged(vm.index)
 
                     readNextChar(list)

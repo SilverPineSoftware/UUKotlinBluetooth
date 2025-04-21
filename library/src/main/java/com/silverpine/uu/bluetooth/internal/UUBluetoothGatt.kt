@@ -276,6 +276,9 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
             {
                 bluetoothGattCallback.notifyCharacteristicRead(characteristic, null, UUBluetoothError.operationFailedError("read:characteristic"))
             }
+            // else
+            //
+            // wait for delegate or timeout
         }
     }
 
@@ -314,14 +317,14 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
 
         if (desc == null)
         {
-            debugLog("read:descriptor", "characteristic is null!")
+            debugLog("read:descriptor", "descriptor is null!")
             bluetoothGattCallback.notifyDescriptorRead(descriptor, null, UUBluetoothError.missingRequiredDescriptor(descriptor.uuid))
             return
         }
 
         uuDispatchMain()
         {
-            debugLog("read:descriptor", "descriptor: $descriptor")
+            debugLog("read:descriptor", "descriptor: ${descriptor.uuid}")
             val success = gatt.readDescriptor(desc)
             debugLog("read:descriptor", "readDescriptor returned $success")
 
@@ -329,6 +332,9 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
             {
                 bluetoothGattCallback.notifyDescriptorRead(descriptor, null, UUBluetoothError.operationFailedError("read:descriptor"))
             }
+            // else
+            //
+            // wait for delegate or timeout
         }
     }
 
@@ -374,13 +380,54 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
 
         uuDispatchMain()
         {
-            debugLog("write:characteristic", "characteristic: $characteristic, tx: ${data.uuToHex()}")
+            debugLog("write:characteristic", "characteristic: ${characteristic.uuid}, tx: ${data.uuToHex()}")
 
             val err = gatt.uuWrite(data, chr, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
             if (err != null)
             {
                 bluetoothGattCallback.notifyCharacteristicWrite(characteristic, err)
             }
+            // else
+            //
+            // wait for delegate or timeout
+        }
+    }
+
+    fun writeWithoutResponse(
+        data: ByteArray,
+        characteristic: BluetoothGattCharacteristic,
+        completion: UUErrorCallback)
+    {
+        val gatt = bluetoothGatt
+
+        if (gatt == null)
+        {
+            debugLog("writeWithoutResponse", "bluetoothGatt is null!")
+            completion.safeNotify(UUBluetoothError.notConnectedError())
+            return
+        }
+
+        val chr = gatt.uuLookupCharacteristic(characteristic)
+
+        if (chr == null)
+        {
+            debugLog("writeWithoutResponse", "characteristic is null!")
+            completion.safeNotify(UUBluetoothError.missingRequiredCharacteristic(characteristic.uuid))
+            return
+        }
+
+        uuDispatchMain()
+        {
+            debugLog("writeWithoutResponse", "characteristic: ${characteristic.uuid}, tx: ${data.uuToHex()}")
+
+            val err = gatt.uuWrite(data, chr, BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE)
+            if (err != null)
+            {
+                bluetoothGattCallback.notifyCharacteristicWrite(characteristic, err)
+            }
+
+            // Notify completion always.  There is no timeout or callback
+            completion.safeNotify(err)
         }
     }
 

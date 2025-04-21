@@ -128,13 +128,13 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
     {
         requireDiscoveredCharacteristic(toCharacteristic)
         { characteristic ->
-            peripheral.writeValueWithoutResponse(data, characteristic)
-            { _, _, error: UUError? ->
+            peripheral.writeWithoutResponse(data, characteristic)
+            { error: UUError? ->
 
                 if (error != null)
                 {
                     end(error)
-                    return@writeValueWithoutResponse
+                    return@writeWithoutResponse
                 }
 
                 completion()

@@ -67,10 +67,10 @@ interface UUPeripheral
         timeout: Long,
         completion: UUErrorCallback)
 
-    fun writeValueWithoutResponse(
+    fun writeWithoutResponse(
         data: ByteArray,
         characteristic: BluetoothGattCharacteristic,
-        completion: UUPeripheralCharacteristicErrorBlock)
+        completion: UUErrorCallback)
 
     fun writeValue(
         data: ByteArray,

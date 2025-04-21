@@ -163,8 +163,8 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: B
 
             Log.d("DEBUG", "Writing WWOR $hex")
 
-            peripheral.writeValueWithoutResponse(tx!!, model)
-            { p, c, e ->
+            peripheral.writeWithoutResponse(tx!!, model)
+            { e ->
 
                 uuDispatchMain()
                 {

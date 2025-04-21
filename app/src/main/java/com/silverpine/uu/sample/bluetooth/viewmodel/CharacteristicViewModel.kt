@@ -98,7 +98,6 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: B
         { data, error ->
 
             this.characteristicData = data
-            Log.d("foo", "RX: ${this.characteristicData?.uuToHex()}")
 
             uuDispatchMain()
             {

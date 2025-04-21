@@ -3,6 +3,7 @@ package com.silverpine.uu.bluetooth.internal
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.content.Context
@@ -23,7 +24,6 @@ import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.logging.UULog
 import java.io.Closeable
 import java.util.Locale
-import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 @SuppressLint("MissingPermission")
@@ -223,26 +223,25 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
         }
     }
 
-    fun readCharacteristic(
-        serviceUuid: UUID,
-        uuid: UUID,
+    fun read(
+        characteristic: BluetoothGattCharacteristic,
         timeout: Long,
         completion: UUDataErrorCallback)
     {
-        val timerId = readCharacteristicWatchdogTimerId(uuid)
+        val timerId = readCharacteristicWatchdogTimerId(characteristic)
 
         val callback: UUDataErrorCallback =
         { data: ByteArray?,
           error: UUError? ->
             debugLog(
-                "readCharacteristic",
+                "read:characteristic",
                 "Read characteristic complete: $bluetoothDevice, error: $error, data: ${data?.uuToHex()}")
             UUTimer.cancelActiveTimer(timerId)
-            bluetoothGattCallback.clearReadCharacteristicCallback(uuid)
+            bluetoothGattCallback.clearReadCharacteristicCallback(characteristic)
             completion.safeNotify(data, error)
         }
 
-        bluetoothGattCallback.registerReadCharacteristicCallback(uuid, callback)
+        bluetoothGattCallback.registerReadCharacteristicCallback(characteristic, callback)
 
         startTimeoutWatchdog(timerId, timeout)
 
@@ -250,29 +249,29 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
 
         if (gatt == null)
         {
-            debugLog("readCharacteristic", "bluetoothGatt is null!")
-            bluetoothGattCallback.notifyCharacteristicRead(uuid, null, UUBluetoothError.notConnectedError())
+            debugLog("read:characteristic", "bluetoothGatt is null!")
+            bluetoothGattCallback.notifyCharacteristicRead(characteristic, null, UUBluetoothError.notConnectedError())
             return
         }
 
-        val characteristic = gatt.getService(serviceUuid).characteristics.firstOrNull { it.uuid == uuid }
+        val chr = gatt.uuLookupCharacteristic(characteristic)
 
-        if (characteristic == null)
+        if (chr == null)
         {
-            debugLog("readCharacteristic", "characteristic is null!")
-            bluetoothGattCallback.notifyCharacteristicRead(uuid, null, UUBluetoothError.missingRequiredCharacteristic(uuid))
+            debugLog("read:characteristic", "characteristic is null!")
+            bluetoothGattCallback.notifyCharacteristicRead(characteristic, null, UUBluetoothError.missingRequiredCharacteristic(characteristic.uuid))
             return
         }
 
         uuDispatchMain()
         {
-            debugLog("readCharacteristic", "characteristic: " + characteristic.uuid)
-            val success = gatt.readCharacteristic(characteristic)
-            debugLog("readCharacteristic", "readCharacteristic returned $success")
+            debugLog("read:characteristic", "characteristic: $characteristic")
+            val success = gatt.readCharacteristic(chr)
+            debugLog("read:characteristic", "readCharacteristic returned $success")
 
             if (!success)
             {
-                bluetoothGattCallback.notifyCharacteristicRead(uuid, null, UUBluetoothError.operationFailedError("readCharacteristic"))
+                bluetoothGattCallback.notifyCharacteristicRead(characteristic, null, UUBluetoothError.operationFailedError("read:characteristic"))
             }
         }
     }
@@ -290,6 +289,13 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Private Methods
     ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    // When passing BluetoothGatt objects around via Parcelable, the objects are not fully functional
+    // So we always go lookup the characteristic from this BluetoothGatt instance.
+    private fun BluetoothGatt.uuLookupCharacteristic(characteristic: BluetoothGattCharacteristic): BluetoothGattCharacteristic?
+    {
+        return getService(characteristic.service.uuid).characteristics.firstOrNull { it.uuid == characteristic.uuid }
+    }
 
     private fun startTimeoutWatchdog(timerId: String, timeout: Long)
     {

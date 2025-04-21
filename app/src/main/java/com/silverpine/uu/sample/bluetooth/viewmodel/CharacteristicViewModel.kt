@@ -94,7 +94,7 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: B
 
     fun readData()
     {
-        peripheral.readCharacteristic(model.service.uuid, model.uuid, 60000)
+        peripheral.read(model, 60000)
         { data, error ->
 
             this.characteristicData = data

@@ -110,10 +110,10 @@ class ServiceDetailActivity: UURecyclerActivity()
         val char = list.removeFirstOrNull()
         char?.let()
         { chr ->
-            peripheral.readCharacteristic(service.uuid, chr.uuid, 10000)
+            peripheral.read(chr, 10000)
             { data, error ->
 
-                val vm = charViewModels.firstOrNull { it.model.uuid == chr.uuid  } ?: return@readCharacteristic
+                val vm = charViewModels.firstOrNull { it.model.uuid == chr.uuid  } ?: return@read
 
                 uuDispatchMain()
                 {

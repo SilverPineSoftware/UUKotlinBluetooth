@@ -1,5 +1,6 @@
 package com.silverpine.uu.bluetooth.internal
 
+import android.bluetooth.BluetoothGattCharacteristic
 import java.util.Locale
 import java.util.UUID
 
@@ -64,9 +65,9 @@ internal fun UUBluetoothGatt.setNotifyStateWatchdogTimerId(uuid: UUID): String
     return timerId(uuid, BluetoothGattTimerBucket.CharacteristicNotifyState)
 }
 
-internal fun UUBluetoothGatt.readCharacteristicWatchdogTimerId(uuid: UUID): String
+internal fun UUBluetoothGatt.readCharacteristicWatchdogTimerId(characteristic: BluetoothGattCharacteristic): String
 {
-    return timerId(uuid, BluetoothGattTimerBucket.ReadCharacteristic)
+    return timerId(characteristic.uuid, BluetoothGattTimerBucket.ReadCharacteristic)
 }
 
 internal fun UUBluetoothGatt.readDescriptorWatchdogTimerId(uuid: UUID): String

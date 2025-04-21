@@ -131,14 +131,13 @@ internal class UUBluetoothDevicePeripheral(
         TODO("Not yet implemented")
     }
 
-    override fun readCharacteristic(
-        serviceUuid: UUID,
-        uuid: UUID,
+    override fun read(
+        characteristic: BluetoothGattCharacteristic,
         timeout: Long,
         completion: UUDataErrorCallback)
     {
         val gatt = UUBluetoothGatt.get(bluetoothDevice)
-        gatt.readCharacteristic(serviceUuid, uuid, timeout, completion)
+        gatt.read(characteristic, timeout, completion)
     }
 
     override fun readValue(

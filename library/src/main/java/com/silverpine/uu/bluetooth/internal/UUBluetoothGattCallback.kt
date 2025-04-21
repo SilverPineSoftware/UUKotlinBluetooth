@@ -8,7 +8,6 @@ import android.bluetooth.BluetoothGattService
 import com.silverpine.uu.bluetooth.UUBluetoothError
 import com.silverpine.uu.core.UUError
 import com.silverpine.uu.core.uuDispatch
-import java.util.UUID
 
 internal class UUBluetoothGattCallback : BluetoothGattCallback()
 {
@@ -47,28 +46,28 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
         serviceChangedCallback = null
     }
 
-    fun registerReadCharacteristicCallback(uuid: UUID, callback: UUDataErrorCallback)
+    fun registerReadCharacteristicCallback(characteristic: BluetoothGattCharacteristic, callback: UUDataErrorCallback)
     {
         synchronized(readCharacteristicCallbacks)
         {
-            readCharacteristicCallbacks[uuid.uuToLowercaseString()] = callback
+            readCharacteristicCallbacks[characteristic.uuHashLookup()] = callback
         }
     }
 
-    fun clearReadCharacteristicCallback(uuid: UUID)
+    fun clearReadCharacteristicCallback(characteristic: BluetoothGattCharacteristic)
     {
         synchronized(readCharacteristicCallbacks)
         {
-            readCharacteristicCallbacks.remove(uuid.uuToLowercaseString())
+            readCharacteristicCallbacks.remove(characteristic.uuHashLookup())
         }
     }
 
-    private fun popReadCharacteristicCallback(uuid: UUID): UUDataErrorCallback?
+    private fun popReadCharacteristicCallback(characteristic: BluetoothGattCharacteristic): UUDataErrorCallback?
     {
         val block: UUDataErrorCallback?
         synchronized(readCharacteristicCallbacks)
         {
-            val id = uuid.uuToLowercaseString()
+            val id = characteristic.uuHashLookup()
             block = readCharacteristicCallbacks[id]
             readCharacteristicCallbacks.remove(id)
         }
@@ -217,11 +216,11 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
     }
 
     fun notifyCharacteristicRead(
-        uuid: UUID,
+        characteristic: BluetoothGattCharacteristic,
         value: ByteArray?,
         error: UUError?)
     {
-        val block = popReadCharacteristicCallback(uuid)
+        val block = popReadCharacteristicCallback(characteristic)
 
         block?.let()
         {

@@ -75,9 +75,8 @@ interface UUPeripheral
         notifyHandler: UUPeripheralCharacteristicErrorBlock?,
         completion: UUPeripheralCharacteristicErrorBlock)
 
-    fun readCharacteristic(
-        serviceUuid: UUID,
-        uuid: UUID,
+    fun read(
+        characteristic: BluetoothGattCharacteristic,
         timeout: Long,
         completion: UUDataErrorCallback)
 

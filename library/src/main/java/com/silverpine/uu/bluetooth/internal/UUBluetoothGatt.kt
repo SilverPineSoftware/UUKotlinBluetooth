@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.content.Context
@@ -276,6 +277,59 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
         }
     }
 
+    fun read(
+        descriptor: BluetoothGattDescriptor,
+        timeout: Long,
+        completion: UUDataErrorCallback)
+    {
+        val timerId = readDescriptorWatchdogTimerId(descriptor)
+
+        val callback: UUDataErrorCallback =
+            { data: ByteArray?,
+              error: UUError? ->
+                debugLog(
+                    "read:descriptor",
+                    "Read descriptor complete: $bluetoothDevice, error: $error, data: ${data?.uuToHex()}")
+                UUTimer.cancelActiveTimer(timerId)
+                bluetoothGattCallback.clearReadDescriptorCallback(descriptor)
+                completion.safeNotify(data, error)
+            }
+
+        bluetoothGattCallback.registerReadDescriptorCallback(descriptor, callback)
+
+        startTimeoutWatchdog(timerId, timeout)
+
+        val gatt = bluetoothGatt
+
+        if (gatt == null)
+        {
+            debugLog("read:descriptor", "bluetoothGatt is null!")
+            bluetoothGattCallback.notifyDescriptorRead(descriptor, null, UUBluetoothError.notConnectedError())
+            return
+        }
+
+        val desc = gatt.uuLookupDescriptor(descriptor)
+
+        if (desc == null)
+        {
+            debugLog("read:descriptor", "characteristic is null!")
+            bluetoothGattCallback.notifyDescriptorRead(descriptor, null, UUBluetoothError.missingRequiredDescriptor(descriptor.uuid))
+            return
+        }
+
+        uuDispatchMain()
+        {
+            debugLog("read:descriptor", "descriptor: $descriptor")
+            val success = gatt.readDescriptor(desc)
+            debugLog("read:descriptor", "readDescriptor returned $success")
+
+            if (!success)
+            {
+                bluetoothGattCallback.notifyDescriptorRead(descriptor, null, UUBluetoothError.operationFailedError("read:descriptor"))
+            }
+        }
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Closeable Implementation
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -295,6 +349,13 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
     private fun BluetoothGatt.uuLookupCharacteristic(characteristic: BluetoothGattCharacteristic): BluetoothGattCharacteristic?
     {
         return getService(characteristic.service.uuid).characteristics.firstOrNull { it.uuid == characteristic.uuid }
+    }
+
+    // When passing BluetoothGatt objects around via Parcelable, the objects are not fully functional
+    // So we always go lookup the characteristic from this BluetoothGatt instance.
+    private fun BluetoothGatt.uuLookupDescriptor(descriptor: BluetoothGattDescriptor): BluetoothGattDescriptor?
+    {
+        return uuLookupCharacteristic(descriptor.characteristic)?.descriptors?.firstOrNull {  it.uuid == descriptor.uuid }
     }
 
     private fun startTimeoutWatchdog(timerId: String, timeout: Long)

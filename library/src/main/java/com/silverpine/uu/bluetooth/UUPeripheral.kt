@@ -4,10 +4,8 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothSocket
-import android.os.ParcelUuid
 import com.silverpine.uu.bluetooth.internal.UUDataErrorCallback
 import com.silverpine.uu.core.UUError
-import java.util.UUID
 
 typealias UUPeripheralConnectedBlock = (()->Unit)
 typealias UUPeripheralDisconnectedBlock = ((UUError?)->Unit)
@@ -80,10 +78,10 @@ interface UUPeripheral
         timeout: Long,
         completion: UUDataErrorCallback)
 
-    fun readValue(
+    fun read(
         descriptor: BluetoothGattDescriptor,
         timeout: Long,
-        completion: UUPeripheralDescriptorErrorBlock)
+        completion: UUDataErrorCallback)
 
     fun writeValue(
         data: ByteArray,

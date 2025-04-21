@@ -14,7 +14,6 @@ import com.silverpine.uu.bluetooth.UUPeripheralConnectionState
 import com.silverpine.uu.bluetooth.UUPeripheralDescriptorErrorBlock
 import com.silverpine.uu.bluetooth.UUPeripheralDisconnectedBlock
 import com.silverpine.uu.bluetooth.UUPeripheralIntegerErrorBlock
-import java.util.UUID
 
 @SuppressLint("MissingPermission")
 internal class UUBluetoothDevicePeripheral(
@@ -140,12 +139,13 @@ internal class UUBluetoothDevicePeripheral(
         gatt.read(characteristic, timeout, completion)
     }
 
-    override fun readValue(
+    override fun read(
         descriptor: BluetoothGattDescriptor,
         timeout: Long,
-        completion: UUPeripheralDescriptorErrorBlock
-    ) {
-        TODO("Not yet implemented")
+        completion: UUDataErrorCallback)
+    {
+        val gatt = UUBluetoothGatt.get(bluetoothDevice)
+        gatt.read(descriptor, timeout, completion)
     }
 
     override fun writeValue(

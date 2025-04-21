@@ -131,6 +131,18 @@ internal object UUBluetoothError
     }
 
     /**
+     * Error returned when a required descriptor is missing.
+     */
+    fun missingRequiredDescriptor(descriptor: UUID): UUError
+    {
+        val err = makeError(UUBluetoothErrorCode.OperationFailed)
+        err.addUserInfo(USER_INFO_KEY_METHOD_NAME, "requireDiscoveredDescriptor")
+        err.addUserInfo(USER_INFO_KEY_MISSING_CHARACTERISTIC, descriptor.toString())
+        err.errorDescription = "Missing required descriptor $descriptor"
+        return err
+    }
+
+    /**
      * Wrapper method to return an error on a pre-condition check.
      *
      * @param message a developer friendly message about the precondition that failed.

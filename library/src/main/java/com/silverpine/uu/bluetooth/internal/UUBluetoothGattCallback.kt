@@ -123,6 +123,19 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
         }
     }
 
+    private fun popReadDescriptorCallback(descriptor: BluetoothGattDescriptor): UUDataErrorCallback?
+    {
+        val block: UUDataErrorCallback?
+        synchronized(readDescriptorCallbacks)
+        {
+            val id = descriptor.uuHashLookup()
+            block = readDescriptorCallbacks[id]
+            readDescriptorCallbacks.remove(id)
+        }
+
+        return block
+    }
+
     fun registerWriteDescriptorCallback(descriptor: BluetoothGattDescriptor, callback: UUErrorCallback)
     {
         synchronized(writeDescriptorCallbacks)
@@ -180,6 +193,7 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
 
     // This is called on Android 12 and below, so it needs to be implemented.  When it gets a value,
     // we simply pipe into the new callback method
+    @Deprecated("Deprecated in Java")
     @Suppress("DEPRECATION")
     override fun onCharacteristicRead(
         gatt: BluetoothGatt?,
@@ -198,21 +212,7 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
         value: ByteArray,
         status: Int)
     {
-        val block: UUDataErrorCallback?
-        synchronized(readCharacteristicCallbacks)
-        {
-            val id = characteristic.uuHashLookup()
-            block = readCharacteristicCallbacks[id]
-            readCharacteristicCallbacks.remove(id)
-        }
-
-        block?.let()
-        {
-            uuDispatch()
-            {
-                it(value, UUBluetoothError.gattStatusError("onCharacteristicRead", status))
-            }
-        }
+        notifyCharacteristicRead(characteristic, value, UUBluetoothError.gattStatusError("onCharacteristicRead", status))
     }
 
     fun notifyCharacteristicRead(
@@ -276,25 +276,42 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
         }
     }
 
+    // This is called on Android 12 and below, so it needs to be implemented.  When it gets a value,
+    // we simply pipe into the new callback method
+    @Deprecated("Deprecated in Java")
+    @Suppress("DEPRECATION")
+    override fun onDescriptorRead(
+        gatt: BluetoothGatt?,
+        descriptor: BluetoothGattDescriptor?,
+        status: Int)
+    {
+        val gtt = gatt ?: return
+        val desc = descriptor ?: return
+        val data = desc.value
+        onDescriptorRead(gtt, desc, status, data)
+    }
+
     override fun onDescriptorRead(
         gatt: BluetoothGatt,
         descriptor: BluetoothGattDescriptor,
         status: Int,
         value: ByteArray)
     {
-        val block: UUDataErrorCallback?
-        synchronized(readDescriptorCallbacks)
-        {
-            val id = descriptor.uuHashLookup()
-            block = readDescriptorCallbacks[id]
-            readDescriptorCallbacks.remove(id)
-        }
+        notifyDescriptorRead(descriptor, value, UUBluetoothError.gattStatusError("onDescriptorRead", status))
+    }
+
+    fun notifyDescriptorRead(
+        descriptor: BluetoothGattDescriptor,
+        value: ByteArray?,
+        error: UUError?)
+    {
+        val block = popReadDescriptorCallback(descriptor)
 
         block?.let()
         {
             uuDispatch()
             {
-                it(value, UUBluetoothError.gattStatusError("onDescriptorRead", status))
+                it(value, error)
             }
         }
     }

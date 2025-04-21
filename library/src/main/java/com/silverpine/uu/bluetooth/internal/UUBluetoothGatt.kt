@@ -7,7 +7,9 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
+import android.bluetooth.BluetoothStatusCodes
 import android.content.Context
+import android.os.Build
 import com.silverpine.uu.bluetooth.UUBluetooth
 import com.silverpine.uu.bluetooth.UUBluetooth.connectionStateToString
 import com.silverpine.uu.bluetooth.UUBluetooth.gattStatusToString
@@ -285,15 +287,15 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
         val timerId = readDescriptorWatchdogTimerId(descriptor)
 
         val callback: UUDataErrorCallback =
-            { data: ByteArray?,
-              error: UUError? ->
-                debugLog(
-                    "read:descriptor",
-                    "Read descriptor complete: $bluetoothDevice, error: $error, data: ${data?.uuToHex()}")
-                UUTimer.cancelActiveTimer(timerId)
-                bluetoothGattCallback.clearReadDescriptorCallback(descriptor)
-                completion.safeNotify(data, error)
-            }
+        { data: ByteArray?,
+          error: UUError? ->
+            debugLog(
+                "read:descriptor",
+                "Read descriptor complete: $bluetoothDevice, error: $error, data: ${data?.uuToHex()}")
+            UUTimer.cancelActiveTimer(timerId)
+            bluetoothGattCallback.clearReadDescriptorCallback(descriptor)
+            completion.safeNotify(data, error)
+        }
 
         bluetoothGattCallback.registerReadDescriptorCallback(descriptor, callback)
 
@@ -330,6 +332,58 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
         }
     }
 
+    fun write(
+        data: ByteArray,
+        characteristic: BluetoothGattCharacteristic,
+        timeout: Long,
+        completion: UUErrorCallback)
+    {
+        val timerId = writeCharacteristicWatchdogTimerId(characteristic)
+
+        val callback: UUErrorCallback =
+        { error: UUError? ->
+            debugLog(
+                "write:characteristic",
+                "Write characteristic complete: $bluetoothDevice, error: $error")
+            UUTimer.cancelActiveTimer(timerId)
+            bluetoothGattCallback.clearWriteCharacteristicCallback(characteristic)
+            completion.safeNotify(error)
+        }
+
+        bluetoothGattCallback.registerWriteCharacteristicCallback(characteristic, callback)
+
+        startTimeoutWatchdog(timerId, timeout)
+
+        val gatt = bluetoothGatt
+
+        if (gatt == null)
+        {
+            debugLog("write:characteristic", "bluetoothGatt is null!")
+            bluetoothGattCallback.notifyCharacteristicWrite(characteristic, UUBluetoothError.notConnectedError())
+            return
+        }
+
+        val chr = gatt.uuLookupCharacteristic(characteristic)
+
+        if (chr == null)
+        {
+            debugLog("write:characteristic", "characteristic is null!")
+            bluetoothGattCallback.notifyCharacteristicWrite(characteristic, UUBluetoothError.missingRequiredCharacteristic(characteristic.uuid))
+            return
+        }
+
+        uuDispatchMain()
+        {
+            debugLog("write:characteristic", "characteristic: $characteristic, tx: ${data.uuToHex()}")
+
+            val err = gatt.uuWrite(data, chr, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
+            if (err != null)
+            {
+                bluetoothGattCallback.notifyCharacteristicWrite(characteristic, err)
+            }
+        }
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Closeable Implementation
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -356,6 +410,44 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
     private fun BluetoothGatt.uuLookupDescriptor(descriptor: BluetoothGattDescriptor): BluetoothGattDescriptor?
     {
         return uuLookupCharacteristic(descriptor.characteristic)?.descriptors?.firstOrNull {  it.uuid == descriptor.uuid }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun BluetoothGatt.uuWrite(
+        data: ByteArray,
+        characteristic: BluetoothGattCharacteristic,
+        writeType: Int): UUError?
+    {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+        {
+            val result = writeCharacteristic(characteristic, data, writeType)
+            debugLog("write:characteristic", "writeCharacteristic returned $result")
+
+            return if (result == BluetoothStatusCodes.SUCCESS)
+            {
+                null
+            }
+            else
+            {
+                UUBluetoothError.operationFailedError("write:characteristic", result)
+            }
+        }
+        else
+        {
+            characteristic.value = data
+            characteristic.writeType = writeType
+            val success = writeCharacteristic(characteristic)
+            debugLog("write:characteristic", "writeCharacteristic returned $success")
+
+            return if (success)
+            {
+                null
+            }
+            else
+            {
+                UUBluetoothError.operationFailedError("write:characteristic")
+            }
+        }
     }
 
     private fun startTimeoutWatchdog(timerId: String, timeout: Long)

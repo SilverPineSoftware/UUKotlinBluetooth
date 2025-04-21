@@ -107,6 +107,19 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
         }
     }
 
+    private fun popWriteCharacteristicCallback(characteristic: BluetoothGattCharacteristic): UUErrorCallback?
+    {
+        val block: UUErrorCallback?
+        synchronized(writeCharacteristicCallbacks)
+        {
+            val id = characteristic.uuHashLookup()
+            block = writeCharacteristicCallbacks[id]
+            writeCharacteristicCallbacks.remove(id)
+        }
+
+        return block
+    }
+
     fun registerReadDescriptorCallback(descriptor: BluetoothGattDescriptor, callback: UUDataErrorCallback)
     {
         synchronized(readDescriptorCallbacks)
@@ -272,6 +285,21 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
             uuDispatch()
             {
                 it(UUBluetoothError.gattStatusError("onCharacteristicWrite", status))
+            }
+        }
+    }
+
+    fun notifyCharacteristicWrite(
+        characteristic: BluetoothGattCharacteristic,
+        error: UUError?)
+    {
+        val block = popWriteCharacteristicCallback(characteristic)
+
+        block?.let()
+        {
+            uuDispatch()
+            {
+                it(error)
             }
         }
     }

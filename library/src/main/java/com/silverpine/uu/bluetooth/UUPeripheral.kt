@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothSocket
 import com.silverpine.uu.bluetooth.internal.UUDataErrorCallback
+import com.silverpine.uu.bluetooth.internal.UUErrorCallback
 import com.silverpine.uu.core.UUError
 
 typealias UUPeripheralConnectedBlock = (()->Unit)
@@ -43,29 +44,6 @@ interface UUPeripheral
         timeout: Long,
         completion: UUDiscoverServicesCompletionBlock)
 
-//    fun discoverCharacteristics(
-//        characteristicUUIDs: List<ParcelUuid>?,
-//        service: BluetoothGattService,
-//        timeout: Long,
-//        completion: UUDiscoverCharacteristicsCompletionBlock)
-//
-//    fun discoverIncludedServices(
-//        includedServiceUUIDs: List<ParcelUuid>?,
-//        service: BluetoothGattService,
-//        timeout: Long,
-//        completion: UUPeripheralErrorBlock)
-//
-//    fun discoverDescriptorsForCharacteristic(
-//        characteristic: BluetoothGattCharacteristic,
-//        timeout: Long,
-//        completion: UUDiscoverDescriptorsCompletionBlock)
-//
-//    fun discover(
-//        characteristics: List<ParcelUuid>?,
-//        serviceUuid: ParcelUuid,
-//        timeout: Long,
-//        completion: UUDiscoverCharacteristicsCompletionBlock)
-
     fun setNotifyValue(
         enabled: Boolean,
         characteristic: BluetoothGattCharacteristic,
@@ -83,11 +61,11 @@ interface UUPeripheral
         timeout: Long,
         completion: UUDataErrorCallback)
 
-    fun writeValue(
+    fun write(
         data: ByteArray,
         characteristic: BluetoothGattCharacteristic,
         timeout: Long,
-        completion: UUPeripheralCharacteristicErrorBlock)
+        completion: UUErrorCallback)
 
     fun writeValueWithoutResponse(
         data: ByteArray,

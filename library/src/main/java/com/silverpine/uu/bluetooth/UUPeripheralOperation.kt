@@ -93,12 +93,12 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
         requireDiscoveredCharacteristic(toCharacteristic)
         { characteristic ->
 
-            peripheral.writeValue(data, characteristic, writeTimeout)
-            { peripheral, char, error ->
+            peripheral.write(data, characteristic, writeTimeout)
+            { error ->
                 if (error != null)
                 {
                     end(error)
-                    return@writeValue
+                    return@write
                 }
 
                 completion()
@@ -111,12 +111,12 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
         requireDiscoveredCharacteristic(toCharacteristic)
         { characteristic ->
 
-            peripheral.writeValue(data, characteristic, writeTimeout)
-            { peripheral, char, error ->
+            peripheral.write(data, characteristic, writeTimeout)
+            { error ->
                 if (error != null)
                 {
                     end(error)
-                    return@writeValue
+                    return@write
                 }
 
                 completion(error)

@@ -16,6 +16,7 @@ internal object UUBluetoothError
     private const val USER_INFO_KEY_MESSAGE = "message"
     private const val USER_INFO_KEY_GATT_STATUS = "gattStatus"
     private const val USER_INFO_KEY_MISSING_CHARACTERISTIC = "missingCharacteristic"
+    private const val USER_INFO_KEY_STATUS_CODE = "statusCode"
 
     private const val DOMAIN = "UUBluetoothError"
 
@@ -107,13 +108,20 @@ internal object UUBluetoothError
      * a method returns false or null or othe error condition.
      *
      * @param method the method name
+     * @param statusCode optional statusCode
      *
      * @return a UUBluetoothError object
      */
-    fun operationFailedError(method: String): UUError
+    fun operationFailedError(method: String, statusCode: Int? = null): UUError
     {
         val err = makeError(UUBluetoothErrorCode.OperationFailed)
         err.addUserInfo(USER_INFO_KEY_METHOD_NAME, method)
+
+        statusCode?.let()
+        { code ->
+            err.addUserInfo(USER_INFO_KEY_STATUS_CODE, "$code")
+        }
+
         err.errorDescription = "Operation Failed: $method"
         return err
     }

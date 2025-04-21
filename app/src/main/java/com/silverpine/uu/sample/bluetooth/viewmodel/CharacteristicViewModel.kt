@@ -143,10 +143,8 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: B
 
             val tx = hex.uuToHexData()
 
-            Log.d("DEBUG", "Writing $hex")
-
-            peripheral.writeValue(tx!!, model, 10000)
-            { p, c, e ->
+            peripheral.write(tx!!, model, 10000)
+            { e ->
 
                 uuDispatchMain()
                 {

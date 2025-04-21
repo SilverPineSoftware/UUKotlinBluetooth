@@ -76,9 +76,9 @@ internal fun UUBluetoothGatt.readDescriptorWatchdogTimerId(descriptor: Bluetooth
     return timerId(descriptor.uuid, BluetoothGattTimerBucket.ReadDescriptor)
 }
 
-internal fun UUBluetoothGatt.writeCharacteristicWatchdogTimerId(uuid: UUID): String
+internal fun UUBluetoothGatt.writeCharacteristicWatchdogTimerId(characteristic: BluetoothGattCharacteristic): String
 {
-    return timerId(uuid, BluetoothGattTimerBucket.WriteCharacteristic)
+    return timerId(characteristic.uuid, BluetoothGattTimerBucket.WriteCharacteristic)
 }
 
 internal fun UUBluetoothGatt.writeDescriptorWatchdogTimerId(uuid: UUID): String

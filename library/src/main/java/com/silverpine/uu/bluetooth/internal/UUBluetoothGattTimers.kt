@@ -29,28 +29,6 @@ internal fun UUBluetoothGatt.timerId(uuid: UUID, bucket: BluetoothGattTimerBucke
 {
     return String.format(Locale.US, "%s__%s__%s", rootTimerId, uuid.uuToLowercaseString(), bucket.name)
 }
-/*
-internal fun UUBluetoothGatt.characteristicTimerId(characteristic: BluetoothGattCharacteristic, bucket: BluetoothGattTimerBucket): String
-{
-    return String.format(
-        Locale.US,
-        "%s__ch_%s__%s",
-        rootTimerId,
-        characteristic.uuHashLookup(),
-        bucket.name
-    )
-}
-
-internal fun UUBluetoothGatt.descriptorTimerId(descriptor: BluetoothGattDescriptor, bucket: BluetoothGattTimerBucket): String
-{
-    return String.format(
-        Locale.US,
-        "%s__de_%s__%s",
-        rootTimerId,
-        descriptor.uuHashLookup(),
-        bucket.name
-    )
-}*/
 
 internal val UUBluetoothGatt.connectWatchdogTimerId: String
     get() = timerId(BluetoothGattTimerBucket.Connect)
@@ -81,9 +59,9 @@ internal fun UUBluetoothGatt.writeCharacteristicWatchdogTimerId(characteristic: 
     return timerId(characteristic.uuid, BluetoothGattTimerBucket.WriteCharacteristic)
 }
 
-internal fun UUBluetoothGatt.writeDescriptorWatchdogTimerId(uuid: UUID): String
+internal fun UUBluetoothGatt.writeDescriptorWatchdogTimerId(descriptor: BluetoothGattDescriptor): String
 {
-    return timerId(uuid, BluetoothGattTimerBucket.WriteDescriptor)
+    return timerId(descriptor.uuid, BluetoothGattTimerBucket.WriteDescriptor)
 }
 
 internal val UUBluetoothGatt.readRssiWatchdogTimerId: String

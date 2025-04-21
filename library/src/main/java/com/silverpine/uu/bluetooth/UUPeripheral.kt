@@ -72,11 +72,11 @@ interface UUPeripheral
         characteristic: BluetoothGattCharacteristic,
         completion: UUErrorCallback)
 
-    fun writeValue(
+    fun write(
         data: ByteArray,
         descriptor: BluetoothGattDescriptor,
         timeout: Long,
-        completion: UUPeripheralDescriptorErrorBlock)
+        completion: UUErrorCallback)
 
     fun readRSSI(
         timeout: Long,

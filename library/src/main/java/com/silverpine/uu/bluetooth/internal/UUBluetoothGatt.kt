@@ -431,6 +431,61 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
         }
     }
 
+    fun write(
+        data: ByteArray,
+        descriptor: BluetoothGattDescriptor,
+        timeout: Long,
+        completion: UUErrorCallback)
+    {
+        val timerId = writeDescriptorWatchdogTimerId(descriptor)
+
+        val callback: UUErrorCallback =
+        { error: UUError? ->
+            debugLog(
+                "write:descriptor",
+                "Write descriptor complete: $bluetoothDevice, error: $error")
+            UUTimer.cancelActiveTimer(timerId)
+            bluetoothGattCallback.clearWriteDescriptorCallback(descriptor)
+            completion.safeNotify(error)
+        }
+
+        bluetoothGattCallback.registerWriteDescriptorCallback(descriptor, callback)
+
+        startTimeoutWatchdog(timerId, timeout)
+
+        val gatt = bluetoothGatt
+
+        if (gatt == null)
+        {
+            debugLog("write:descriptor", "bluetoothGatt is null!")
+            bluetoothGattCallback.notifyDescriptorWrite(descriptor, UUBluetoothError.notConnectedError())
+            return
+        }
+
+        val desc = gatt.uuLookupDescriptor(descriptor)
+
+        if (desc == null)
+        {
+            debugLog("write:descriptor", "descriptor is null!")
+            bluetoothGattCallback.notifyDescriptorWrite(descriptor, UUBluetoothError.missingRequiredDescriptor(descriptor.uuid))
+            return
+        }
+
+        uuDispatchMain()
+        {
+            debugLog("write:descriptor", "descriptor: ${descriptor.uuid}, tx: ${data.uuToHex()}")
+
+            val err = gatt.uuWrite(data, desc)
+            if (err != null)
+            {
+                bluetoothGattCallback.notifyDescriptorWrite(descriptor, err)
+            }
+            // else
+            //
+            // wait for delegate or timeout
+        }
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Closeable Implementation
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -444,6 +499,18 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Private Methods
     ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    private fun BluetoothGatt.uuSafeClose()
+    {
+        try
+        {
+            close()
+        }
+        catch (ex: Exception)
+        {
+            logException( "uuSafeClose", ex)
+        }
+    }
 
     // When passing BluetoothGatt objects around via Parcelable, the objects are not fully functional
     // So we always go lookup the characteristic from this BluetoothGatt instance.
@@ -493,6 +560,42 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
             else
             {
                 UUBluetoothError.operationFailedError("write:characteristic")
+            }
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun BluetoothGatt.uuWrite(
+        data: ByteArray,
+        descriptor: BluetoothGattDescriptor): UUError?
+    {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+        {
+            val result = writeDescriptor(descriptor, data)
+            debugLog("write:descriptor", "writeDescriptor returned $result")
+
+            return if (result == BluetoothStatusCodes.SUCCESS)
+            {
+                null
+            }
+            else
+            {
+                UUBluetoothError.operationFailedError("write:descriptor", result)
+            }
+        }
+        else
+        {
+            descriptor.value = data
+            val success = writeDescriptor(descriptor)
+            debugLog("write:descriptor", "writeDescriptor returned $success")
+
+            return if (success)
+            {
+                null
+            }
+            else
+            {
+                UUBluetoothError.operationFailedError("write:descriptor")
             }
         }
     }

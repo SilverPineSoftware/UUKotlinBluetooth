@@ -167,13 +167,14 @@ internal class UUBluetoothDevicePeripheral(
         gatt.writeWithoutResponse(data, characteristic, completion)
     }
 
-    override fun writeValue(
+    override fun write(
         data: ByteArray,
         descriptor: BluetoothGattDescriptor,
         timeout: Long,
-        completion: UUPeripheralDescriptorErrorBlock
-    ) {
-        TODO("Not yet implemented")
+        completion: UUErrorCallback)
+    {
+        val gatt = UUBluetoothGatt.get(bluetoothDevice)
+        gatt.write(data, descriptor, timeout, completion)
     }
 
     override fun readRSSI(timeout: Long, completion: UUPeripheralIntegerErrorBlock) {

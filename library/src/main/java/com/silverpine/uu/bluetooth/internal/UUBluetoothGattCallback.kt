@@ -165,6 +165,19 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
         }
     }
 
+    private fun popWriteDescriptorCallback(descriptor: BluetoothGattDescriptor): UUErrorCallback?
+    {
+        val block: UUErrorCallback?
+        synchronized(writeDescriptorCallbacks)
+        {
+            val id = descriptor.uuHashLookup()
+            block = writeDescriptorCallbacks[id]
+            writeDescriptorCallbacks.remove(id)
+        }
+
+        return block
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Bluetooth Gatt Overrides
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -363,6 +376,21 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
             uuDispatch()
             {
                 it(UUBluetoothError.gattStatusError("onDescriptorWrite", status))
+            }
+        }
+    }
+
+    fun notifyDescriptorWrite(
+        descriptor: BluetoothGattDescriptor,
+        error: UUError?)
+    {
+        val block = popWriteDescriptorCallback(descriptor)
+
+        block?.let()
+        {
+            uuDispatch()
+            {
+                it(error)
             }
         }
     }

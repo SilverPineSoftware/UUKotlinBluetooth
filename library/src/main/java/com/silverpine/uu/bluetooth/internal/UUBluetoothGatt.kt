@@ -20,6 +20,7 @@ import com.silverpine.uu.bluetooth.UUDiscoverServicesCompletionBlock
 import com.silverpine.uu.bluetooth.UUPeripheralConnectedBlock
 import com.silverpine.uu.bluetooth.UUPeripheralConnectionState
 import com.silverpine.uu.bluetooth.UUPeripheralDisconnectedBlock
+import com.silverpine.uu.bluetooth.uuIsNotifying
 import com.silverpine.uu.core.UUError
 import com.silverpine.uu.core.UUTimer
 import com.silverpine.uu.core.uuDispatchMain
@@ -59,7 +60,7 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
 //    private val writeDescriptorDelegates = HashMap<String, UUDescriptorDelegate>()
     //private var disconnectTimeout: Long = 0
 
-    val isConnecting: Boolean
+    private val isConnecting: Boolean
         get() = (bluetoothGatt != null && isConnectWatchdogActive)
 
     private val isConnectWatchdogActive: Boolean
@@ -223,6 +224,89 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
             // else
             //
             // wait for delegate or timeout
+        }
+    }
+
+    fun setNotifyValue(
+        enabled: Boolean,
+        characteristic: BluetoothGattCharacteristic,
+        timeout: Long,
+        notifyHandler: UUCharacteristicDataCallback?,
+        completion: UUCharacteristicErrorCallback)
+    {
+        val timerId = setNotifyStateWatchdogTimerId(characteristic)
+
+        val callback: UUCharacteristicErrorCallback =
+        { updatedCharacteristic, error ->
+            debugLog(
+                "setNotifyState",
+                "Set characteristic notify complete: $bluetoothDevice, error: $error}")
+            bluetoothGattCallback.clearSetCharacteristicNotificationCallback(characteristic)
+            UUTimer.cancelActiveTimer(timerId)
+            completion.safeNotify(updatedCharacteristic, error)
+        }
+
+        bluetoothGattCallback.registerSetCharacteristicNotificationCallback(characteristic, callback)
+
+        startTimeoutWatchdog(timerId, timeout)
+
+        val gatt = bluetoothGatt
+
+        if (gatt == null)
+        {
+            debugLog("setNotifyState", "bluetoothGatt is null!")
+            bluetoothGattCallback.notifyCharacteristicSetNotifyCallback(characteristic, UUBluetoothError.notConnectedError())
+            return
+        }
+
+        val chr = gatt.uuLookupCharacteristic(characteristic)
+
+        if (chr == null)
+        {
+            debugLog("setNotifyState", "characteristic is null!")
+            bluetoothGattCallback.notifyCharacteristicSetNotifyCallback(characteristic, UUBluetoothError.missingRequiredCharacteristic(characteristic.uuid))
+            return
+        }
+
+        val descriptorUuid = UUBluetoothConstants.Descriptors.CLIENT_CHARACTERISTIC_CONFIGURATION_UUID
+        val descriptor = chr.getDescriptor(descriptorUuid)
+        if (descriptor == null)
+        {
+            bluetoothGattCallback.notifyCharacteristicSetNotifyCallback(chr, UUBluetoothError.missingRequiredDescriptor(descriptorUuid))
+            return
+        }
+
+        if (enabled && notifyHandler != null)
+        {
+            bluetoothGattCallback.registerCharacteristicDataChangedCallback(chr, notifyHandler)
+        }
+        else
+        {
+            bluetoothGattCallback.clearCharacteristicDataChangedCallback(chr)
+        }
+
+        val start = System.currentTimeMillis()
+        uuDispatchMain()
+        {
+            debugLog("toggleNotifyState", "Setting characteristic notify for ${characteristic.uuid}")
+
+            val success = gatt.setCharacteristicNotification(chr, enabled)
+            debugLog("toggleNotifyState", "setCharacteristicNotification returned $success")
+            if (!success)
+            {
+                bluetoothGattCallback.notifyCharacteristicSetNotifyCallback(chr, UUBluetoothError.operationFailedError("setCharacteristicNotification"))
+                return@uuDispatchMain
+            }
+
+            val data = if (enabled) BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE else BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
+
+            val timeoutLeft = timeout - (System.currentTimeMillis() - start)
+            write(data, descriptor, timeoutLeft)
+            { error ->
+
+                debugLog("setNotifyState", "original char.isNotifying: ${characteristic.uuIsNotifying()}, updated char.isNotifying: ${chr.uuIsNotifying()}")
+                bluetoothGattCallback.notifyCharacteristicSetNotifyCallback(chr, error)
+            }
         }
     }
 

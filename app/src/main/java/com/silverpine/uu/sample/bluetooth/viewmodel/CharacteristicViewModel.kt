@@ -16,11 +16,12 @@ import com.silverpine.uu.bluetooth.uuIsNotifying
 import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.core.uuToHexData
+import com.silverpine.uu.logging.UULog
 import com.silverpine.uu.sample.bluetooth.R
 import com.silverpine.uu.sample.bluetooth.ui.Strings
 import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModel
 
-class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: BluetoothGattCharacteristic): UUAdapterItemViewModel()
+class CharacteristicViewModel(private val peripheral: UUPeripheral, var model: BluetoothGattCharacteristic): UUAdapterItemViewModel()
 {
     private val _uuid = MutableLiveData<String?>(null)
     private val _name = MutableLiveData<String?>(null)
@@ -114,24 +115,35 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, val model: B
             !isNotifying,
             model,
             30000,
-            { peripheral, characteristic, error -> //UULog.debug(javaClass, "setNotify.characteristicChanged",
+            { characteristic, data -> //UULog.debug(javaClass, "setNotify.characteristicChanged",
                 //  "Characteristic changed, characteristic: " + characteristic.uuid +
                 //        ", data: " + UUString.byteToHex(characteristic.value) +
                 //      ", error: " + error)
 
+                this.characteristicData = data
+                this.model = characteristic
+
                 uuDispatchMain()
                 {
                     refreshData()
+                    refreshNotifyLabel()
                 }
             }
-        ) { peripheral, characteristic, error -> //UULog.debug(javaClass, "setNotify.onComplete",
+        ) { characteristic, error -> //UULog.debug(javaClass, "setNotify.onComplete",
             //  ("Set Notify complete, characteristic: " + characteristic.uuid +
             //        ", error: " + error))
             //UUListView.reloadRow(listView, position)
 
+            UULog.d(javaClass, "toggle.notify",
+                "original char.isNotifying: ${model.uuIsNotifying()}, updated char.isNotifying: ${characteristic.uuIsNotifying()}")
+
+
+            this.model = characteristic
+
             uuDispatchMain()
             {
                 refreshData()
+                refreshNotifyLabel()
             }
         }
     }

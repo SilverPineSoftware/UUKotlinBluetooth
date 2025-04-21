@@ -14,10 +14,11 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
     var connectionStateChangedCallback: UUIntIntCallback? = null
     var servicesDiscoveredCallback: UUServiceListCallback? = null
     private var readCharacteristicCallbacks: HashMap<String, UUDataErrorCallback> = hashMapOf()
-    private var characteristicDataChangedCallbacks: HashMap<String, UUDataCallback> = hashMapOf()
+    private var characteristicDataChangedCallbacks: HashMap<String, UUCharacteristicDataCallback> = hashMapOf()
     private var writeCharacteristicCallbacks: HashMap<String, UUErrorCallback> = hashMapOf()
     private var readDescriptorCallbacks: HashMap<String, UUDataErrorCallback> = hashMapOf()
     private var writeDescriptorCallbacks: HashMap<String, UUErrorCallback> = hashMapOf()
+    private var setCharacteristicNotificationCallbacks: HashMap<String, UUCharacteristicErrorCallback> = hashMapOf()
     var executeReliableWriteCallback: UUErrorCallback? = null
     var readRssiCallback: UUIntErrorCallback? = null
     var mtuChangedCallback: UUIntErrorCallback? = null
@@ -38,6 +39,7 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
         writeCharacteristicCallbacks.clear()
         readDescriptorCallbacks.clear()
         writeDescriptorCallbacks.clear()
+        setCharacteristicNotificationCallbacks.clear()
         executeReliableWriteCallback = null
         readRssiCallback = null
         mtuChangedCallback = null
@@ -75,7 +77,51 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
         return block
     }
 
-    fun registerCharacteristicDataChangedCallback(characteristic: BluetoothGattCharacteristic, callback: UUDataCallback)
+    fun registerSetCharacteristicNotificationCallback(characteristic: BluetoothGattCharacteristic, callback: UUCharacteristicErrorCallback)
+    {
+        synchronized(setCharacteristicNotificationCallbacks)
+        {
+            setCharacteristicNotificationCallbacks[characteristic.uuHashLookup()] = callback
+        }
+    }
+
+    fun clearSetCharacteristicNotificationCallback(characteristic: BluetoothGattCharacteristic)
+    {
+        synchronized(setCharacteristicNotificationCallbacks)
+        {
+            setCharacteristicNotificationCallbacks.remove(characteristic.uuHashLookup())
+        }
+    }
+
+    private fun popSetCharacteristicNotificationCallback(characteristic: BluetoothGattCharacteristic): UUCharacteristicErrorCallback?
+    {
+        val block: UUCharacteristicErrorCallback?
+        synchronized(setCharacteristicNotificationCallbacks)
+        {
+            val id = characteristic.uuHashLookup()
+            block = setCharacteristicNotificationCallbacks[id]
+            setCharacteristicNotificationCallbacks.remove(id)
+        }
+
+        return block
+    }
+
+    fun notifyCharacteristicSetNotifyCallback(
+        characteristic: BluetoothGattCharacteristic,
+        error: UUError?)
+    {
+        val block = popSetCharacteristicNotificationCallback(characteristic)
+
+        block?.let()
+        {
+            uuDispatch()
+            {
+                it(characteristic, error)
+            }
+        }
+    }
+
+    fun registerCharacteristicDataChangedCallback(characteristic: BluetoothGattCharacteristic, callback: UUCharacteristicDataCallback)
     {
         synchronized(characteristicDataChangedCallbacks)
         {
@@ -262,7 +308,7 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
         characteristic: BluetoothGattCharacteristic,
         value: ByteArray)
     {
-        val block: UUDataCallback?
+        val block: UUCharacteristicDataCallback?
         synchronized(characteristicDataChangedCallbacks)
         {
             val id = characteristic.uuHashLookup()
@@ -274,9 +320,24 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
         {
             uuDispatch()
             {
-                it(value)
+                it(characteristic, value)
             }
         }
+    }
+
+    // This is called on Android 12 and below, so it needs to be implemented.  When it gets a value,
+    // we simply pipe into the new callback method
+    @Deprecated("Deprecated in Java")
+    @Suppress("DEPRECATION")
+    override fun onCharacteristicChanged(
+        gatt: BluetoothGatt?,
+        characteristic: BluetoothGattCharacteristic?)
+    {
+        val gtt = gatt ?: return
+        val chr = characteristic ?: return
+        val data = chr.value
+
+        onCharacteristicChanged(gtt, chr, data)
     }
 
     override fun onCharacteristicWrite(

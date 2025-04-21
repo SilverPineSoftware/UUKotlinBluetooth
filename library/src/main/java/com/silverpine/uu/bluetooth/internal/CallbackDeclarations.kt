@@ -1,5 +1,6 @@
 package com.silverpine.uu.bluetooth.internal
 
+import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattService
 import com.silverpine.uu.core.UUError
 
@@ -11,3 +12,5 @@ internal typealias UUDataErrorCallback = (ByteArray?, UUError?)->Unit
 internal typealias UUDataCallback = (ByteArray?)->Unit
 internal typealias UUIntErrorCallback = (Int?, UUError?)->Unit
 internal typealias UUIntIntErrorCallback = (Int?, Int?, UUError?)->Unit
+internal typealias UUCharacteristicDataCallback = ((BluetoothGattCharacteristic, ByteArray?)->Unit)
+internal typealias UUCharacteristicErrorCallback = ((BluetoothGattCharacteristic, UUError?)->Unit)

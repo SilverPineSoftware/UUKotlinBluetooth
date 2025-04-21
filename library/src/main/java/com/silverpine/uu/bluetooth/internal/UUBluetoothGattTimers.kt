@@ -39,9 +39,9 @@ internal val UUBluetoothGatt.disconnectWatchdogTimerId: String
 internal val UUBluetoothGatt.serviceDiscoveryWatchdogTimerId: String
     get() = timerId(BluetoothGattTimerBucket.ServiceDiscovery)
 
-internal fun UUBluetoothGatt.setNotifyStateWatchdogTimerId(uuid: UUID): String
+internal fun UUBluetoothGatt.setNotifyStateWatchdogTimerId(characteristic: BluetoothGattCharacteristic): String
 {
-    return timerId(uuid, BluetoothGattTimerBucket.CharacteristicNotifyState)
+    return timerId(characteristic.uuid, BluetoothGattTimerBucket.CharacteristicNotifyState)
 }
 
 internal fun UUBluetoothGatt.readCharacteristicWatchdogTimerId(characteristic: BluetoothGattCharacteristic): String

@@ -8,10 +8,8 @@ import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothSocket
 import com.silverpine.uu.bluetooth.UUDiscoverServicesCompletionBlock
 import com.silverpine.uu.bluetooth.UUPeripheral
-import com.silverpine.uu.bluetooth.UUPeripheralCharacteristicErrorBlock
 import com.silverpine.uu.bluetooth.UUPeripheralConnectedBlock
 import com.silverpine.uu.bluetooth.UUPeripheralConnectionState
-import com.silverpine.uu.bluetooth.UUPeripheralDescriptorErrorBlock
 import com.silverpine.uu.bluetooth.UUPeripheralDisconnectedBlock
 import com.silverpine.uu.bluetooth.UUPeripheralIntegerErrorBlock
 
@@ -82,52 +80,15 @@ internal class UUBluetoothDevicePeripheral(
         gatt.discoverServices(timeout, completion)
     }
 
-    /*
-
-    override fun discoverCharacteristics(
-        characteristicUUIDs: List<ParcelUuid>?,
-        service: BluetoothGattService,
-        timeout: Long,
-        completion: UUDiscoverCharacteristicsCompletionBlock
-    ) {
-        TODO("Not yet implemented")
-    }
-
-    override fun discoverIncludedServices(
-        includedServiceUUIDs: List<ParcelUuid>?,
-        service: BluetoothGattService,
-        timeout: Long,
-        completion: UUPeripheralErrorBlock
-    ) {
-        TODO("Not yet implemented")
-    }
-
-    override fun discoverDescriptorsForCharacteristic(
-        characteristic: BluetoothGattCharacteristic,
-        timeout: Long,
-        completion: UUDiscoverDescriptorsCompletionBlock
-    ) {
-        TODO("Not yet implemented")
-    }
-
-
-    override fun discover(
-        characteristics: List<ParcelUuid>?,
-        serviceUuid: ParcelUuid,
-        timeout: Long,
-        completion: UUDiscoverCharacteristicsCompletionBlock
-    ) {
-        TODO("Not yet implemented")
-    } */
-
     override fun setNotifyValue(
         enabled: Boolean,
         characteristic: BluetoothGattCharacteristic,
         timeout: Long,
-        notifyHandler: UUPeripheralCharacteristicErrorBlock?,
-        completion: UUPeripheralCharacteristicErrorBlock
-    ) {
-        TODO("Not yet implemented")
+        notifyHandler: UUCharacteristicDataCallback?,
+        completion: UUCharacteristicErrorCallback)
+    {
+        val gatt = UUBluetoothGatt.get(bluetoothDevice)
+        gatt.setNotifyValue(enabled, characteristic, timeout, notifyHandler, completion)
     }
 
     override fun read(

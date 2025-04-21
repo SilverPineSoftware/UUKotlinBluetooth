@@ -535,28 +535,22 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
 
             peripheral.setNotifyValue(true, characteristic, readTimeout,
                 notifyHandler =
-                    { p, chr, error ->
+                { _, data ->
 
-                        if (error != null)
-                        {
-                            end(error)
-                            return@setNotifyValue
-                        }
+                    dataChanged(data)
 
-                        dataChanged(chr.value)
-
-                    },
+                },
                 completion =
-                    { p, chr, error ->
+                { _, error ->
 
-                        if (error != null)
-                        {
-                            end(error)
-                            return@setNotifyValue
-                        }
+                    if (error != null)
+                    {
+                        end(error)
+                        return@setNotifyValue
+                    }
 
-                        completion()
-                    })
+                    completion()
+                })
         }
     }
 
@@ -568,16 +562,16 @@ abstract class UUPeripheralOperation<T : UUPeripheral>(protected val peripheral:
             peripheral.setNotifyValue(false, characteristic, readTimeout,
                 notifyHandler = null,
                 completion =
-                    { p, chr, error ->
+                { _, error ->
 
-                        if (error != null)
-                        {
-                            end(error)
-                            return@setNotifyValue
-                        }
+                    if (error != null)
+                    {
+                        end(error)
+                        return@setNotifyValue
+                    }
 
-                        completion()
-                    })
+                    completion()
+                })
 
             /*
             peripheral.setNotifyState(characteristic, false, readTimeout, null)

@@ -4,6 +4,8 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothSocket
+import com.silverpine.uu.bluetooth.internal.UUCharacteristicDataCallback
+import com.silverpine.uu.bluetooth.internal.UUCharacteristicErrorCallback
 import com.silverpine.uu.bluetooth.internal.UUDataErrorCallback
 import com.silverpine.uu.bluetooth.internal.UUErrorCallback
 import com.silverpine.uu.core.UUError
@@ -12,6 +14,7 @@ typealias UUPeripheralConnectedBlock = (()->Unit)
 typealias UUPeripheralDisconnectedBlock = ((UUError?)->Unit)
 typealias UUPeripheralBlock = ((UUPeripheral)->Unit)
 typealias UUPeripheralErrorBlock = ((UUPeripheral, UUError?)->Unit)
+typealias UUPeripheralCharacteristicDataBlock = ((UUPeripheral, BluetoothGattCharacteristic, ByteArray?)->Unit)
 typealias UUPeripheralCharacteristicErrorBlock = ((UUPeripheral, BluetoothGattCharacteristic, UUError?)->Unit)
 typealias UUPeripheralDescriptorErrorBlock = ((UUPeripheral, BluetoothGattDescriptor, UUError?)->Unit)
 typealias UUPeripheralIntegerErrorBlock = ((UUPeripheral, Int, UUError?)->Unit)
@@ -48,8 +51,8 @@ interface UUPeripheral
         enabled: Boolean,
         characteristic: BluetoothGattCharacteristic,
         timeout: Long,
-        notifyHandler: UUPeripheralCharacteristicErrorBlock?,
-        completion: UUPeripheralCharacteristicErrorBlock)
+        notifyHandler: UUCharacteristicDataCallback?,
+        completion: UUCharacteristicErrorCallback)
 
     fun read(
         characteristic: BluetoothGattCharacteristic,

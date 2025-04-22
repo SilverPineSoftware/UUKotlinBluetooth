@@ -14,15 +14,7 @@ import com.silverpine.uu.core.UUError
 
 typealias UUPeripheralConnectedBlock = (()->Unit)
 typealias UUPeripheralDisconnectedBlock = ((UUError?)->Unit)
-typealias UUPeripheralBlock = ((UUPeripheral)->Unit)
-typealias UUPeripheralErrorBlock = ((UUPeripheral, UUError?)->Unit)
-typealias UUPeripheralCharacteristicDataBlock = ((UUPeripheral, BluetoothGattCharacteristic, ByteArray?)->Unit)
-typealias UUPeripheralCharacteristicErrorBlock = ((UUPeripheral, BluetoothGattCharacteristic, UUError?)->Unit)
-typealias UUPeripheralDescriptorErrorBlock = ((UUPeripheral, BluetoothGattDescriptor, UUError?)->Unit)
-typealias UUPeripheralIntegerErrorBlock = ((UUPeripheral, Int, UUError?)->Unit)
 typealias UUDiscoverServicesCompletionBlock = ((List<BluetoothGattService>?, UUError?)->Unit)
-typealias UUDiscoverCharacteristicsCompletionBlock = ((List<BluetoothGattCharacteristic>?, UUError?)->Unit)
-typealias UUDiscoverDescriptorsCompletionBlock = ((List<BluetoothGattDescriptor>?, UUError?)->Unit)
 
 interface UUPeripheral
 {

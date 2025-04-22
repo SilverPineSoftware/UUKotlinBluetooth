@@ -661,6 +661,87 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
         }
     }
 
+    fun readPhy(
+        timeout: Long,
+        completion: UUIntIntErrorCallback)
+    {
+        val timerId = readPhyWatchdogTimerId
+
+        val callback: UUIntIntErrorCallback =
+        { txPhy, rxPhy, error ->
+            debugLog(
+                "readPhy",
+                "Read Phy complete: $bluetoothDevice, error: $error, txPhy: $txPhy, rxPhy: $rxPhy")
+            UUTimer.cancelActiveTimer(timerId)
+            bluetoothGattCallback.phyReadCallback = null
+            completion.safeNotify(rxPhy, txPhy, error)
+        }
+
+        bluetoothGattCallback.phyReadCallback = callback
+
+        startTimeoutWatchdog(timerId, timeout)
+
+        val gatt = bluetoothGatt
+
+        if (gatt == null)
+        {
+            debugLog("readPhy", "bluetoothGatt is null!")
+            bluetoothGattCallback.notifyPhyRead(null, null, UUBluetoothError.notConnectedError())
+            return
+        }
+
+        uuDispatchMain()
+        {
+            debugLog("readPhy", "Reading Phy")
+            gatt.readPhy()
+            debugLog("readPhy", "readPhy called")
+
+            // wait for delegate or timeout
+        }
+    }
+
+    fun updatePhy(
+        txPhy: Int,
+        rxPhy: Int,
+        phyOptions: Int,
+        timeout: Long,
+        completion: UUIntIntErrorCallback)
+    {
+        val timerId = updatePhyWatchdogTimerId
+
+        val callback: UUIntIntErrorCallback =
+        { txPhyUpdated, rxPhyUpdated, error ->
+            debugLog(
+                "updatePhy",
+                "Update Phy complete: $bluetoothDevice, error: $error, txPhy: $txPhyUpdated, rxPhy: $rxPhyUpdated")
+            UUTimer.cancelActiveTimer(timerId)
+            bluetoothGattCallback.phyUpdatedCallback = null
+            completion.safeNotify(txPhyUpdated, rxPhyUpdated, error)
+        }
+
+        bluetoothGattCallback.phyUpdatedCallback = callback
+
+        startTimeoutWatchdog(timerId, timeout)
+
+        val gatt = bluetoothGatt
+
+        if (gatt == null)
+        {
+            debugLog("updatePhy", "bluetoothGatt is null!")
+            bluetoothGattCallback.notifyPhyUpdate(null, null, UUBluetoothError.notConnectedError())
+            return
+        }
+
+        uuDispatchMain()
+        {
+            debugLog("updatePhy", "Requesting Phy update, txPhy: $txPhy, rxPhy: $rxPhy, phyOptions: $phyOptions'")
+            gatt.setPreferredPhy(txPhy, rxPhy, phyOptions)
+            debugLog("updatePhy", "setPreferredPhy called")
+
+            // wait for delegate or timeout
+        }
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Closeable Implementation
     ////////////////////////////////////////////////////////////////////////////////////////////////

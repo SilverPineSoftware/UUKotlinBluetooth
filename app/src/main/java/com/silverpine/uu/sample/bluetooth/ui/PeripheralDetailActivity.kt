@@ -1,6 +1,6 @@
 package com.silverpine.uu.sample.bluetooth.ui
 
-import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattService
 import android.content.Intent
 import android.os.Bundle
@@ -135,15 +135,30 @@ class PeripheralDetailActivity : UURecyclerActivity()
 
     private fun handleReadPhy()
     {
+        peripheral.readPhy( 10000)
+        { txPhy, rxPhy, error ->
+            uuShowToast("TxPhy: $txPhy, RxPhy: $rxPhy")
+
+            refreshUi()
+        }
     }
 
     private fun handleSetPreferredPhy()
     {
+        val txPhy = BluetoothDevice.PHY_LE_2M_MASK
+        val rxPhy = BluetoothDevice.PHY_LE_2M_MASK
+        val options = BluetoothDevice.PHY_OPTION_NO_PREFERRED
+        peripheral.updatePhy(txPhy, rxPhy, options, 10000)
+        { txPhyUpdated, rxPhyUpdated, error ->
+            uuShowToast("TxPhy: $txPhyUpdated, RxPhy: $rxPhyUpdated")
+
+            refreshUi()
+        }
     }
 
     private fun handleDisconnect()
     {
-        peripheral.disconnect(10000) //null)
+        peripheral.disconnect(10000)
     }
 
     private fun refreshUi()
@@ -157,9 +172,8 @@ class PeripheralDetailActivity : UURecyclerActivity()
             tmp.add(LabelValueViewModel(R.string.state_label.load(), peripheral.peripheralState.name))
             tmp.add(LabelValueViewModel(R.string.rssi_label.load(), "${peripheral.rssi}"))
             tmp.add(LabelValueViewModel(R.string.mtu_size_label.load(), "${peripheral.mtuSize}"))
-
-            //tmp.add(LabelValueViewModel(R.string.mtu_size_label.load(), "${peripheral.mtuSize}"))
-            //tmp.add(LabelValueViewModel(R.string.mtu_size_label.load(), "${peripheral.mtuSize}"))
+            tmp.add(LabelValueViewModel(R.string.tx_phy_label.load(), "${peripheral.txPhy}"))
+            tmp.add(LabelValueViewModel(R.string.rx_phy_label.load(), "${peripheral.rxPhy}"))
 
             tmp.add(SectionHeaderViewModel(R.string.services))
             tmp.addAll(discoveredServices.map { ServiceViewModel(it) })

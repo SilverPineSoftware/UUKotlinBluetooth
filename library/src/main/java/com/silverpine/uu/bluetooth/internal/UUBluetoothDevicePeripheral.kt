@@ -27,6 +27,8 @@ internal class UUBluetoothDevicePeripheral(
     override var friendlyName: String = advertisement.address
     override var services: List<BluetoothGattService>? = null
     override var mtuSize: Int = DEFAULT_MTU
+    override var txPhy: Int? = null
+    override var rxPhy: Int? = null
 
     override val peripheralState: UUPeripheralConnectionState
         get()
@@ -146,6 +148,37 @@ internal class UUBluetoothDevicePeripheral(
 
             updatedMtu?.let { this.mtuSize = it }
             completion(updatedMtu, error)
+        }
+    }
+
+    override fun readPhy(
+        timeout: Long,
+        completion: UUIntIntErrorCallback)
+    {
+        val gatt = UUBluetoothGatt.get(bluetoothDevice)
+        gatt.readPhy(timeout)
+        { txPhyUpdated, rxPhyUpdated, error ->
+
+            txPhy = txPhyUpdated
+            rxPhy = rxPhyUpdated
+            completion(txPhyUpdated, rxPhyUpdated, error)
+        }
+    }
+
+    override fun updatePhy(
+        txPhy: Int,
+        rxPhy: Int,
+        phyOptions: Int,
+        timeout: Long,
+        completion: UUIntIntErrorCallback)
+    {
+        val gatt = UUBluetoothGatt.get(bluetoothDevice)
+        gatt.updatePhy(txPhy, rxPhy, phyOptions, timeout)
+        { txPhyUpdated, rxPhyUpdated, error ->
+
+            this.txPhy = txPhyUpdated
+            this.rxPhy = rxPhyUpdated
+            completion(txPhyUpdated, rxPhyUpdated, error)
         }
     }
 

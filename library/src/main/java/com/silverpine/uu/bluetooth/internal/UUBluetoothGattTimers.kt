@@ -15,9 +15,10 @@ internal enum class BluetoothGattTimerBucket
     ReadDescriptor,
     WriteDescriptor,
     ReadRssi,
-    PollRssi,
     Disconnect,
     RequestMtu,
+    ReadPhy,
+    UpdatePhy
 }
 
 internal fun UUBluetoothGatt.timerId(bucket: BluetoothGattTimerBucket): String
@@ -70,5 +71,8 @@ internal val UUBluetoothGatt.readRssiWatchdogTimerId: String
 internal val UUBluetoothGatt.requestMtuWatchdogTimerId: String
     get() = timerId(BluetoothGattTimerBucket.RequestMtu)
 
-internal val UUBluetoothGatt.pollRssiTimerId: String
-    get() = timerId(BluetoothGattTimerBucket.PollRssi)
+internal val UUBluetoothGatt.readPhyWatchdogTimerId: String
+    get() = timerId(BluetoothGattTimerBucket.ReadPhy)
+
+internal val UUBluetoothGatt.updatePhyWatchdogTimerId: String
+    get() = timerId(BluetoothGattTimerBucket.UpdatePhy)

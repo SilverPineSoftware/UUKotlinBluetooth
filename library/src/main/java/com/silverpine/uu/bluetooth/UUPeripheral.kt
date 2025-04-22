@@ -9,6 +9,7 @@ import com.silverpine.uu.bluetooth.internal.UUCharacteristicErrorCallback
 import com.silverpine.uu.bluetooth.internal.UUDataErrorCallback
 import com.silverpine.uu.bluetooth.internal.UUErrorCallback
 import com.silverpine.uu.bluetooth.internal.UUIntErrorCallback
+import com.silverpine.uu.bluetooth.internal.UUIntIntErrorCallback
 import com.silverpine.uu.core.UUError
 
 typealias UUPeripheralConnectedBlock = (()->Unit)
@@ -38,6 +39,8 @@ interface UUPeripheral
     val services: List<BluetoothGattService>?
 
     var mtuSize: Int
+    var txPhy: Int?
+    var rxPhy: Int?
 
     fun connect(
         timeout: Long,
@@ -92,6 +95,17 @@ interface UUPeripheral
         mtu: Int,
         timeout: Long,
         completion: UUIntErrorCallback)
+
+    fun readPhy(
+        timeout: Long,
+        completion: UUIntIntErrorCallback)
+
+    fun updatePhy(
+        txPhy: Int,
+        rxPhy: Int,
+        phyOptions: Int,
+        timeout: Long,
+        completion: UUIntIntErrorCallback)
 
     // These need to be internal
     // func openL2CAPChannel(psm: CBL2CAPPSM)

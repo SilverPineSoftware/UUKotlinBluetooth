@@ -8,6 +8,8 @@ import android.bluetooth.BluetoothGattService
 import com.silverpine.uu.bluetooth.UUBluetoothError
 import com.silverpine.uu.core.UUError
 import com.silverpine.uu.core.uuDispatch
+import com.silverpine.uu.core.uuToHex
+import com.silverpine.uu.logging.UULog
 
 internal class UUBluetoothGattCallback : BluetoothGattCallback()
 {
@@ -19,11 +21,12 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
     private var readDescriptorCallbacks: HashMap<String, UUDataErrorCallback> = hashMapOf()
     private var writeDescriptorCallbacks: HashMap<String, UUErrorCallback> = hashMapOf()
     private var setCharacteristicNotificationCallbacks: HashMap<String, UUCharacteristicErrorCallback> = hashMapOf()
-    var executeReliableWriteCallback: UUErrorCallback? = null
     var readRssiCallback: UUIntErrorCallback? = null
     var mtuChangedCallback: UUIntErrorCallback? = null
     var phyReadCallback: UUIntIntErrorCallback? = null
     var phyUpdatedCallback: UUIntIntErrorCallback? = null
+
+    var executeReliableWriteCallback: UUErrorCallback? = null
     var serviceChangedCallback: UUVoidCallback? = null
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -230,6 +233,165 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
 
     override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int)
     {
+        UULog.d(javaClass, "onConnectionStateChange", "status: $status, newState: $newState")
+
+        notifyConnectionStateChanged(status, newState)
+    }
+
+    override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int)
+    {
+        UULog.d(javaClass, "onServicesDiscovered", "gatt.services: ${gatt.services}, status: $status")
+
+        notifyServicesDiscovered(gatt.services, UUBluetoothError.gattStatusError("onServicesDiscovered", status))
+    }
+
+    // This is called on Android 12 and below, so it needs to be implemented.  When it gets a value,
+    // we simply pipe into the new callback method
+    @Deprecated("Deprecated in Java")
+    @Suppress("DEPRECATION")
+    override fun onCharacteristicRead(
+        gatt: BluetoothGatt?,
+        characteristic: BluetoothGattCharacteristic?,
+        status: Int)
+    {
+        UULog.d(javaClass, "onCharacteristicRead", "characteristic: ${characteristic?.uuid}, value: ${characteristic?.value?.uuToHex()}, status: $status")
+
+        val chr = characteristic ?: return
+        notifyCharacteristicRead(chr, chr.value, UUBluetoothError.gattStatusError("onCharacteristicRead", status))
+
+    }
+
+    override fun onCharacteristicRead(
+        gatt: BluetoothGatt,
+        characteristic: BluetoothGattCharacteristic,
+        value: ByteArray,
+        status: Int)
+    {
+        UULog.d(javaClass, "onCharacteristicRead", "characteristic: ${characteristic.uuid}, value: ${value.uuToHex()}, status: $status")
+
+        notifyCharacteristicRead(characteristic, value, UUBluetoothError.gattStatusError("onCharacteristicRead", status))
+    }
+
+    override fun onCharacteristicChanged(
+        gatt: BluetoothGatt,
+        characteristic: BluetoothGattCharacteristic,
+        value: ByteArray)
+    {
+        UULog.d(javaClass, "onCharacteristicChanged", "characteristic: ${characteristic.uuid}, data: ${value.uuToHex()}")
+
+        notifyCharacteristicChanged(characteristic, value)
+    }
+
+    // This is called on Android 12 and below, so it needs to be implemented.  When it gets a value,
+    // we simply pipe into the new callback method
+    @Deprecated("Deprecated in Java")
+    @Suppress("DEPRECATION")
+    override fun onCharacteristicChanged(
+        gatt: BluetoothGatt?,
+        characteristic: BluetoothGattCharacteristic?)
+    {
+        UULog.d(javaClass, "onCharacteristicChanged", "characteristic: ${characteristic?.uuid}, data: ${characteristic?.value?.uuToHex()}")
+
+        val chr = characteristic ?: return
+        notifyCharacteristicChanged(characteristic, chr.value)
+    }
+
+    override fun onCharacteristicWrite(
+        gatt: BluetoothGatt?,
+        characteristic: BluetoothGattCharacteristic?,
+        status: Int)
+    {
+        UULog.d(javaClass, "onDescriptorRead", "characteristic: ${characteristic?.uuid}, data: ${characteristic?.value?.uuToHex()} status: $status")
+
+        val chr = characteristic ?: return
+        notifyCharacteristicWrite(chr, UUBluetoothError.gattStatusError("onCharacteristicWrite", status))
+    }
+
+    // This is called on Android 12 and below, so it needs to be implemented.  When it gets a value,
+    // we simply pipe into the new callback method
+    @Deprecated("Deprecated in Java")
+    @Suppress("DEPRECATION")
+    override fun onDescriptorRead(
+        gatt: BluetoothGatt?,
+        descriptor: BluetoothGattDescriptor?,
+        status: Int)
+    {
+        UULog.d(javaClass, "onDescriptorRead", "descriptor: ${descriptor?.uuid}, data: ${descriptor?.value?.uuToHex()} status: $status")
+
+        val desc = descriptor ?: return
+        notifyDescriptorRead(desc, desc.value, UUBluetoothError.gattStatusError("onDescriptorRead", status))
+    }
+
+    override fun onDescriptorRead(
+        gatt: BluetoothGatt,
+        descriptor: BluetoothGattDescriptor,
+        status: Int,
+        value: ByteArray)
+    {
+        UULog.d(javaClass, "onDescriptorRead", "descriptor: ${descriptor.uuid}, data: ${value.uuToHex()} status: $status")
+
+        notifyDescriptorRead(descriptor, value, UUBluetoothError.gattStatusError("onDescriptorRead", status))
+    }
+
+    override fun onDescriptorWrite(
+        gatt: BluetoothGatt?,
+        descriptor: BluetoothGattDescriptor?,
+        status: Int)
+    {
+        UULog.d(javaClass, "onDescriptorWrite", "descriptor: ${descriptor?.uuid}, data: ${descriptor?.value?.uuToHex()} status: $status")
+
+        val desc = descriptor ?: return
+        notifyDescriptorWrite(desc, UUBluetoothError.gattStatusError("onDescriptorWrite", status))
+    }
+
+    override fun onReliableWriteCompleted(gatt: BluetoothGatt?, status: Int)
+    {
+        UULog.d(javaClass, "onReliableWriteCompleted", "status: $status")
+
+        notifyReliableWriteComplete(UUBluetoothError.gattStatusError("onReliableWriteCompleted", status))
+    }
+
+    override fun onReadRemoteRssi(gatt: BluetoothGatt?, rssi: Int, status: Int)
+    {
+        UULog.d(javaClass, "onReadRemoteRssi", "rssi: $rssi, status: $status")
+
+        notifyRemoteRssiRead(rssi, UUBluetoothError.gattStatusError("onReadRemoteRssi", status))
+    }
+
+    override fun onMtuChanged(gatt: BluetoothGatt?, mtu: Int, status: Int)
+    {
+        UULog.d(javaClass, "onMtuChanged", "mtu: $mtu, status: $status")
+
+        notifyMtuChanged(mtu, UUBluetoothError.gattStatusError("onMtuChanged", status))
+    }
+
+    override fun onPhyRead(gatt: BluetoothGatt?, txPhy: Int, rxPhy: Int, status: Int)
+    {
+        UULog.d(javaClass, "onPhyRead", "txPhy: $txPhy, rxPhy: $rxPhy, status: $status")
+
+        notifyPhyRead(txPhy, rxPhy, UUBluetoothError.gattStatusError("onPhyRead", status))
+    }
+
+    override fun onPhyUpdate(gatt: BluetoothGatt?, txPhy: Int, rxPhy: Int, status: Int)
+    {
+        UULog.d(javaClass, "onPhyUpdate", "txPhy: $txPhy, rxPhy: $rxPhy, status: $status")
+
+        notifyPhyUpdate(txPhy, rxPhy, UUBluetoothError.gattStatusError("onPhyUpdate", status))
+    }
+
+    override fun onServiceChanged(gatt: BluetoothGatt)
+    {
+        UULog.d(javaClass, "onServiceChanged", "GATT database is out of sync, re-discover services.")
+
+        notifyServiceChanged()
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Callback Wrappers
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    private fun notifyConnectionStateChanged(status: Int, newState: Int)
+    {
         val block = connectionStateChangedCallback
 
         // Do not clear the delegate because the connection state can be invoked multiple times.
@@ -241,11 +403,6 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
                 block(status, newState)
             }
         }
-    }
-
-    override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int)
-    {
-        notifyServicesDiscovered(gatt.services, UUBluetoothError.gattStatusError("onServicesDiscovered", status))
     }
 
     fun notifyServicesDiscovered(services: List<BluetoothGattService>?, error: UUError?)
@@ -260,30 +417,6 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
                 it(services, error)
             }
         }
-    }
-
-    // This is called on Android 12 and below, so it needs to be implemented.  When it gets a value,
-    // we simply pipe into the new callback method
-    @Deprecated("Deprecated in Java")
-    @Suppress("DEPRECATION")
-    override fun onCharacteristicRead(
-        gatt: BluetoothGatt?,
-        characteristic: BluetoothGattCharacteristic?,
-        status: Int)
-    {
-        val gtt = gatt ?: return
-        val chr = characteristic ?: return
-        val data = chr.value
-        onCharacteristicRead(gtt, chr, data, status)
-    }
-
-    override fun onCharacteristicRead(
-        gatt: BluetoothGatt,
-        characteristic: BluetoothGattCharacteristic,
-        value: ByteArray,
-        status: Int)
-    {
-        notifyCharacteristicRead(characteristic, value, UUBluetoothError.gattStatusError("onCharacteristicRead", status))
     }
 
     fun notifyCharacteristicRead(
@@ -302,10 +435,9 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
         }
     }
 
-    override fun onCharacteristicChanged(
-        gatt: BluetoothGatt,
+    private fun notifyCharacteristicChanged(
         characteristic: BluetoothGattCharacteristic,
-        value: ByteArray)
+        value: ByteArray?)
     {
         val block: UUCharacteristicDataCallback?
         synchronized(characteristicDataChangedCallbacks)
@@ -320,44 +452,6 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
             uuDispatch()
             {
                 it(characteristic, value)
-            }
-        }
-    }
-
-    // This is called on Android 12 and below, so it needs to be implemented.  When it gets a value,
-    // we simply pipe into the new callback method
-    @Deprecated("Deprecated in Java")
-    @Suppress("DEPRECATION")
-    override fun onCharacteristicChanged(
-        gatt: BluetoothGatt?,
-        characteristic: BluetoothGattCharacteristic?)
-    {
-        val gtt = gatt ?: return
-        val chr = characteristic ?: return
-        val data = chr.value
-
-        onCharacteristicChanged(gtt, chr, data)
-    }
-
-    override fun onCharacteristicWrite(
-        gatt: BluetoothGatt?,
-        characteristic: BluetoothGattCharacteristic?,
-        status: Int)
-    {
-        val id = characteristic?.uuHashLookup()
-
-        val block: UUErrorCallback?
-        synchronized(writeCharacteristicCallbacks)
-        {
-            block = writeCharacteristicCallbacks[id]
-            writeCharacteristicCallbacks.remove(id)
-        }
-
-        block?.let()
-        {
-            uuDispatch()
-            {
-                it(UUBluetoothError.gattStatusError("onCharacteristicWrite", status))
             }
         }
     }
@@ -377,30 +471,6 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
         }
     }
 
-    // This is called on Android 12 and below, so it needs to be implemented.  When it gets a value,
-    // we simply pipe into the new callback method
-    @Deprecated("Deprecated in Java")
-    @Suppress("DEPRECATION")
-    override fun onDescriptorRead(
-        gatt: BluetoothGatt?,
-        descriptor: BluetoothGattDescriptor?,
-        status: Int)
-    {
-        val gtt = gatt ?: return
-        val desc = descriptor ?: return
-        val data = desc.value
-        onDescriptorRead(gtt, desc, status, data)
-    }
-
-    override fun onDescriptorRead(
-        gatt: BluetoothGatt,
-        descriptor: BluetoothGattDescriptor,
-        status: Int,
-        value: ByteArray)
-    {
-        notifyDescriptorRead(descriptor, value, UUBluetoothError.gattStatusError("onDescriptorRead", status))
-    }
-
     fun notifyDescriptorRead(
         descriptor: BluetoothGattDescriptor,
         value: ByteArray?,
@@ -413,29 +483,6 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
             uuDispatch()
             {
                 it(value, error)
-            }
-        }
-    }
-
-    override fun onDescriptorWrite(
-        gatt: BluetoothGatt?,
-        descriptor: BluetoothGattDescriptor?,
-        status: Int)
-    {
-        val id = descriptor?.uuHashLookup()
-
-        val block: UUErrorCallback?
-        synchronized(writeDescriptorCallbacks)
-        {
-            block = writeDescriptorCallbacks[id]
-            writeDescriptorCallbacks.remove(id)
-        }
-
-        block?.let()
-        {
-            uuDispatch()
-            {
-                it(UUBluetoothError.gattStatusError("onDescriptorWrite", status))
             }
         }
     }
@@ -454,79 +501,6 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
             }
         }
     }
-
-    override fun onReliableWriteCompleted(gatt: BluetoothGatt?, status: Int)
-    {
-        val block = executeReliableWriteCallback
-        executeReliableWriteCallback = null
-
-        block?.let()
-        {
-            uuDispatch()
-            {
-                it(UUBluetoothError.gattStatusError("onReliableWriteCompleted", status))
-            }
-        }
-    }
-
-    override fun onReadRemoteRssi(gatt: BluetoothGatt?, rssi: Int, status: Int)
-    {
-        notifyRemoteRssiRead(rssi, UUBluetoothError.gattStatusError("onReadRemoteRssi", status))
-    }
-
-    override fun onMtuChanged(gatt: BluetoothGatt?, mtu: Int, status: Int)
-    {
-        notifyMtuChanged(mtu, UUBluetoothError.gattStatusError("onMtuChanged", status))
-    }
-
-    override fun onPhyRead(gatt: BluetoothGatt?, txPhy: Int, rxPhy: Int, status: Int)
-    {
-        val block = phyReadCallback
-        phyReadCallback = null
-
-        block?.let()
-        {
-            uuDispatch()
-            {
-                it(txPhy, rxPhy, UUBluetoothError.gattStatusError("onPhyRead", status))
-            }
-        }
-    }
-
-    override fun onPhyUpdate(gatt: BluetoothGatt?, txPhy: Int, rxPhy: Int, status: Int)
-    {
-        val block = phyUpdatedCallback
-        phyUpdatedCallback = null
-
-        block?.let()
-        {
-            uuDispatch()
-            {
-                it(txPhy, rxPhy, UUBluetoothError.gattStatusError("onPhyUpdate", status))
-            }
-        }
-    }
-
-    override fun onServiceChanged(gatt: BluetoothGatt)
-    {
-        val block = serviceChangedCallback
-
-        // Don't null out block since this potentially could be invoked many times within a session
-
-        block?.let()
-        {
-            uuDispatch(it)
-        }
-    }
-
-
-
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // Callback Wrappers
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 
     fun notifyRemoteRssiRead(
         value: Int?,
@@ -557,6 +531,66 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
             {
                 it(value, error)
             }
+        }
+    }
+
+    fun notifyPhyRead(
+        txPhy: Int?,
+        rxPhy: Int?,
+        error: UUError?)
+    {
+        val block = phyReadCallback
+        phyReadCallback = null
+
+        block?.let()
+        {
+            uuDispatch()
+            {
+                it(txPhy, rxPhy, error)
+            }
+        }
+    }
+
+    fun notifyPhyUpdate(
+        txPhy: Int?,
+        rxPhy: Int?,
+        error: UUError?)
+    {
+        val block = phyUpdatedCallback
+        phyUpdatedCallback = null
+
+        block?.let()
+        {
+            uuDispatch()
+            {
+                it(txPhy, rxPhy, error)
+            }
+        }
+    }
+
+    private fun notifyReliableWriteComplete(error: UUError?)
+    {
+        val block = executeReliableWriteCallback
+        executeReliableWriteCallback = null
+
+        block?.let()
+        {
+            uuDispatch()
+            {
+                it(error)
+            }
+        }
+    }
+
+    private fun notifyServiceChanged()
+    {
+        val block = serviceChangedCallback
+
+        // Don't null out block since this potentially could be invoked many times within a session
+
+        block?.let()
+        {
+            uuDispatch(it)
         }
     }
 }

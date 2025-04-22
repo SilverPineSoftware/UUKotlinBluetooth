@@ -8,6 +8,7 @@ import com.silverpine.uu.bluetooth.internal.UUCharacteristicDataCallback
 import com.silverpine.uu.bluetooth.internal.UUCharacteristicErrorCallback
 import com.silverpine.uu.bluetooth.internal.UUDataErrorCallback
 import com.silverpine.uu.bluetooth.internal.UUErrorCallback
+import com.silverpine.uu.bluetooth.internal.UUIntErrorCallback
 import com.silverpine.uu.core.UUError
 
 typealias UUPeripheralConnectedBlock = (()->Unit)
@@ -83,7 +84,7 @@ interface UUPeripheral
 
     fun readRSSI(
         timeout: Long,
-        completion: UUPeripheralIntegerErrorBlock)
+        completion: UUIntErrorCallback)
 
     // These need to be internal
     // func openL2CAPChannel(psm: CBL2CAPPSM)

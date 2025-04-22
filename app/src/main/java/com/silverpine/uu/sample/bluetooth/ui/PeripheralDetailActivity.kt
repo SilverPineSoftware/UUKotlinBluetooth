@@ -72,6 +72,7 @@ class PeripheralDetailActivity : UURecyclerActivity()
         {
             menuHandler.add(R.string.disconnect, this::handleDisconnect)
             menuHandler.add(R.string.discover_services, this::handleDiscoverServices)
+            menuHandler.add(R.string.read_rssi, this::handleReadRssi)
         }
         else
         {
@@ -104,6 +105,16 @@ class PeripheralDetailActivity : UURecyclerActivity()
             uuShowToast("Found ${services?.size ?: 0} services")
 
             this.discoveredServices = services ?: listOf()
+            refreshUi()
+        }
+    }
+
+    private fun handleReadRssi()
+    {
+        peripheral.readRSSI(60000)
+        { rssi, error ->
+            uuShowToast("Peripheral RSSI is $rssi")
+
             refreshUi()
         }
     }

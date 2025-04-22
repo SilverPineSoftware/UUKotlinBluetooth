@@ -11,7 +11,6 @@ import com.silverpine.uu.bluetooth.UUPeripheral
 import com.silverpine.uu.bluetooth.UUPeripheralConnectedBlock
 import com.silverpine.uu.bluetooth.UUPeripheralConnectionState
 import com.silverpine.uu.bluetooth.UUPeripheralDisconnectedBlock
-import com.silverpine.uu.bluetooth.UUPeripheralIntegerErrorBlock
 
 @SuppressLint("MissingPermission")
 internal class UUBluetoothDevicePeripheral(
@@ -138,8 +137,17 @@ internal class UUBluetoothDevicePeripheral(
         gatt.write(data, descriptor, timeout, completion)
     }
 
-    override fun readRSSI(timeout: Long, completion: UUPeripheralIntegerErrorBlock) {
-        TODO("Not yet implemented")
+    override fun readRSSI(
+        timeout: Long,
+        completion: UUIntErrorCallback)
+    {
+        val gatt = UUBluetoothGatt.get(bluetoothDevice)
+        gatt.readRSSI(timeout)
+        { rssi, error ->
+
+            rssi?.let { this.rssi = it }
+            completion(rssi, error)
+        }
     }
 
     override fun createL2capChannel(psm: Int): BluetoothSocket?

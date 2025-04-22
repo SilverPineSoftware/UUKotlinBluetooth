@@ -86,6 +86,18 @@ internal fun UUDataErrorCallback.safeNotify(data: ByteArray?, error: UUError?)
     }
 }
 
+internal fun UUIntErrorCallback.safeNotify(data: Int?, error: UUError?)
+{
+    try
+    {
+        this(data, error)
+    }
+    catch (ex: Exception)
+    {
+        UULog.d(javaClass, "safeNotify", "", ex)
+    }
+}
+
 internal fun UUCharacteristicErrorCallback.safeNotify(
     characteristic: BluetoothGattCharacteristic,
     error: UUError?)

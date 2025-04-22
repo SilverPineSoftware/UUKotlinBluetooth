@@ -472,16 +472,7 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
 
     override fun onReadRemoteRssi(gatt: BluetoothGatt?, rssi: Int, status: Int)
     {
-        val block = readRssiCallback
-        readRssiCallback = null
-
-        block?.let()
-        {
-            uuDispatch()
-            {
-                it(rssi, UUBluetoothError.gattStatusError("onReadRemoteRssi", status))
-            }
-        }
+        notifyRemoteRssiRead(rssi, UUBluetoothError.gattStatusError("onReadRemoteRssi", status))
     }
 
     override fun onMtuChanged(gatt: BluetoothGatt?, mtu: Int, status: Int)
@@ -535,6 +526,29 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
         block?.let()
         {
             uuDispatch(it)
+        }
+    }
+
+
+
+
+
+
+
+
+    fun notifyRemoteRssiRead(
+        value: Int?,
+        error: UUError?)
+    {
+        val block = readRssiCallback
+        readRssiCallback = null
+
+        block?.let()
+        {
+            uuDispatch()
+            {
+                it(value, error)
+            }
         }
     }
 }

@@ -570,6 +570,51 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
         }
     }
 
+    fun readRSSI(
+        timeout: Long,
+        completion: UUIntErrorCallback)
+    {
+        val timerId = readRssiWatchdogTimerId
+
+        val callback: UUIntErrorCallback =
+        { data, error ->
+            debugLog(
+                "readRSSI",
+                "Read RSSI complete: $bluetoothDevice, error: $error, data: $data")
+            UUTimer.cancelActiveTimer(timerId)
+            bluetoothGattCallback.readRssiCallback = null
+            completion.safeNotify(data, error)
+        }
+
+        bluetoothGattCallback.readRssiCallback = callback
+
+        startTimeoutWatchdog(timerId, timeout)
+
+        val gatt = bluetoothGatt
+
+        if (gatt == null)
+        {
+            debugLog("readRSSI", "bluetoothGatt is null!")
+            bluetoothGattCallback.notifyRemoteRssiRead(null, UUBluetoothError.notConnectedError())
+            return
+        }
+
+        uuDispatchMain()
+        {
+            debugLog("readRSSI", "Reading remote RSSI")
+            val success = gatt.readRemoteRssi()
+            debugLog("readRSSI", "readRemoteRssi returned $success")
+
+            if (!success)
+            {
+                bluetoothGattCallback.notifyRemoteRssiRead( null, UUBluetoothError.operationFailedError("readRSSI"))
+            }
+            // else
+            //
+            // wait for delegate or timeout
+        }
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Closeable Implementation
     ////////////////////////////////////////////////////////////////////////////////////////////////

@@ -615,6 +615,52 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
         }
     }
 
+    fun requestMtu(
+        mtu: Int,
+        timeout: Long,
+        completion: UUIntErrorCallback)
+    {
+        val timerId = requestMtuWatchdogTimerId
+
+        val callback: UUIntErrorCallback =
+        { data, error ->
+            debugLog(
+                "requestMtu",
+                "Request MTU complete: $bluetoothDevice, error: $error, data: $data")
+            UUTimer.cancelActiveTimer(timerId)
+            bluetoothGattCallback.mtuChangedCallback = null
+            completion.safeNotify(data, error)
+        }
+
+        bluetoothGattCallback.mtuChangedCallback = callback
+
+        startTimeoutWatchdog(timerId, timeout)
+
+        val gatt = bluetoothGatt
+
+        if (gatt == null)
+        {
+            debugLog("requestMtu", "bluetoothGatt is null!")
+            bluetoothGattCallback.notifyMtuChanged(null, UUBluetoothError.notConnectedError())
+            return
+        }
+
+        uuDispatchMain()
+        {
+            debugLog("requestMtu", "Reading remote RSSI")
+            val success = gatt.requestMtu(mtu)
+            debugLog("requestMtu", "requestMtu returned $success")
+
+            if (!success)
+            {
+                bluetoothGattCallback.notifyMtuChanged( null, UUBluetoothError.operationFailedError("requestMtu"))
+            }
+            // else
+            //
+            // wait for delegate or timeout
+        }
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Closeable Implementation
     ////////////////////////////////////////////////////////////////////////////////////////////////

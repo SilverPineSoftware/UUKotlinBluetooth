@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothSocket
+import com.silverpine.uu.bluetooth.UUBluetoothConstants.DEFAULT_MTU
 import com.silverpine.uu.bluetooth.UUDiscoverServicesCompletionBlock
 import com.silverpine.uu.bluetooth.UUPeripheral
 import com.silverpine.uu.bluetooth.UUPeripheralConnectedBlock
@@ -25,7 +26,7 @@ internal class UUBluetoothDevicePeripheral(
     override var name: String = bluetoothDevice.name ?: ""
     override var friendlyName: String = advertisement.address
     override var services: List<BluetoothGattService>? = null
-    override var negotiatedMtuSize: Int? = 0
+    override var mtuSize: Int = DEFAULT_MTU
 
     override val peripheralState: UUPeripheralConnectionState
         get()
@@ -33,28 +34,6 @@ internal class UUBluetoothDevicePeripheral(
             val gatt = UUBluetoothGatt.get(bluetoothDevice)
             return gatt.getPeripheralState()
         }
-
-
-
-
-//    private var bluetoothGatt: BluetoothGatt? = null
-//    private val bluetoothGattCallback: UUBluetoothGattCallback = UUBluetoothGattCallback()
-//
-//    private val isConnectWatchdogActive: Boolean
-//        get() = (UUTimer.findActiveTimer(connectWatchdogTimerId) != null)
-//
-//
-//    private var disconnectError: UUError? = null
-////    private val readCharacteristicDelegates = HashMap<String, UUCharacteristicDelegate>()
-////    private val writeCharacteristicDelegates = HashMap<String, UUCharacteristicDelegate>()
-////    private val characteristicChangedDelegates = HashMap<String, UUCharacteristicDelegate>()
-////    private val setNotifyDelegates = HashMap<String, UUCharacteristicDelegate>()
-////    private val readDescriptorDelegates = HashMap<String, UUDescriptorDelegate>()
-////    private val writeDescriptorDelegates = HashMap<String, UUDescriptorDelegate>()
-//    private var disconnectTimeout: Long = 0
-//
-//
-//    private var disconnectedCallback: UUPeripheralDisconnectedBlock? = null
 
     override fun connect(
         timeout: Long,
@@ -76,7 +55,13 @@ internal class UUBluetoothDevicePeripheral(
         completion: UUDiscoverServicesCompletionBlock)
     {
         val gatt = UUBluetoothGatt.get(bluetoothDevice)
-        gatt.discoverServices(timeout, completion)
+        gatt.discoverServices(timeout)
+        { discoveredServices, error ->
+
+            this.services = discoveredServices
+
+            completion(discoveredServices, error)
+        }
     }
 
     override fun setNotifyValue(
@@ -147,6 +132,20 @@ internal class UUBluetoothDevicePeripheral(
 
             rssi?.let { this.rssi = it }
             completion(rssi, error)
+        }
+    }
+
+    override fun requestMtu(
+        mtu: Int,
+        timeout: Long,
+        completion: UUIntErrorCallback)
+    {
+        val gatt = UUBluetoothGatt.get(bluetoothDevice)
+        gatt.requestMtu(mtu, timeout)
+        { updatedMtu, error ->
+
+            updatedMtu?.let { this.mtuSize = it }
+            completion(updatedMtu, error)
         }
     }
 

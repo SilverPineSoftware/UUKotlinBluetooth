@@ -37,6 +37,8 @@ interface UUPeripheral
     val peripheralState: UUPeripheralConnectionState
     val services: List<BluetoothGattService>?
 
+    var mtuSize: Int
+
     fun connect(
         timeout: Long,
         connected: UUPeripheralConnectedBlock,
@@ -86,6 +88,11 @@ interface UUPeripheral
         timeout: Long,
         completion: UUIntErrorCallback)
 
+    fun requestMtu(
+        mtu: Int,
+        timeout: Long,
+        completion: UUIntErrorCallback)
+
     // These need to be internal
     // func openL2CAPChannel(psm: CBL2CAPPSM)
 
@@ -96,11 +103,4 @@ interface UUPeripheral
     fun createInsecureL2capChannel(psm: Int): BluetoothSocket?
 
 
-//    val bluetoothDevice: BluetoothDevice
-//    var bluetoothGatt: BluetoothGatt?
-    var negotiatedMtuSize: Int?
-
-    fun updateRssi(updatedRssi: Int)
-    {
-    }
 }

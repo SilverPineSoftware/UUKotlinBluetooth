@@ -38,6 +38,11 @@ object UUBluetoothConstants
      */
     const val GATT_DISCONNECTED_BY_PERIPHERAL = 0x13
 
+    /**
+     * Per the Bluetooth spec, the default MTU size is 23 bytes
+     */
+    const val DEFAULT_MTU = 23
+
     val BLUETOOTH_SPEC_NAMES = HashMap<UUID?, String>()
 
     init

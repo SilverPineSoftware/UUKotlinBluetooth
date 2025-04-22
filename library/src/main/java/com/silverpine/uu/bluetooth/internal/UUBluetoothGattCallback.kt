@@ -228,7 +228,6 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
     // Bluetooth Gatt Overrides
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-
     override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int)
     {
         val block = connectionStateChangedCallback
@@ -477,16 +476,7 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
 
     override fun onMtuChanged(gatt: BluetoothGatt?, mtu: Int, status: Int)
     {
-        val block = mtuChangedCallback
-        mtuChangedCallback = null
-
-        block?.let()
-        {
-            uuDispatch()
-            {
-                it(mtu, UUBluetoothError.gattStatusError("onMtuChanged", status))
-            }
-        }
+        notifyMtuChanged(mtu, UUBluetoothError.gattStatusError("onMtuChanged", status))
     }
 
     override fun onPhyRead(gatt: BluetoothGatt?, txPhy: Int, rxPhy: Int, status: Int)
@@ -532,7 +522,9 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
 
 
 
-
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Callback Wrappers
+    ////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -542,6 +534,22 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
     {
         val block = readRssiCallback
         readRssiCallback = null
+
+        block?.let()
+        {
+            uuDispatch()
+            {
+                it(value, error)
+            }
+        }
+    }
+
+    fun notifyMtuChanged(
+        value: Int?,
+        error: UUError?)
+    {
+        val block = mtuChangedCallback
+        mtuChangedCallback = null
 
         block?.let()
         {

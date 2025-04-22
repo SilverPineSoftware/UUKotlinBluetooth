@@ -25,6 +25,8 @@
     <string name="address_label">Address:</string>
     <string name="state_label">State:</string>
     <string name="rssi_label">RSSI:</string>
+    <string name="tx_phy_label">Tx Phy:</string>
+    <string name="rx_phy_label">Rx Phy:</string>
     <string name="properties_label">Properties:</string>
     <string name="is_notifying_label">Is Notifying:</string>
     <string name="data_label">Data:</string>
@@ -48,4 +50,7 @@
     <string name="write">Write</string>
     <string name="read_all">Read All</string>
     <string name="read_rssi">Read RSSI</string>
+    <string name="request_mtu">Request MTU</string>
+    <string name="read_phy">Read Phy</string>
+    <string name="set_preferred_phy">Set Preferred Phy</string>
 </resources>

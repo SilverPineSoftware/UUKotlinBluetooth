@@ -47,7 +47,7 @@ class L2CapClientViewModel: L2CapBaseViewModel()
         val op = ReadL2CapSettingsOperation(peripheral)
         readL2CapSettingsOperation = op
         op.start()
-        { err ->
+        { _, err ->
             completion(op.psm, op.channelEncrypted, err)
             readL2CapSettingsOperation = null
         }

@@ -154,7 +154,7 @@ class HomeViewModel: RecyclerViewModel()
         val op = ReadDeviceInfoOperation(peripheral)
         readDeviceInfoOperation = op
         op.start()
-        { err ->
+        { _, err ->
 
             uuDispatchMain()
             {

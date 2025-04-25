@@ -9,9 +9,7 @@ import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.util.Log
-import com.silverpine.uu.core.uuFormatAsRfc3339
 import com.silverpine.uu.core.uuFormatAsRfc3339WithMillis
-import com.silverpine.uu.core.uuFormatAsRfc3339WithMillisUtc
 import com.silverpine.uu.core.uuNanoToRealTime
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.core.uuUtf8ByteArray

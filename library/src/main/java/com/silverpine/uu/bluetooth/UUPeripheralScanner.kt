@@ -24,13 +24,3 @@ val UUBluetooth.defaultScanner: UUPeripheralScanner
     {
         return UUBluetoothObjects.defaultScanner
     }
-
-
-/*
-public extension UUCoreBluetooth
-{
-    static var defaultScanner: UUPeripheralScanner
-    {
-        return UUCoreBluetoothBleScanner()
-    }
-}*/

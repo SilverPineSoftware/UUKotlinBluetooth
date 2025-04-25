@@ -4,7 +4,11 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
 import com.silverpine.uu.bluetooth.UUByteArrayCallback
+import com.silverpine.uu.bluetooth.UUCharacteristicErrorCallback
+import com.silverpine.uu.bluetooth.UUDataErrorCallback
 import com.silverpine.uu.bluetooth.UUDiscoverServicesCompletionBlock
+import com.silverpine.uu.bluetooth.UUIntErrorCallback
+import com.silverpine.uu.bluetooth.UUIntIntErrorCallback
 import com.silverpine.uu.bluetooth.UUPeripheralDisconnectedBlock
 import com.silverpine.uu.bluetooth.UUPeripheralSession
 import com.silverpine.uu.bluetooth.UUPeripheralSessionEndedCallback

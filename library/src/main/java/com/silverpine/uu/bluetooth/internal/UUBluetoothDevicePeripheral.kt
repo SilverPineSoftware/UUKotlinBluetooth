@@ -7,7 +7,13 @@ import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothSocket
 import com.silverpine.uu.bluetooth.UUBluetoothConstants.DEFAULT_MTU
+import com.silverpine.uu.bluetooth.UUCharacteristicDataCallback
+import com.silverpine.uu.bluetooth.UUCharacteristicErrorCallback
+import com.silverpine.uu.bluetooth.UUDataErrorCallback
 import com.silverpine.uu.bluetooth.UUDiscoverServicesCompletionBlock
+import com.silverpine.uu.bluetooth.UUErrorCallback
+import com.silverpine.uu.bluetooth.UUIntErrorCallback
+import com.silverpine.uu.bluetooth.UUIntIntErrorCallback
 import com.silverpine.uu.bluetooth.UUPeripheral
 import com.silverpine.uu.bluetooth.UUPeripheralConnectedBlock
 import com.silverpine.uu.bluetooth.UUPeripheralConnectionState

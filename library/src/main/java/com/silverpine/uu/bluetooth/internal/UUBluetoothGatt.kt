@@ -16,7 +16,13 @@ import com.silverpine.uu.bluetooth.UUBluetooth.gattStatusToString
 import com.silverpine.uu.bluetooth.UUBluetoothConstants
 import com.silverpine.uu.bluetooth.UUBluetoothError
 import com.silverpine.uu.bluetooth.UUBluetoothErrorCode
+import com.silverpine.uu.bluetooth.UUCharacteristicDataCallback
+import com.silverpine.uu.bluetooth.UUCharacteristicErrorCallback
+import com.silverpine.uu.bluetooth.UUDataErrorCallback
 import com.silverpine.uu.bluetooth.UUDiscoverServicesCompletionBlock
+import com.silverpine.uu.bluetooth.UUErrorCallback
+import com.silverpine.uu.bluetooth.UUIntErrorCallback
+import com.silverpine.uu.bluetooth.UUIntIntErrorCallback
 import com.silverpine.uu.bluetooth.UUPeripheralConnectedBlock
 import com.silverpine.uu.bluetooth.UUPeripheralConnectionState
 import com.silverpine.uu.bluetooth.UUPeripheralDisconnectedBlock

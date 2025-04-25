@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
 import com.silverpine.uu.bluetooth.UUBluetoothError
+import com.silverpine.uu.bluetooth.UUVoidCallback
 import com.silverpine.uu.core.UUError
 import com.silverpine.uu.core.uuDispatch
 import com.silverpine.uu.core.uuToHex

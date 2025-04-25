@@ -12,9 +12,9 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.annotation.RequiresPermission
+import com.silverpine.uu.core.UUDate
 import com.silverpine.uu.core.uuIsBitSet
 import com.silverpine.uu.core.uuToHexData
-import com.silverpine.uu.logging.UULog
 import java.util.Locale
 import java.util.UUID
 
@@ -31,6 +31,18 @@ object UUBluetooth
          */
         val noRssi: Int = 127
     }
+
+    /**
+     * Framework defaults.  Calling applications can change these once and they are used for
+     * all sessions during the life of the current app.
+     */
+    object Defaults
+    {
+        var connectTimeout: Long = 10 * UUDate.Constants.millisInOneSecond
+        var disconnectTimeout: Long = 10 * UUDate.Constants.millisInOneSecond
+        var operationTimeout: Long = 10 * UUDate.Constants.millisInOneSecond
+    }
+
     /**
      * Gets the current framework version
      *

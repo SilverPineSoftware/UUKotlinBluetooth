@@ -13,12 +13,12 @@ class ReadDeviceInfoOperation(peripheral: UUPeripheral): UUPeripheralOperation<U
 
     override fun execute(completion: (UUError?) -> Unit)
     {
-        readUtf8String(UUBluetoothConstants.Characteristics.DEVICE_NAME_UUID!!)
+        readUtf8String(UUBluetoothConstants.Characteristics.DEVICE_NAME_UUID)
         { deviceNameResult ->
 
             deviceName = deviceNameResult
 
-            readUtf8String(UUBluetoothConstants.Characteristics.MANUFACTURER_NAME_STRING_UUID!!)
+            readUtf8String(UUBluetoothConstants.Characteristics.MANUFACTURER_NAME_STRING_UUID)
             { mfgNameResult ->
                 mfgName = mfgNameResult
 

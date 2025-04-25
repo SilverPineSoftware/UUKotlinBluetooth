@@ -50,7 +50,12 @@ enum class UUBluetoothErrorCode(val rawValue: Int)
     /**
      * An operation was interrupted by the user
      */
-    UserInterrupted(8);
+    UserInterrupted(8),
+
+    /**
+     * A service discovery operation did not discover any services
+     */
+    NoServicesDiscovered(9);
 
     /**
      *

@@ -26,7 +26,7 @@ internal object UUBluetoothError
      * @param errorCode error code
      * @param caughtException caught exception
      */
-    private fun makeError(errorCode: UUBluetoothErrorCode, caughtException: Exception? = null): UUError
+    internal fun makeError(errorCode: UUBluetoothErrorCode, caughtException: Exception? = null): UUError
     {
         val err = UUError(errorCode.rawValue, DOMAIN, caughtException)
         err.errorDescription = errorCode.errorDescription

@@ -3,8 +3,8 @@ package com.silverpine.uu.bluetooth.internal
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.le.ScanResult
 import android.os.Build
-import android.os.ParcelUuid
 import com.silverpine.uu.bluetooth.UUAdvertisement
+import java.util.UUID
 
 internal class UUBluetoothAdvertisement(
     private val scanResult: ScanResult,
@@ -19,8 +19,8 @@ internal class UUBluetoothAdvertisement(
     override val rssi: Int
         get() = scanResult.rssi
 
-    override val localName: String?
-        get() = scanResult.scanRecord?.deviceName
+    override val localName: String
+        get() = scanResult.scanRecord?.deviceName ?: ""
 
     override val isConnectable: Boolean
         get() = scanResult.isConnectable
@@ -40,16 +40,16 @@ internal class UUBluetoothAdvertisement(
     override val timestamp: Long
         get() = scanResult.timestampNanos
 
-    override val services: List<ParcelUuid>?
-        get() = scanResult.scanRecord?.serviceUuids
+    override val services: List<UUID>?
+        get() = scanResult.scanRecord?.serviceUuids?.map { it.uuid }
 
-    override val serviceData: Map<ParcelUuid,ByteArray>?
-        get() = scanResult.scanRecord?.serviceData
+    override val serviceData: Map<UUID,ByteArray>?
+        get() = scanResult.scanRecord?.serviceData?.mapKeys { (parcelUuid, _) -> parcelUuid.uuid }
 
-    override val solicitedServices: List<ParcelUuid>?
+    override val solicitedServices: List<UUID>?
         get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
         {
-            scanResult.scanRecord?.serviceSolicitationUuids
+            scanResult.scanRecord?.serviceSolicitationUuids?.map { it.uuid }
         }
         else
         {

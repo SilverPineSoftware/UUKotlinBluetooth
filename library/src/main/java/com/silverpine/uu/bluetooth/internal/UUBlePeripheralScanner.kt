@@ -28,7 +28,7 @@ import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
 @SuppressLint("MissingPermission")
-class UUBlePeripheralScanner(context: Context) : UUPeripheralScanner
+internal class UUBlePeripheralScanner(context: Context) : UUPeripheralScanner
 {
     private val nearbyPeripheralMap: MutableMap<String, UUPeripheral> = mutableMapOf()
     private var scanSettings = UUBluetoothScanSettings()

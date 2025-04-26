@@ -20,7 +20,7 @@ import com.silverpine.uu.logging.UULog
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
-class UUBluetoothDevicePeripheralSession(
+internal class UUBluetoothDevicePeripheralSession(
     override val peripheral: UUPeripheral,
 
 ) : UUPeripheralSession

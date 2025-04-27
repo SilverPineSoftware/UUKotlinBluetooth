@@ -30,7 +30,6 @@ internal class UUBluetoothDevicePeripheral(
     override var firstDiscoveryTime: Long = 0L
     override var identifier: String = advertisement.address
     override var name: String = bluetoothDevice.name ?: ""
-    override var friendlyName: String = advertisement.address
     override var services: List<BluetoothGattService>? = null
     override var mtuSize: Int = DEFAULT_MTU
     override var txPhy: Int? = null

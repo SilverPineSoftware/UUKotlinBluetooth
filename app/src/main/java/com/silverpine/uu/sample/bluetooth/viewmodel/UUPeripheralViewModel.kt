@@ -29,7 +29,7 @@ class UUPeripheralViewModel(val model: UUPeripheral): UUAdapterItemViewModel()
 
     init
     {
-        _friendlyName.value = model.friendlyName
+        _friendlyName.value = (model.advertisement.localName.takeIf { it.isNotEmpty() } ?: model.name).takeIf { it.isNotEmpty() } ?: "Unknown Device"
         _macAddress.value = "${model.identifier}\n${TextUtils.join("\n", model.advertisement.services?.map { it }?.toList() ?: ArrayList<ParcelUuid>(0))}"
 
         _connectionState.value = "${model.peripheralState}"

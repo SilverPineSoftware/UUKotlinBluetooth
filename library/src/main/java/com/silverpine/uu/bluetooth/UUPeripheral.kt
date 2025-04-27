@@ -28,7 +28,6 @@ interface UUPeripheral
 
     val identifier: String
     val name: String
-    val friendlyName: String
     val peripheralState: UUPeripheralConnectionState
     val services: List<BluetoothGattService>?
 

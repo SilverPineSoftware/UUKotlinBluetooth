@@ -5,8 +5,9 @@ import android.os.Build
 import android.util.Log
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.platform.app.InstrumentationRegistry
-import com.silverpine.uu.ux.UUPermissions
-import kotlinx.coroutines.Job
+import com.silverpine.uu.test.ui.uuAppendOutputLine
+import com.silverpine.uu.test.ui.uuRequestPermissions
+import com.silverpine.uu.test.ui.uuSetTestName
 import org.junit.Rule
 
 open class BaseTest
@@ -20,22 +21,17 @@ open class BaseTest
     {
         appendOutputLine("Starting test")
 
-        activityScenarioRule.scenario.onActivity()
-        { activity: UUBleTestActivity ->
-            activity.setTestName(testName)
-        }
+        activityScenarioRule.uuSetTestName(testName)
 
         appendOutputLine("Acquiring BLE permissions")
-        requestBluetoothPermissions(activityScenarioRule)
+        requestBluetoothPermissions() //activityScenarioRule)
     }
 
     protected fun appendOutputLine(line: String)
     {
         log("OUTPUT: $line")
 
-        activityScenarioRule.scenario.onActivity { activity: UUBleTestActivity ->
-            activity.appendLine(line)
-        }
+        activityScenarioRule.uuAppendOutputLine(line)
     }
 
     protected fun log(text: String)
@@ -43,6 +39,33 @@ open class BaseTest
         Log.d(javaClass.name, text)
     }
 
+    private fun requestBluetoothPermissions() //(scenarioRule: ActivityScenarioRule<*>)
+    {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+        {
+            //requestBluetoothPermissionsPost31(scenarioRule)
+
+            val result = activityScenarioRule.uuRequestPermissions(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.BLUETOOTH_SCAN,
+                    Manifest.permission.BLUETOOTH_CONNECT
+                )
+            )
+        }
+        else
+        {
+            //requestBluetoothPermissionsPre31(scenarioRule)
+
+            val result = activityScenarioRule.uuRequestPermissions(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                )
+            )
+        }
+    }
+
+    /*
     companion object
     {
         suspend fun requestBluetoothPermissions(scenarioRule: ActivityScenarioRule<*>)
@@ -91,5 +114,5 @@ open class BaseTest
 
             job.join()
         }
-    }
+    }*/
 }

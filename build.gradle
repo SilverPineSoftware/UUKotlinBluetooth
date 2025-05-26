@@ -1,12 +1,12 @@
 buildscript {
     ext.min_sdk = 26
     ext.target_sdk = 36
-    ext.gradle_version = '8.9.1'
+    ext.gradle_version = '8.9.3'
     ext.kotlin_version = '2.1.20'
     ext.java_version = JavaVersion.VERSION_17
-    ext.uu_test_version = '0.0.7-DEV-32'
-    ext.uu_core_version = '0.0.13'
-    ext.uu_ux_version = '0.0.10'
+    ext.uu_test_version = '0.0.7.25-develop-SNAPSHOT'
+    ext.uu_core_version = '0.0.14.95-develop-SNAPSHOT'
+    ext.uu_ux_version = '0.0.12.99-develop-SNAPSHOT'
 }
 
 plugins {

@@ -2,10 +2,10 @@ package com.silverpine.uu.sample.bluetooth.viewmodel
 
 import android.os.Bundle
 import com.silverpine.uu.bluetooth.UUBluetooth
-import com.silverpine.uu.bluetooth.UUBluetoothScanSettings
 import com.silverpine.uu.bluetooth.UUBluetoothSniffer
 import com.silverpine.uu.bluetooth.UUPeripheral
 import com.silverpine.uu.bluetooth.UUPeripheralScanner
+import com.silverpine.uu.bluetooth.UUPeripheralScannerConfig
 import com.silverpine.uu.bluetooth.defaultScanner
 import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.logging.UULog
@@ -77,7 +77,7 @@ class HomeViewModel: RecyclerViewModel()
 
         //adapter.update(listOf())
 
-        val settings = UUBluetoothScanSettings()
+        val config = UUPeripheralScannerConfig()
 
 //        val filters: ArrayList<UUPeripheralFilter<UUPeripheral>> = arrayListOf()
 //        //filters.add(RequireMinimumRssiPeripheralFilter(-70))
@@ -90,8 +90,19 @@ class HomeViewModel: RecyclerViewModel()
 //        val outOfRangeFilters: ArrayList<UUOutOfRangePeripheralFilter<UUPeripheral>> = arrayListOf()
         //outOfRangeFilters.add(OutOfRangeFilter(30000))
 
-        scanner.startScan(settings)
-        { list ->
+        scanner.config = config
+        scanner.started =
+        { scanner ->
+            UULog.d(javaClass, "startScanning", "Scan was started")
+        }
+
+        scanner.ended =
+        { scanner, error ->
+            UULog.d(javaClass, "startScanning", "Scan ended")
+        }
+
+        scanner.listChanged =
+        { scanner, list ->
 
             val timeSinceLastUpdate = System.currentTimeMillis() - this.lastUpdate
             if (timeSinceLastUpdate > 300)
@@ -114,6 +125,8 @@ class HomeViewModel: RecyclerViewModel()
                 }
             }
         }
+
+        scanner.start()
 
         updateMenu()
     }
@@ -250,7 +263,7 @@ class HomeViewModel: RecyclerViewModel()
     {
         //Log.d(TAG, "stopScanning")
 
-        scanner.stopScan()
+        scanner.stop()
         updateMenu()
     }
 

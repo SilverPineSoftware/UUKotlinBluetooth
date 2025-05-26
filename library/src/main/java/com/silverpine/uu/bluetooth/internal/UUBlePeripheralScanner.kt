@@ -7,9 +7,12 @@ import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.content.Context
-import com.silverpine.uu.bluetooth.UUBluetoothScanSettings
 import com.silverpine.uu.bluetooth.UUPeripheral
+import com.silverpine.uu.bluetooth.UUPeripheralListChangedCallback
 import com.silverpine.uu.bluetooth.UUPeripheralScanner
+import com.silverpine.uu.bluetooth.UUPeripheralScannerConfig
+import com.silverpine.uu.bluetooth.UUPeripheralScannerStartedCallback
+import com.silverpine.uu.bluetooth.UUPeripheralScannerStoppedCallback
 import com.silverpine.uu.bluetooth.buildScanSettings
 import com.silverpine.uu.bluetooth.buildUuidFilters
 import com.silverpine.uu.bluetooth.callbackThrottleMillis
@@ -31,8 +34,8 @@ import kotlin.time.toDuration
 internal class UUBlePeripheralScanner(context: Context) : UUPeripheralScanner
 {
     private val nearbyPeripheralMap: MutableMap<String, UUPeripheral> = mutableMapOf()
-    private var scanSettings = UUBluetoothScanSettings()
-    private var nearbyPeripheralCallback: (List<UUPeripheral>) -> Unit = {}
+    //private var scanSettings = UUBluetoothScanSettings()
+    //private var nearbyPeripheralCallback: (List<UUPeripheral>) -> Unit = {}
     private val nearbyPeripherals = MutableStateFlow<List<UUPeripheral>>(emptyList())
     private val scope = CoroutineScope(Dispatchers.IO)
 
@@ -70,19 +73,19 @@ internal class UUBlePeripheralScanner(context: Context) : UUPeripheralScanner
 
     override var isScanning: Boolean = false
 
-    @OptIn(FlowPreview::class)
-    override fun startScan(
-        settings: UUBluetoothScanSettings,
-        callback: (List<UUPeripheral>) -> Unit
-    ) {
-        this.scanSettings = settings
-        this.nearbyPeripheralCallback = callback
-        clearNearbyPeripherals()
+    override var config: UUPeripheralScannerConfig = UUPeripheralScannerConfig()
+    override var peripherals: List<UUPeripheral> = listOf()
+    override var started: UUPeripheralScannerStartedCallback = { scanner -> }
+    override var ended: UUPeripheralScannerStoppedCallback = { scanner, error -> }
+    override var listChanged: UUPeripheralListChangedCallback = { scanner, list -> }
 
+    @OptIn(FlowPreview::class)
+    override fun start()
+    {
         // cancel any existing subscription
         nearbyPeripheralSubscription?.cancel()
 
-        val throttleMillis = settings.callbackThrottleMillis
+        val throttleMillis = config.callbackThrottleMillis
         if (throttleMillis > 0)
         {
             nearbyPeripheralSubscription = nearbyPeripherals
@@ -107,12 +110,14 @@ internal class UUBlePeripheralScanner(context: Context) : UUPeripheralScanner
         }
 
         isScanning = true
-        val scanFilters = scanSettings.buildUuidFilters()
-        val scanSettings = scanSettings.buildScanSettings()
+        val scanFilters = config.buildUuidFilters()
+        val scanSettings = config.buildScanSettings()
+
+        notifyScanStarted()
         bluetoothLeScanner.startScan(scanFilters, scanSettings, scanCallback)
     }
 
-    override fun stopScan()
+    override fun stop()
     {
         isScanning = false
 
@@ -120,7 +125,20 @@ internal class UUBlePeripheralScanner(context: Context) : UUPeripheralScanner
         nearbyPeripheralSubscription = null
 
         bluetoothLeScanner.stopScan(scanCallback)
+
+        notifyScanEnded(null)
     }
+
+    /*
+    @OptIn(FlowPreview::class)
+    override fun startScan(
+        settings: UUBluetoothScanSettings,
+        callback: (List<UUPeripheral>) -> Unit
+    ) {
+        this.scanSettings = settings
+        this.nearbyPeripheralCallback = callback
+        clearNearbyPeripherals()
+    }*/
 
     override fun getPeripheral(identifier: String): UUPeripheral?
     {
@@ -136,6 +154,16 @@ internal class UUBlePeripheralScanner(context: Context) : UUPeripheralScanner
             nearbyPeripheralMap.clear()
             nearbyPeripherals.value = emptyList()
         }
+    }
+
+    private fun notifyScanStarted()
+    {
+        started(this)
+    }
+
+    private fun notifyScanEnded(error: Error?)
+    {
+        ended(this, error)
     }
 
     private fun handleScanResult(callbackType: Int, scanResult: ScanResult)
@@ -178,17 +206,18 @@ internal class UUBlePeripheralScanner(context: Context) : UUPeripheralScanner
 
     private fun shouldDiscoverPeripheral(peripheral: UUPeripheral): Boolean
     {
-        val filters = scanSettings.discoveryFilters ?: return true
+        val filters = config.discoveryFilters ?: return true
         return filters.all { it.shouldDiscover(peripheral) }
     }
 
     private fun notifyNearbyPeripherals(list: List<UUPeripheral>)
     {
-        val sorted = scanSettings.peripheralSorting?.let()
+        val sorted = config.peripheralSorting?.let()
         { comparator ->
             list.sortedWith(comparator)
         } ?: list
 
-        nearbyPeripheralCallback(sorted)
+        peripherals = sorted
+        listChanged(this, sorted)
     }
 }

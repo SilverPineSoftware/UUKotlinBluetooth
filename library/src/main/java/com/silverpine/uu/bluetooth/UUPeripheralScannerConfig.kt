@@ -8,7 +8,7 @@ import com.silverpine.uu.core.UUDate
 /**
  * Contains BLE scanning settings.
  */
-data class UUBluetoothScanSettings(
+data class UUPeripheralScannerConfig(
 
     var scanMode: Int = ScanSettings.SCAN_MODE_LOW_LATENCY,
     var callbackType: Int = ScanSettings.CALLBACK_TYPE_ALL_MATCHES,
@@ -41,15 +41,15 @@ data class UUBluetoothScanSettings(
     var peripheralSorting: Comparator<UUPeripheral>? = null
 )
 
-internal val UUBluetoothScanSettings.callbackThrottleMillis: Long
+internal val UUPeripheralScannerConfig.callbackThrottleMillis: Long
     get() = callbackThrottle.times(UUDate.Constants.millisInOneSecond).toLong()
 
-internal fun UUBluetoothScanSettings.buildUuidFilters(): List<ScanFilter>?
+internal fun UUPeripheralScannerConfig.buildUuidFilters(): List<ScanFilter>?
 {
     return serviceUUIDs?.map { ScanFilter.Builder().setServiceUuid(it).build() }
 }
 
-internal fun UUBluetoothScanSettings.buildScanSettings(): ScanSettings
+internal fun UUPeripheralScannerConfig.buildScanSettings(): ScanSettings
 {
     val builder = ScanSettings.Builder()
     builder.setCallbackType(callbackType)

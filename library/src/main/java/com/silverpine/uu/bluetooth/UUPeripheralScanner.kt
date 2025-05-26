@@ -1,8 +1,5 @@
 package com.silverpine.uu.bluetooth
 
-import com.silverpine.uu.bluetooth.UUBluetooth.requireApplicationContext
-import com.silverpine.uu.bluetooth.internal.UUBlePeripheralScanner
-
 typealias UUPeripheralListChangedCallback = (UUPeripheralScanner, List<UUPeripheral>) -> Unit
 typealias UUPeripheralScannerStartedCallback = (UUPeripheralScanner) -> Unit
 typealias UUPeripheralScannerStoppedCallback = (UUPeripheralScanner, Error?) -> Unit

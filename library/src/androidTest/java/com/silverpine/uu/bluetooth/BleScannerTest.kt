@@ -31,12 +31,24 @@ class BleScannerTest: BaseTest()
 
         appendOutputLine("Starting scanner, timeout: ${timeout / 1000.0f}")
 
-        val settings = UUBluetoothScanSettings()
-        scanner.startScan(settings)
-        { list ->
+        val config = UUPeripheralScannerConfig()
+        scanner.config = config
+        scanner.started =
+        { scanner ->
+            appendOutputLine("Scan started")
+        }
 
+        scanner.ended =
+        { scanner, error ->
+            appendOutputLine("Scan ended, error: $error")
+        }
+
+        scanner.listChanged =
+        { scanner, list ->
             appendOutputLine("${list.size} nearby devices")
         }
+
+        scanner.start()
 
         UUTimer.startTimer("testTimer", timeout, null)
         { _, _ ->
@@ -47,6 +59,6 @@ class BleScannerTest: BaseTest()
         job.join()
 
         appendOutputLine("Stopping scanner")
-        scanner.stopScan()
+        scanner.stop()
     }
 }

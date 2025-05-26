@@ -6,7 +6,6 @@ import com.silverpine.uu.bluetooth.UUBluetoothSniffer
 import com.silverpine.uu.bluetooth.UUPeripheral
 import com.silverpine.uu.bluetooth.UUPeripheralScanner
 import com.silverpine.uu.bluetooth.UUPeripheralScannerConfig
-import com.silverpine.uu.bluetooth.defaultScanner
 import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.logging.UULog
 import com.silverpine.uu.sample.bluetooth.R
@@ -23,7 +22,7 @@ class HomeViewModel: RecyclerViewModel()
 {
     // private val scanner: UUBluetoothScanner<UUPeripheral> = UUBluetoothScanner(UUBluetooth.requireApplicationContext(), UUDefaultPeripheralFactory())
 
-    private val scanner: UUPeripheralScanner = UUBluetooth.defaultScanner
+    private val scanner: UUPeripheralScanner = UUBluetooth.scanner
     private val sniffer: UUBluetoothSniffer = UUBluetoothSniffer(UUBluetooth.requireApplicationContext())
 
     private var lastUpdate: Long = 0

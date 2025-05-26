@@ -10,7 +10,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.silverpine.uu.bluetooth.UUBluetooth
 import com.silverpine.uu.bluetooth.UUPeripheral
 import com.silverpine.uu.bluetooth.UUPeripheralConnectionState
-import com.silverpine.uu.bluetooth.defaultScanner
 import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.sample.bluetooth.BR
 import com.silverpine.uu.sample.bluetooth.R
@@ -34,7 +33,7 @@ class PeripheralDetailActivity : UURecyclerActivity()
         super.onCreate(savedInstanceState)
 
         val peripheralIdentifier = intent.uuRequireString("peripheral.identifier")
-        val p = UUBluetooth.defaultScanner.getPeripheral(peripheralIdentifier)
+        val p = UUBluetooth.scanner.getPeripheral(peripheralIdentifier)
             ?: throw RuntimeException("Expect peripheral $peripheralIdentifier to exist!")
 
         peripheral = p

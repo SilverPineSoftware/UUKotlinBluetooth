@@ -18,12 +18,73 @@ import com.silverpine.uu.core.uuToHexData
 import java.util.Locale
 import java.util.UUID
 
+/*
+public class UUBluetooth
+{
+    private init() {}
+
+    private static var provider: UUBluetoothProvider = UUDefaultProvider()
+
+    public static func setProvider(_ provider: UUBluetoothProvider)
+    {
+        UUBluetooth.provider = provider
+    }
+
+    public static func initializeCoreBluetooth()
+    {
+        // Simply access singleton will create a CBCentralManager and prompt users for permissions.
+        _ = UUCentralManager.shared
+    }
+
+    public static var scanner: UUPeripheralScanner
+    {
+        return provider.scanner
+    }
+
+    public static func createSession(peripheral: UUPeripheral) -> UUPeripheralSession
+    {
+        return provider.createSession(peripheral: peripheral)
+    }
+}
+*/
+
 /**
  * Helpful Bluetooth methods, constants, interfaces
  */
 @SuppressWarnings("unused")
 object UUBluetooth
 {
+    //private var provider: UUBluetoothProvider lazy by { UUDefaultProvider() }
+
+    private lateinit var provider: UUBluetoothProvider// by lazy { UUDefaultProvider() }
+
+    fun setProvider(provider: UUBluetoothProvider)
+    {
+        this.provider = provider
+    }
+
+    val scanner: UUPeripheralScanner
+        get()
+        {
+            return provider.scanner
+        }
+
+    fun createSession(peripheral: UUPeripheral): UUPeripheralSession
+    {
+        return provider.createSession(peripheral)
+    }
+
+
+
+
+
+
+
+
+
+
+
+
     object Constants
     {
         /**
@@ -312,10 +373,13 @@ object UUBluetooth
      * classes or methods.  Pass an applicationContext only.
      *
      * @param applicationContext application context
+     * @param provider provider
      */
-    fun init(applicationContext: Context)
+    fun init(applicationContext: Context, provider: UUBluetoothProvider = UUDefaultProvider(applicationContext))
     {
         UUBluetooth.applicationContext = applicationContext
+
+        setProvider(provider)
     }
 
     fun requireApplicationContext(): Context

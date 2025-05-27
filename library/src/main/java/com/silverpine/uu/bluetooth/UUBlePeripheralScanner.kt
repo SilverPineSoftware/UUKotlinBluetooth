@@ -1,4 +1,4 @@
-package com.silverpine.uu.bluetooth.internal
+package com.silverpine.uu.bluetooth
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
@@ -7,15 +7,8 @@ import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.content.Context
-import com.silverpine.uu.bluetooth.UUPeripheral
-import com.silverpine.uu.bluetooth.UUPeripheralListChangedCallback
-import com.silverpine.uu.bluetooth.UUPeripheralScanner
-import com.silverpine.uu.bluetooth.UUPeripheralScannerConfig
-import com.silverpine.uu.bluetooth.UUPeripheralScannerStartedCallback
-import com.silverpine.uu.bluetooth.UUPeripheralScannerStoppedCallback
-import com.silverpine.uu.bluetooth.buildScanSettings
-import com.silverpine.uu.bluetooth.buildUuidFilters
-import com.silverpine.uu.bluetooth.callbackThrottleMillis
+import com.silverpine.uu.bluetooth.internal.UUBluetoothAdvertisement
+import com.silverpine.uu.bluetooth.internal.UUBluetoothDevicePeripheral
 import com.silverpine.uu.logging.UULog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,7 +24,7 @@ import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
 @SuppressLint("MissingPermission")
-internal class UUBlePeripheralScanner(context: Context) : UUPeripheralScanner
+class UUBlePeripheralScanner(context: Context) : UUPeripheralScanner
 {
     private val nearbyPeripheralMap: MutableMap<String, UUPeripheral> = mutableMapOf()
     //private var scanSettings = UUBluetoothScanSettings()
@@ -195,7 +188,9 @@ internal class UUBlePeripheralScanner(context: Context) : UUPeripheralScanner
 
         synchronized(nearbyPeripheralMap)
         {
-            val existing = nearbyPeripheralMap[advertisement.address] ?: UUBluetoothDevicePeripheral(advertisement)
+            val existing = nearbyPeripheralMap[advertisement.address] ?: UUBluetoothDevicePeripheral(
+                advertisement
+            )
 
             //existing.update(advertisement)
 

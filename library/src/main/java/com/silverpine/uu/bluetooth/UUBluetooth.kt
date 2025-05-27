@@ -10,6 +10,7 @@ import android.bluetooth.BluetoothServerSocket
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.ParcelUuid
 import androidx.annotation.RequiresApi
 import androidx.annotation.RequiresPermission
 import com.silverpine.uu.core.UUDate
@@ -482,6 +483,11 @@ fun uuShortCodeToUuid(shortCode: String): UUID
     return uuUuidFromString(uuShortCodeToFullUuidString(shortCode))
 }
 
+fun UUID.uuToParcelUuid(): ParcelUuid
+{
+    return ParcelUuid(this)
+}
+
 /**
  * Checks a string to see if it is a valid BTLE shortcode
  *
@@ -502,5 +508,5 @@ fun uuIsValidShortCode(shortCode: String?): Boolean
  */
 fun uuUuidFromString(string: String): UUID
 {
-    return UUID.fromString(string)!!
+    return UUID.fromString(string)
 }

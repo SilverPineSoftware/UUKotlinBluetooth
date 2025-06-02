@@ -1,6 +1,6 @@
 package com.silverpine.uu.bluetooth
 
-data class UUPeripheralSessionConfiguration(
+open class UUPeripheralSessionConfiguration(
     var connectTimeout: Long = UUBluetooth.Defaults.connectTimeout,
     var disconnectTimeout: Long = UUBluetooth.Defaults.disconnectTimeout,
     var serviceDiscoveryTimeout: Long = UUBluetooth.Defaults.operationTimeout,

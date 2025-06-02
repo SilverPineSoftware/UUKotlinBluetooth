@@ -2,7 +2,7 @@ package com.silverpine.uu.bluetooth
 
 import android.content.Context
 import com.silverpine.uu.bluetooth.UUBlePeripheralScanner
-import com.silverpine.uu.bluetooth.internal.UUBluetoothDevicePeripheralSession
+import com.silverpine.uu.bluetooth.UUBluetoothDevicePeripheralSession
 
 class UUDefaultProvider(applicationContext: Context): UUBluetoothProvider
 {

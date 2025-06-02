@@ -137,7 +137,7 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
             if (status == BluetoothGatt.GATT_SUCCESS && newState == BluetoothGatt.STATE_CONNECTED)
             {
                 debugLog("connect", "Connected to: $bluetoothDevice")
-                UUTimer.cancelActiveTimer(timerId)
+                cancelTimer(timerId)
                 disconnectError = null
                 connected.safeNotify()
             }
@@ -172,7 +172,7 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
             }
         }
 
-        startTimeoutWatchdog(timerId, timeout)
+        startDisconnectWatchdogTimer(timerId, timeout)
 
         val connectGattAutoFlag = false
 
@@ -202,11 +202,11 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
         bluetoothGattCallback.servicesDiscoveredCallback =
         { services, error ->
             debugLog("discoverServices", "Service Discovery complete: $bluetoothDevice, error: $error")
-            UUTimer.cancelActiveTimer(timerId)
+            cancelTimer(timerId)
             completion.safeNotify(services, error)
         }
 
-        startTimeoutWatchdog(timerId, timeout)
+        startDisconnectWatchdogTimer(timerId, timeout)
 
         val gatt = bluetoothGatt
 
@@ -254,7 +254,7 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
 
         bluetoothGattCallback.registerSetCharacteristicNotificationCallback(characteristic, callback)
 
-        startTimeoutWatchdog(timerId, timeout)
+        startDisconnectWatchdogTimer(timerId, timeout)
 
         val gatt = bluetoothGatt
 
@@ -329,14 +329,14 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
             debugLog(
                 "read:characteristic",
                 "Read characteristic complete: $bluetoothDevice, error: $error, data: ${data?.uuToHex()}")
-            UUTimer.cancelActiveTimer(timerId)
+            cancelTimer(timerId)
             bluetoothGattCallback.clearReadCharacteristicCallback(characteristic)
             completion.safeNotify(data, error)
         }
 
         bluetoothGattCallback.registerReadCharacteristicCallback(characteristic, callback)
 
-        startTimeoutWatchdog(timerId, timeout)
+        startDisconnectWatchdogTimer(timerId, timeout)
 
         val gatt = bluetoothGatt
 
@@ -385,14 +385,14 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
             debugLog(
                 "read:descriptor",
                 "Read descriptor complete: $bluetoothDevice, error: $error, data: ${data?.uuToHex()}")
-            UUTimer.cancelActiveTimer(timerId)
+            cancelTimer(timerId)
             bluetoothGattCallback.clearReadDescriptorCallback(descriptor)
             completion.safeNotify(data, error)
         }
 
         bluetoothGattCallback.registerReadDescriptorCallback(descriptor, callback)
 
-        startTimeoutWatchdog(timerId, timeout)
+        startDisconnectWatchdogTimer(timerId, timeout)
 
         val gatt = bluetoothGatt
 
@@ -441,14 +441,14 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
             debugLog(
                 "write:characteristic",
                 "Write characteristic complete: $bluetoothDevice, error: $error")
-            UUTimer.cancelActiveTimer(timerId)
+            cancelTimer(timerId)
             bluetoothGattCallback.clearWriteCharacteristicCallback(characteristic)
             completion.safeNotify(error)
         }
 
         bluetoothGattCallback.registerWriteCharacteristicCallback(characteristic, callback)
 
-        startTimeoutWatchdog(timerId, timeout)
+        startDisconnectWatchdogTimer(timerId, timeout)
 
         val gatt = bluetoothGatt
 
@@ -534,14 +534,14 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
             debugLog(
                 "write:descriptor",
                 "Write descriptor complete: $bluetoothDevice, error: $error")
-            UUTimer.cancelActiveTimer(timerId)
+            cancelTimer(timerId)
             bluetoothGattCallback.clearWriteDescriptorCallback(descriptor)
             completion.safeNotify(error)
         }
 
         bluetoothGattCallback.registerWriteDescriptorCallback(descriptor, callback)
 
-        startTimeoutWatchdog(timerId, timeout)
+        startDisconnectWatchdogTimer(timerId, timeout)
 
         val gatt = bluetoothGatt
 
@@ -587,14 +587,14 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
             debugLog(
                 "readRSSI",
                 "Read RSSI complete: $bluetoothDevice, error: $error, data: $data")
-            UUTimer.cancelActiveTimer(timerId)
+            cancelTimer(timerId)
             bluetoothGattCallback.readRssiCallback = null
             completion.safeNotify(data, error)
         }
 
         bluetoothGattCallback.readRssiCallback = callback
 
-        startTimeoutWatchdog(timerId, timeout)
+        startDisconnectWatchdogTimer(timerId, timeout)
 
         val gatt = bluetoothGatt
 
@@ -633,14 +633,14 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
             debugLog(
                 "requestMtu",
                 "Request MTU complete: $bluetoothDevice, error: $error, data: $data")
-            UUTimer.cancelActiveTimer(timerId)
+            cancelTimer(timerId)
             bluetoothGattCallback.mtuChangedCallback = null
             completion.safeNotify(data, error)
         }
 
         bluetoothGattCallback.mtuChangedCallback = callback
 
-        startTimeoutWatchdog(timerId, timeout)
+        startDisconnectWatchdogTimer(timerId, timeout)
 
         val gatt = bluetoothGatt
 
@@ -678,14 +678,14 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
             debugLog(
                 "readPhy",
                 "Read Phy complete: $bluetoothDevice, error: $error, txPhy: $txPhy, rxPhy: $rxPhy")
-            UUTimer.cancelActiveTimer(timerId)
+            cancelTimer(timerId)
             bluetoothGattCallback.phyReadCallback = null
             completion.safeNotify(rxPhy, txPhy, error)
         }
 
         bluetoothGattCallback.phyReadCallback = callback
 
-        startTimeoutWatchdog(timerId, timeout)
+        startDisconnectWatchdogTimer(timerId, timeout)
 
         val gatt = bluetoothGatt
 
@@ -720,14 +720,14 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
             debugLog(
                 "updatePhy",
                 "Update Phy complete: $bluetoothDevice, error: $error, txPhy: $txPhyUpdated, rxPhy: $rxPhyUpdated")
-            UUTimer.cancelActiveTimer(timerId)
+            cancelTimer(timerId)
             bluetoothGattCallback.phyUpdatedCallback = null
             completion.safeNotify(txPhyUpdated, rxPhyUpdated, error)
         }
 
         bluetoothGattCallback.phyUpdatedCallback = callback
 
-        startTimeoutWatchdog(timerId, timeout)
+        startDisconnectWatchdogTimer(timerId, timeout)
 
         val gatt = bluetoothGatt
 
@@ -862,13 +862,27 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
         }
     }
 
-    private fun startTimeoutWatchdog(timerId: String, timeout: Long)
+    fun startDisconnectWatchdogTimer(timerId: String, timeout: Long)
     {
         UUTimer.startTimer(timerId, timeout, null)
         { _, _ ->
             disconnect(UUBluetoothError.timeoutError())
         }
     }
+
+    fun startTimer(timerId: String, timeout: Long, block: ()->Unit)
+    {
+        UUTimer.startTimer(timerId, timeout, null)
+        { _, _ ->
+            block()
+        }
+    }
+
+    fun cancelTimer(timerId: String)
+    {
+        UUTimer.cancelActiveTimer(timerId)
+    }
+
     private fun reconnectGatt()
     {
         try

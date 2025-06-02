@@ -1,45 +1,38 @@
-package com.silverpine.uu.bluetooth.internal
+package com.silverpine.uu.bluetooth
 
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
-import com.silverpine.uu.bluetooth.UUBluetoothError
-import com.silverpine.uu.bluetooth.UUBluetoothErrorCode
-import com.silverpine.uu.bluetooth.UUByteArrayCallback
-import com.silverpine.uu.bluetooth.UUPeripheral
-import com.silverpine.uu.bluetooth.UUPeripheralSession
-import com.silverpine.uu.bluetooth.UUPeripheralSessionConfiguration
-import com.silverpine.uu.bluetooth.UUPeripheralSessionEndedCallback
-import com.silverpine.uu.bluetooth.UUPeripheralSessionStartedCallback
-import com.silverpine.uu.bluetooth.UUSessionErrorHandler
-import com.silverpine.uu.bluetooth.UUVoidCallback
 import com.silverpine.uu.bluetooth.extensions.uuCommonName
+import com.silverpine.uu.bluetooth.internal.safeNotify
 import com.silverpine.uu.core.UUError
 import com.silverpine.uu.core.UUTimedMetric
 import com.silverpine.uu.logging.UULog
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
-internal class UUBluetoothDevicePeripheralSession(
+open class UUBluetoothDevicePeripheralSession(
     override val peripheral: UUPeripheral,
 
 ) : UUPeripheralSession
 {
     override var configuration: UUPeripheralSessionConfiguration = UUPeripheralSessionConfiguration()
     override var discoveredServices: ArrayList<BluetoothGattService> = arrayListOf()
-        private set
+        protected set
 
-    override var discoveredCharacteristics: ConcurrentHashMap<UUID, List<BluetoothGattCharacteristic>> = ConcurrentHashMap()
-        private set
+    override var discoveredCharacteristics: ConcurrentHashMap<UUID, List<BluetoothGattCharacteristic>> =
+        ConcurrentHashMap()
+        protected set
 
-    override var discoveredDescriptors: ConcurrentHashMap<UUID, List<BluetoothGattDescriptor>> = ConcurrentHashMap()
-        private set
+    override var discoveredDescriptors: ConcurrentHashMap<UUID, List<BluetoothGattDescriptor>> =
+        ConcurrentHashMap()
+        protected set
 
     override var sessionEndError: UUError? = null
-        private set
+        protected set
 
-    override var sessionStarted: UUPeripheralSessionStartedCallback? = null
-    override var sessionEnded: UUPeripheralSessionEndedCallback? = null
+    override var started: UUPeripheralSessionStartedCallback? = null
+    override var ended: UUPeripheralSessionErrorCallback? = null
 
     private val connectTimeMeasurement = UUTimedMetric("connectTime")
     private val disconnectTimeMeasurement = UUTimedMetric("disconnectTime")
@@ -60,38 +53,35 @@ internal class UUBluetoothDevicePeripheralSession(
         disconnect()
     }
 
+    /*
+    public func startTimer(name: String, timeout: TimeInterval, block: @escaping ()->())
+    {
+        peripheral.startTimer(name: name, timeout: timeout, block: block)
+    }
+
+    public func cancelTimer(name: String)
+    {
+        peripheral.cancelTimer(name: name)
+    }*/
+
+    override fun startTimer(name: String, timeout: Long, block: () -> Unit)
+    {
+
+    }
+
+    override fun cancelTimer(name: String)
+    {
+
+    }
+
     override fun read(
         characteristic: UUID,
-        completion: UUByteArrayCallback,
-        errorHandler: UUSessionErrorHandler?)
+        completion: UUPeripheralSessionObjectErrorCallback<ByteArray>)
     {
-        val actualErrorHandler = errorHandler ?: this::defaultErrorHandler
-
-        fun internalHandleCompletion(data: ByteArray?, error: UUError?)
-        {
-            var invokeCompletion = true
-
-            error?.let()
-            { err ->
-                val endSession = actualErrorHandler(err)
-                if (endSession)
-                {
-                    invokeCompletion = false
-                    end(error)
-                    return@let
-                }
-            }
-
-            if (invokeCompletion)
-            {
-                completion.safeNotify(data)
-            }
-        }
-
         val char = findDiscoveredCharacteristic(characteristic) ?: run()
         {
             val err = UUBluetoothError.missingRequiredCharacteristic(characteristic)
-            internalHandleCompletion(null, err)
+            completion.safeNotify(this, null, err)
             return
         }
 
@@ -100,7 +90,7 @@ internal class UUBluetoothDevicePeripheralSession(
             timeout = configuration.readTimeout,
             completion =
             { data, error ->
-                internalHandleCompletion(data, error)
+                completion.safeNotify(this, data, error)
             })
     }
 
@@ -108,36 +98,12 @@ internal class UUBluetoothDevicePeripheralSession(
         data: ByteArray,
         characteristic: UUID,
         withResponse: Boolean,
-        completion: UUVoidCallback,
-        errorHandler: UUSessionErrorHandler?)
+        completion: UUPeripheralSessionErrorCallback)
     {
-        val actualErrorHandler = errorHandler ?: this::defaultErrorHandler
-
-        fun internalHandleCompletion(error: UUError?)
-        {
-            var invokeCompletion = true
-
-            error?.let()
-            { err ->
-                val endSession = actualErrorHandler(err)
-                if (endSession)
-                {
-                    invokeCompletion = false
-                    end(error)
-                    return@let
-                }
-            }
-
-            if (invokeCompletion)
-            {
-                completion.safeNotify()
-            }
-        }
-
         val char = findDiscoveredCharacteristic(characteristic) ?: run()
         {
             val err = UUBluetoothError.missingRequiredCharacteristic(characteristic)
-            internalHandleCompletion(err)
+            completion.safeNotify(this, err)
             return
         }
 
@@ -149,7 +115,7 @@ internal class UUBluetoothDevicePeripheralSession(
                 timeout = configuration.writeTimeout,
                 completion =
                 { error: UUError? ->
-                    internalHandleCompletion(error)
+                    completion.safeNotify(this, error)
                 })
         }
         else
@@ -159,44 +125,20 @@ internal class UUBluetoothDevicePeripheralSession(
                 characteristic = char,
                 completion =
                 { error: UUError? ->
-                    internalHandleCompletion(error)
+                    completion.safeNotify(this, error)
                 })
         }
     }
 
     override fun startListeningForDataChanges(
         characteristic: UUID,
-        dataChanged: UUByteArrayCallback,
-        completion: UUVoidCallback,
-        errorHandler: UUSessionErrorHandler?)
+        dataChanged: UUPeripheralSessionObjectErrorCallback<ByteArray>,
+        completion: UUPeripheralSessionErrorCallback)
     {
-        val actualErrorHandler = errorHandler ?: this::defaultErrorHandler
-
-        fun internalHandleCompletion(error: UUError?)
-        {
-            var invokeCompletion = true
-
-            error?.let()
-            { err ->
-                val endSession = actualErrorHandler(err)
-                if (endSession)
-                {
-                    invokeCompletion = false
-                    end(error)
-                    return@let
-                }
-            }
-
-            if (invokeCompletion)
-            {
-                completion.safeNotify()
-            }
-        }
-
         val char = findDiscoveredCharacteristic(characteristic) ?: run()
         {
             val err = UUBluetoothError.missingRequiredCharacteristic(characteristic)
-            internalHandleCompletion(err)
+            completion.safeNotify(this, err)
             return
         }
 
@@ -209,47 +151,23 @@ internal class UUBluetoothDevicePeripheralSession(
 
                 //TODO: Update char in discovered map?
 
-                dataChanged.safeNotify(updatedData)
+                dataChanged.safeNotify(this, updatedData, null)
             },
             completion =
             { updatedCharacteristic, error ->
-                internalHandleCompletion(error)
+                completion.safeNotify(this, error)
             }
         )
     }
 
     override fun stopListeningForDataChanges(
         characteristic: UUID,
-        completion: UUVoidCallback,
-        errorHandler: UUSessionErrorHandler?)
+        completion: UUPeripheralSessionErrorCallback)
     {
-        val actualErrorHandler = errorHandler ?: this::defaultErrorHandler
-
-        fun internalHandleCompletion(error: UUError?)
-        {
-            var invokeCompletion = true
-
-            error?.let()
-            { err ->
-                val endSession = actualErrorHandler(err)
-                if (endSession)
-                {
-                    invokeCompletion = false
-                    end(error)
-                    return@let
-                }
-            }
-
-            if (invokeCompletion)
-            {
-                completion.safeNotify()
-            }
-        }
-
         val char = findDiscoveredCharacteristic(characteristic) ?: run()
         {
             val err = UUBluetoothError.missingRequiredCharacteristic(characteristic)
-            internalHandleCompletion(err)
+            completion(this, err)
             return
         }
 
@@ -260,7 +178,7 @@ internal class UUBluetoothDevicePeripheralSession(
             notifyHandler = null,
             completion =
             { updatedCharacteristic, error ->
-                internalHandleCompletion(error)
+                completion(this, error)
             }
         )
     }
@@ -281,7 +199,10 @@ internal class UUBluetoothDevicePeripheralSession(
 
     private fun handleSessionStarted()
     {
-        sessionStarted?.safeNotify(this)
+        finishSessionStart()
+        {
+            started?.safeNotify(this)
+        }
     }
 
     private fun disconnect()
@@ -306,7 +227,7 @@ internal class UUBluetoothDevicePeripheralSession(
             sessionEndError = disconnectError
         }
 
-        sessionEnded?.safeNotify(this, sessionEndError)
+        ended?.safeNotify(this, sessionEndError)
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -430,15 +351,13 @@ internal class UUBluetoothDevicePeripheralSession(
     // Additional Private Methods
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    private fun defaultErrorHandler(error: UUError): Boolean
-    {
-        UULog.d(javaClass, "defaultErrorHandler", "Error: $error")
-        return true
-    }
-
     private fun findDiscoveredCharacteristic(uuid: UUID): BluetoothGattCharacteristic?
     {
         return discoveredCharacteristics.values.flatten().firstOrNull { it.uuid == uuid }
     }
-}
 
+    open fun finishSessionStart(completion: ()->Unit)
+    {
+        completion()
+    }
+}

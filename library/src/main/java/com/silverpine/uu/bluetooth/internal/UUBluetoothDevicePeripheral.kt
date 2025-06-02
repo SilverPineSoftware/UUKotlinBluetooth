@@ -42,6 +42,18 @@ internal class UUBluetoothDevicePeripheral(
             return gatt.getPeripheralState()
         }
 
+    override fun startTimer(name: String, timeout: Long, block: () -> Unit)
+    {
+        val gatt = UUBluetoothGatt.get(bluetoothDevice)
+        gatt.startTimer(name, timeout, block)
+    }
+
+    override fun cancelTimer(name: String)
+    {
+        val gatt = UUBluetoothGatt.get(bluetoothDevice)
+        gatt.cancelTimer(name)
+    }
+
     override fun connect(
         timeout: Long,
         connected: UUPeripheralConnectedBlock,

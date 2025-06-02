@@ -19,12 +19,12 @@ class ReadDeviceInfoOperation(peripheral: UUPeripheral): UUPeripheralOperation<R
     override fun execute(completion: (ReadDeviceInfoResult?, UUError?) -> Unit)
     {
         session.readUtf8(UUBluetoothConstants.Characteristics.DEVICE_NAME_UUID)
-        {  deviceNameResult ->
+        {  session, deviceNameResult, error ->
 
             this.deviceName = deviceNameResult
 
             session.readUtf8(UUBluetoothConstants.Characteristics.MANUFACTURER_NAME_STRING_UUID)
-            {  mfgNameResult ->
+            {  session, mfgNameResult, error ->
 
                 this.mfgName = mfgNameResult
 

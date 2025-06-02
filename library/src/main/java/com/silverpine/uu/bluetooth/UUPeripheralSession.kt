@@ -20,20 +20,25 @@ import java.nio.ByteOrder
 import java.nio.charset.Charset
 import java.util.UUID
 
+//typealias UUPeripheralSessionStartedCallback = ((UUPeripheralSession) -> Unit)
+//typealias UUPeripheralSessionEndedCallback = ((UUPeripheralSession, UUError?) -> Unit)
+//typealias UUByteArrayCallback = ((ByteArray?) -> Unit)
+//typealias UUStringCallback = ((String?) -> Unit)
+//typealias UUVoidCallback = ()->Unit
+//typealias UUSessionErrorHandler = ((UUError) -> Boolean)
+//typealias UUUByteCallback = ((UByte?) -> Unit)
+//typealias UUUShortCallback = ((UShort?) -> Unit)
+//typealias UUUIntCallback = ((UInt?) -> Unit)
+//typealias UUULongCallback = ((ULong?) -> Unit)
+//typealias UUByteCallback = ((Byte?) -> Unit)
+//typealias UUShortCallback = ((Short?) -> Unit)
+//typealias UUIntCallback = ((Int?) -> Unit)
+//typealias UULongCallback = ((Long?) -> Unit)
+
 typealias UUPeripheralSessionStartedCallback = ((UUPeripheralSession) -> Unit)
-typealias UUPeripheralSessionEndedCallback = ((UUPeripheralSession, UUError?) -> Unit)
-typealias UUByteArrayCallback = ((ByteArray?) -> Unit)
-typealias UUStringCallback = ((String?) -> Unit)
-typealias UUVoidCallback = ()->Unit
-typealias UUSessionErrorHandler = ((UUError) -> Boolean)
-typealias UUUByteCallback = ((UByte?) -> Unit)
-typealias UUUShortCallback = ((UShort?) -> Unit)
-typealias UUUIntCallback = ((UInt?) -> Unit)
-typealias UUULongCallback = ((ULong?) -> Unit)
-typealias UUByteCallback = ((Byte?) -> Unit)
-typealias UUShortCallback = ((Short?) -> Unit)
-typealias UUIntCallback = ((Int?) -> Unit)
-typealias UULongCallback = ((Long?) -> Unit)
+//typealias UUPeripheralSessionEndedCallback = ((UUPeripheralSession, UUError?) -> Unit)
+typealias UUPeripheralSessionObjectErrorCallback<T> = ((UUPeripheralSession, T?, UUError?) -> Unit)
+typealias UUPeripheralSessionErrorCallback = ((UUPeripheralSession, UUError?) -> Unit)
 
 /**
  * Defines a session for interacting with a single UUPeripheral.
@@ -60,10 +65,10 @@ interface UUPeripheralSession
     val sessionEndError: UUError?
 
     /** Callback invoked when the session has started. */
-    var sessionStarted: UUPeripheralSessionStartedCallback?
+    var started: UUPeripheralSessionStartedCallback?
 
     /** Callback invoked when the session has ended, with optional error. */
-    var sessionEnded: UUPeripheralSessionEndedCallback?
+    var ended: UUPeripheralSessionErrorCallback?
 
     /** Begin the session (discover services, etc.). */
     fun start()
@@ -71,16 +76,18 @@ interface UUPeripheralSession
     /** End the session, optionally with an error. */
     fun end(error: UUError?)
 
+    fun startTimer(name: String, timeout: Long, block: ()->Unit)
+
+    fun cancelTimer(name: String)
+
     /**
      * Read data from the specified characteristic.
      * @param characteristic UUID of the characteristic to read.
      * @param completion Called with the read bytes, or null on failure.
-     * @param errorHandler Optional handler; return true to retry.
      */
     fun read(
         characteristic: UUID,
-        completion: UUByteArrayCallback,
-        errorHandler: UUSessionErrorHandler? = null)
+        completion: UUPeripheralSessionObjectErrorCallback<ByteArray>)
 
     /**
      * Write data to a characteristic.
@@ -88,58 +95,45 @@ interface UUPeripheralSession
      * @param characteristic UUID of the target characteristic.
      * @param withResponse True to request write-with-response, false for without-response.
      * @param completion Invoked when the write is complete.
-     * @param errorHandler Optional handler; return true to retry.
      */
     fun write(
         data: ByteArray,
         characteristic: UUID,
         withResponse: Boolean,
-        completion: UUVoidCallback,
-        errorHandler: UUSessionErrorHandler? = null)
+        completion: UUPeripheralSessionErrorCallback)
 
     /**
      * Start listening for changes on a characteristic.
      * @param characteristic UUID to monitor.
      * @param dataChanged Called when new data arrives.
      * @param completion Called once notification is set up.
-     * @param errorHandler Optional handler; return true to retry.
      */
     fun startListeningForDataChanges(
         characteristic: UUID,
-        dataChanged: UUByteArrayCallback,
-        completion: UUVoidCallback,
-        errorHandler: UUSessionErrorHandler? = null)
+        dataChanged: UUPeripheralSessionObjectErrorCallback<ByteArray>,
+        completion: UUPeripheralSessionErrorCallback)
 
     /**
      * Stop listening for changes on a characteristic.
      * @param characteristic UUID to stop monitoring.
      * @param completion Called when notifications are torn down.
-     * @param errorHandler Optional handler; return true to retry.
      */
     fun stopListeningForDataChanges(
         characteristic: UUID,
-        completion: UUVoidCallback,
-        errorHandler: UUSessionErrorHandler? = null)
+        completion: UUPeripheralSessionErrorCallback)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Read Extensions
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-fun UUPeripheralSession.read(
-    characteristic: UUID,
-    completion: UUByteArrayCallback)
-{
-    read(characteristic, completion = completion, errorHandler = null)
-}
-
 fun UUPeripheralSession.readString(
     characteristic: UUID,
     encoding: Charset,
-    completion: UUStringCallback)
+    completion: UUPeripheralSessionObjectErrorCallback<String>)
 {
     read(characteristic)
-    { data ->
+    { p, data, err ->
 
         var result: String? = null
 
@@ -149,116 +143,116 @@ fun UUPeripheralSession.readString(
 
         }
 
-        completion(result)
+        completion(p, result, null)
     }
 }
 
 fun UUPeripheralSession.readUtf8(
     characteristic: UUID,
-    completion: UUStringCallback)
+    completion: UUPeripheralSessionObjectErrorCallback<String>)
 {
     readString(characteristic, encoding = Charsets.UTF_8, completion)
 }
 
 fun UUPeripheralSession.readUByte(
     characteristic: UUID,
-    completion: UUUByteCallback)
+    completion: UUPeripheralSessionObjectErrorCallback<UByte>)
 {
     read(characteristic)
-    { data ->
+    { p, data, err ->
 
         val result = data?.uuReadUInt8(0)?.toUByte()
-        completion(result)
+        completion(p, result, null)
     }
 }
 
 fun UUPeripheralSession.readUShort(
     characteristic: UUID,
     byteOrder: ByteOrder,
-    completion: UUUShortCallback)
+    completion: UUPeripheralSessionObjectErrorCallback<UShort>)
 {
     read(characteristic)
-    { data ->
+    { p, data, err ->
 
         val result = data?.uuReadUInt16(byteOrder, 0)?.toUShort()
-        completion(result)
+        completion(p, result, null)
     }
 }
 
 fun UUPeripheralSession.readUInt(
     characteristic: UUID,
     byteOrder: ByteOrder,
-    completion: UUUIntCallback)
+    completion: UUPeripheralSessionObjectErrorCallback<UInt>)
 {
     read(characteristic)
-    { data ->
+    { p, data, err ->
 
         val result = data?.uuReadUInt32(byteOrder, 0)?.toUInt()
-        completion(result)
+        completion(p, result, null)
     }
 }
 
 fun UUPeripheralSession.readULong(
     characteristic: UUID,
     byteOrder: ByteOrder,
-    completion: UUULongCallback)
+    completion: UUPeripheralSessionObjectErrorCallback<ULong>)
 {
     read(characteristic)
-    { data ->
+    { p, data, err ->
 
         val result = data?.uuReadUInt64(byteOrder, 0)?.toULong()
-        completion(result)
+        completion(p, result, null)
     }
 }
 
 fun UUPeripheralSession.readByte(
     characteristic: UUID,
-    completion: UUByteCallback)
+    completion: UUPeripheralSessionObjectErrorCallback<Byte>)
 {
     read(characteristic)
-    { data ->
+    { p, data, err ->
 
         val result = data?.uuReadUInt8(0)?.toByte()
-        completion(result)
+        completion(p, result, null)
     }
 }
 
 fun UUPeripheralSession.readShort(
     characteristic: UUID,
     byteOrder: ByteOrder,
-    completion: UUShortCallback)
+    completion: UUPeripheralSessionObjectErrorCallback<Short>)
 {
     read(characteristic)
-    { data ->
+    { p, data, err ->
 
         val result = data?.uuReadUInt16(byteOrder, 0)?.toShort()
-        completion(result)
+        completion(p, result, null)
     }
 }
 
 fun UUPeripheralSession.readInt(
     characteristic: UUID,
     byteOrder: ByteOrder,
-    completion: UUIntCallback)
+    completion: UUPeripheralSessionObjectErrorCallback<Int>)
 {
     read(characteristic)
-    { data ->
+    { p, data, err ->
 
         val result = data?.uuReadUInt32(byteOrder, 0)?.toInt()
-        completion(result)
+        completion(p, result, null)
     }
 }
 
 fun UUPeripheralSession.readLong(
     characteristic: UUID,
     byteOrder: ByteOrder,
-    completion: UULongCallback)
+    completion: UUPeripheralSessionObjectErrorCallback<Long>)
 {
     read(characteristic)
-    { data ->
+    { p, data, err ->
 
         val result = data?.uuReadUInt64(byteOrder, 0)?.toLong()
-        completion(result)
+        completion(p, result, null)
     }
 }
 
@@ -267,24 +261,11 @@ fun UUPeripheralSession.readLong(
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 fun UUPeripheralSession.write(
-    data: ByteArray,
-    characteristic: UUID,
-    withResponse: Boolean,
-    completion: UUVoidCallback)
-{
-    write(data = data,
-        characteristic = characteristic,
-        withResponse = withResponse,
-        completion = completion,
-        errorHandler = null)
-}
-
-fun UUPeripheralSession.write(
     string: String,
     encoding: Charset,
     characteristic: UUID,
     withResponse: Boolean,
-    completion: UUVoidCallback)
+    completion: UUPeripheralSessionErrorCallback)
 {
     write(
         data = string.toByteArray(encoding),
@@ -297,7 +278,7 @@ fun UUPeripheralSession.writeUtf8(
     string: String,
     characteristic: UUID,
     withResponse: Boolean,
-    completion: UUVoidCallback)
+    completion: UUPeripheralSessionErrorCallback)
 {
     write(string, Charsets.UTF_8, characteristic, withResponse, completion)
 }
@@ -306,7 +287,7 @@ fun UUPeripheralSession.writeUByte(
     data: UByte,
     characteristic: UUID,
     withResponse: Boolean,
-    completion: UUVoidCallback)
+    completion: UUPeripheralSessionErrorCallback)
 {
     val buffer = ByteArray(UByte.SIZE_BYTES)
     buffer.uuWriteUInt8(0, data.toInt())
@@ -318,7 +299,7 @@ fun UUPeripheralSession.writeUShort(
     characteristic: UUID,
     byteOrder: ByteOrder,
     withResponse: Boolean,
-    completion: UUVoidCallback)
+    completion: UUPeripheralSessionErrorCallback)
 {
     val buffer = ByteArray(UShort.SIZE_BYTES)
     buffer.uuWriteUInt16(byteOrder, 0, data.toInt())
@@ -330,7 +311,7 @@ fun UUPeripheralSession.writeUInt(
     characteristic: UUID,
     byteOrder: ByteOrder,
     withResponse: Boolean,
-    completion: UUVoidCallback)
+    completion: UUPeripheralSessionErrorCallback)
 {
     val buffer = ByteArray(UInt.SIZE_BYTES)
     buffer.uuWriteUInt32(byteOrder, 0, data.toLong())
@@ -342,7 +323,7 @@ fun UUPeripheralSession.writeULong(
     characteristic: UUID,
     byteOrder: ByteOrder,
     withResponse: Boolean,
-    completion: UUVoidCallback)
+    completion: UUPeripheralSessionErrorCallback)
 {
     val buffer = ByteArray(ULong.SIZE_BYTES)
     buffer.uuWriteUInt64(byteOrder, 0, data.toLong())
@@ -353,7 +334,7 @@ fun UUPeripheralSession.writeByte(
     data: Byte,
     characteristic: UUID,
     withResponse: Boolean,
-    completion: UUVoidCallback)
+    completion: UUPeripheralSessionErrorCallback)
 {
     val buffer = ByteArray(Byte.SIZE_BYTES)
     buffer.uuWriteInt8(0, data)
@@ -365,7 +346,7 @@ fun UUPeripheralSession.writeShort(
     characteristic: UUID,
     byteOrder: ByteOrder,
     withResponse: Boolean,
-    completion: UUVoidCallback)
+    completion: UUPeripheralSessionErrorCallback)
 {
     val buffer = ByteArray(Short.SIZE_BYTES)
     buffer.uuWriteInt16(byteOrder, 0, data)
@@ -377,7 +358,7 @@ fun UUPeripheralSession.writeInt(
     characteristic: UUID,
     byteOrder: ByteOrder,
     withResponse: Boolean,
-    completion: UUVoidCallback)
+    completion: UUPeripheralSessionErrorCallback)
 {
     val buffer = ByteArray(Int.SIZE_BYTES)
     buffer.uuWriteInt32(byteOrder, 0, data)
@@ -389,24 +370,9 @@ fun UUPeripheralSession.writeLong(
     characteristic: UUID,
     byteOrder: ByteOrder,
     withResponse: Boolean,
-    completion: UUVoidCallback)
+    completion: UUPeripheralSessionErrorCallback)
 {
     val buffer = ByteArray(Long.SIZE_BYTES)
     buffer.uuWriteInt64(byteOrder, 0, data.toLong())
     write(buffer, characteristic, withResponse, completion)
-}
-
-fun UUPeripheralSession.startListeningForDataChanges(
-    characteristic: UUID,
-    dataChanged: UUByteArrayCallback,
-    completion: UUVoidCallback)
-{
-    startListeningForDataChanges(characteristic, dataChanged, completion, null)
-}
-
-fun UUPeripheralSession.stopListeningForDataChanges(
-    characteristic: UUID,
-    completion: UUVoidCallback)
-{
-    stopListeningForDataChanges(characteristic, completion, null)
 }

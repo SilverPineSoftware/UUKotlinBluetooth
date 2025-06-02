@@ -1,6 +1,6 @@
 package com.silverpine.uu.bluetooth
 
-import com.silverpine.uu.bluetooth.internal.UUBluetoothDevicePeripheralSession
+import com.silverpine.uu.bluetooth.UUBluetoothDevicePeripheralSession
 import com.silverpine.uu.core.UUError
 import com.silverpine.uu.logging.UULog
 
@@ -20,12 +20,12 @@ open class UUPeripheralOperation<Result>(
     {
         session = UUBluetoothDevicePeripheralSession(peripheral)
         session.configuration = configuration
-        session.sessionStarted =
+        session.started =
         { session ->
             internalExecute()
         }
 
-        session.sessionEnded =
+        session.ended =
         { session, error ->
 
             try

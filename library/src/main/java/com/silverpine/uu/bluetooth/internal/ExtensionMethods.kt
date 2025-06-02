@@ -3,18 +3,17 @@ package com.silverpine.uu.bluetooth.internal
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
-import com.silverpine.uu.bluetooth.UUByteArrayCallback
 import com.silverpine.uu.bluetooth.UUCharacteristicErrorCallback
 import com.silverpine.uu.bluetooth.UUDataErrorCallback
 import com.silverpine.uu.bluetooth.UUDiscoverServicesCompletionBlock
 import com.silverpine.uu.bluetooth.UUIntErrorCallback
 import com.silverpine.uu.bluetooth.UUIntIntErrorCallback
+import com.silverpine.uu.bluetooth.UUPeripheralConnectedBlock
 import com.silverpine.uu.bluetooth.UUPeripheralDisconnectedBlock
 import com.silverpine.uu.bluetooth.UUPeripheralSession
-import com.silverpine.uu.bluetooth.UUPeripheralSessionEndedCallback
+import com.silverpine.uu.bluetooth.UUPeripheralSessionErrorCallback
+import com.silverpine.uu.bluetooth.UUPeripheralSessionObjectErrorCallback
 import com.silverpine.uu.bluetooth.UUPeripheralSessionStartedCallback
-import com.silverpine.uu.bluetooth.UUStringCallback
-import com.silverpine.uu.bluetooth.UUVoidCallback
 import com.silverpine.uu.core.UUError
 import com.silverpine.uu.core.uuSafeToString
 import com.silverpine.uu.logging.UULog
@@ -47,7 +46,6 @@ internal fun BluetoothGattDescriptor?.uuHashLookup(): String
     return "${this?.characteristic?.uuSafeUuidString()}-${this?.uuSafeUuidString()}"
 }
 
-/*
 internal fun UUPeripheralConnectedBlock.safeNotify()
 {
     try
@@ -58,7 +56,7 @@ internal fun UUPeripheralConnectedBlock.safeNotify()
     {
         UULog.d(javaClass, "safeNotify", "", ex)
     }
-}*/
+}
 
 internal fun UUPeripheralDisconnectedBlock.safeNotify(error: UUError?)
 {
@@ -162,7 +160,19 @@ internal fun UUPeripheralSessionStartedCallback.safeNotify(session: UUPeripheral
     }
 }
 
-internal fun UUPeripheralSessionEndedCallback.safeNotify(session: UUPeripheralSession, error: UUError?)
+//internal fun UUPeripheralSessionEndedCallback.safeNotify(session: UUPeripheralSession, error: UUError?)
+//{
+//    try
+//    {
+//        this(session, error)
+//    }
+//    catch (ex: Exception)
+//    {
+//        UULog.d(javaClass, "safeNotify", "", ex)
+//    }
+//}
+
+internal fun UUPeripheralSessionErrorCallback.safeNotify(session: UUPeripheralSession, error: UUError?)
 {
     try
     {
@@ -174,6 +184,21 @@ internal fun UUPeripheralSessionEndedCallback.safeNotify(session: UUPeripheralSe
     }
 }
 
+internal fun <T> UUPeripheralSessionObjectErrorCallback<T>.safeNotify(session: UUPeripheralSession, data: T?, error: UUError?)
+{
+    try
+    {
+        this(session, data, error)
+    }
+    catch (ex: Exception)
+    {
+        UULog.d(javaClass, "safeNotify", "", ex)
+    }
+}
+
+
+
+/*
 internal fun UUVoidCallback.safeNotify()
 {
     try
@@ -208,4 +233,4 @@ internal fun UUStringCallback.safeNotify(data: String?)
     {
         UULog.d(javaClass, "safeNotify", "", ex)
     }
-}
+}*/

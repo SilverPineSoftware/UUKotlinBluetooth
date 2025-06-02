@@ -17,6 +17,7 @@ typealias UUIntErrorCallback = (Int?, UUError?)->Unit
 typealias UUIntIntErrorCallback = (Int?, Int?, UUError?)->Unit
 typealias UUCharacteristicDataCallback = ((BluetoothGattCharacteristic, ByteArray?)->Unit)
 typealias UUCharacteristicErrorCallback = ((BluetoothGattCharacteristic, UUError?)->Unit)
+typealias UUVoidCallback = ()->Unit
 
 interface UUPeripheral
 {
@@ -34,6 +35,9 @@ interface UUPeripheral
     var mtuSize: Int
     var txPhy: Int?
     var rxPhy: Int?
+
+    fun startTimer(name: String, timeout: Long, block: ()->Unit)
+    fun cancelTimer(name: String)
 
     fun connect(
         timeout: Long,

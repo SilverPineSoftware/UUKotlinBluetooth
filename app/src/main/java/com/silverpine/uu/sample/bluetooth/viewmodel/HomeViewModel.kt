@@ -6,10 +6,13 @@ import com.silverpine.uu.bluetooth.UUBluetoothSniffer
 import com.silverpine.uu.bluetooth.UUPeripheral
 import com.silverpine.uu.bluetooth.UUPeripheralScanner
 import com.silverpine.uu.bluetooth.UUPeripheralScannerConfig
+import com.silverpine.uu.core.uuDispatch
 import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.logging.UULog
 import com.silverpine.uu.sample.bluetooth.R
 import com.silverpine.uu.sample.bluetooth.operations.ReadDeviceInfoOperation
+import com.silverpine.uu.sample.bluetooth.tisensortag.TiSensorTagCoreBluetoothSession
+import com.silverpine.uu.sample.bluetooth.tisensortag.TiSensorTagSession
 import com.silverpine.uu.sample.bluetooth.ui.PeripheralDetailActivity
 import com.silverpine.uu.sample.bluetooth.ui.l2cap.L2CapClientActivity
 import com.silverpine.uu.sample.bluetooth.ui.l2cap.L2CapServerActivity
@@ -17,6 +20,8 @@ import com.silverpine.uu.ux.UUAlertDialog
 import com.silverpine.uu.ux.UUButton
 import com.silverpine.uu.ux.UUMenuItem
 import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModel
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 class HomeViewModel: RecyclerViewModel()
 {
@@ -136,6 +141,7 @@ class HomeViewModel: RecyclerViewModel()
         items.add(UUButton("View Services") { gotoPeripheralServices(peripheral) })
         items.add(UUButton("Read Info") { readDeviceInfo(peripheral) })
         items.add(UUButton("Start L2Cap Client") { gotoL2CapClient(peripheral) })
+        items.add(UUButton("Open Sensor Tag Session") { openSensorTagSession(peripheral) })
 
         val dlg = UUAlertDialog()
         dlg.title = "Choose an action for ${peripheral.name} - ${peripheral.identifier}"
@@ -195,6 +201,41 @@ class HomeViewModel: RecyclerViewModel()
                     showAlertDialog(dlg)
                 }
             }
+        }
+    }
+
+    private var sensorTagSession: TiSensorTagSession? = null
+    private fun openSensorTagSession(peripheral: UUPeripheral)
+    {
+        uuDispatch()
+        {
+            val latch = CountDownLatch(1)
+            val endLatch = CountDownLatch(1)
+
+            sensorTagSession = TiSensorTagCoreBluetoothSession(peripheral)
+            sensorTagSession?.started =
+            { s ->
+                UULog.d(javaClass, "openSensorTagSession", "Session started")
+
+                latch.countDown()
+            }
+
+            sensorTagSession?.ended =
+            { s, e ->
+                UULog.d(javaClass, "openSensorTagSession", "Session ended, error: $e")
+                endLatch.countDown()
+            }
+
+            sensorTagSession?.start()
+
+            latch.await(30, TimeUnit.SECONDS)
+
+            sensorTagSession?.startTimer("end session", 10000)
+            {
+                sensorTagSession?.end(null)
+            }
+
+            endLatch.await(30, TimeUnit.SECONDS)
         }
     }
 

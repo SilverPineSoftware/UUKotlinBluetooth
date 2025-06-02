@@ -16,11 +16,11 @@ class ReadL2CapSettingsOperation(peripheral: UUPeripheral): UUPeripheralOperatio
     override fun execute(completion: (Void?, UUError?) -> Unit)
     {
         session.readInt(L2CapConstants.UU_L2CAP_PSM_CHARACTERISTIC_UUID, ByteOrder.LITTLE_ENDIAN)
-        { psmResult ->
+        { session, psmResult, error ->
             psm = psmResult ?: 0
 
             session.readUByte(L2CapConstants.UU_L2CAP_CHANNEL_ENCRYPTED_CHARACTERISTIC_UUID)
-            { channelEncryptedResult ->
+            { session, channelEncryptedResult, error ->
 
                 channelEncrypted = (channelEncryptedResult?.toInt() == 1)
                 completion(null, null)

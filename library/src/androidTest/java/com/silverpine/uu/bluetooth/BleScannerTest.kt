@@ -1,7 +1,6 @@
 package com.silverpine.uu.bluetooth
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.silverpine.uu.bluetooth.UUBlePeripheralScanner
 import com.silverpine.uu.core.UUDate
 import com.silverpine.uu.core.UUTimer
 import com.silverpine.uu.logging.UUConsoleLogger

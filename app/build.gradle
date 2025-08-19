@@ -9,9 +9,9 @@ plugins {
 android {
     defaultConfig {
         applicationId "com.silverpine.uu.sample.bluetooth"
-        minSdkVersion min_sdk
-        compileSdk target_sdk
-        targetSdkVersion target_sdk
+        minSdkVersion uu_min_sdk
+        compileSdk uu_target_sdk
+        targetSdkVersion uu_target_sdk
         versionCode 1
         versionName "1.0"
 
@@ -26,12 +26,12 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility java_version
-        targetCompatibility java_version
+        sourceCompatibility uu_java_version
+        targetCompatibility uu_java_version
     }
 
     kotlinOptions {
-        jvmTarget = java_version
+        jvmTarget = uu_java_version
     }
 
     buildFeatures {

@@ -6,39 +6,13 @@ plugins {
     id 'kotlin-kapt'
 }
 
+apply from: "${uu_build_common}/uu-build-library-app-common.gradle"
+
 android {
-    defaultConfig {
-        applicationId "com.silverpine.uu.sample.bluetooth"
-        minSdkVersion uu_min_sdk
-        compileSdk uu_target_sdk
-        targetSdkVersion uu_target_sdk
-        versionCode 1
-        versionName "1.0"
-
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-    }
-
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
-    }
-
-    compileOptions {
-        sourceCompatibility uu_java_version
-        targetCompatibility uu_java_version
-    }
-
-    kotlinOptions {
-        jvmTarget = uu_java_version
-    }
-
     buildFeatures {
         dataBinding = true
         viewBinding true
     }
-    namespace 'com.silverpine.uu.sample.bluetooth'
 }
 
 dependencies {

@@ -147,14 +147,14 @@ open class UUBluetoothDevicePeripheralSession(
             characteristic = char,
             timeout = configuration.readTimeout,
             notifyHandler =
-            { updatedCharacteristic, updatedData ->
+            { updatedData ->
 
                 //TODO: Update char in discovered map?
 
                 dataChanged.safeNotify(this, updatedData, null)
             },
             completion =
-            { updatedCharacteristic, error ->
+            { error ->
                 completion.safeNotify(this, error)
             }
         )
@@ -177,7 +177,7 @@ open class UUBluetoothDevicePeripheralSession(
             timeout = configuration.readTimeout,
             notifyHandler = null,
             completion =
-            { updatedCharacteristic, error ->
+            { error ->
                 completion(this, error)
             }
         )

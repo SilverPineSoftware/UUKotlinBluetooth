@@ -4,6 +4,13 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import com.silverpine.uu.core.uuIsBitSet
 import java.util.Arrays
+import java.util.UUID
+
+interface UUBluetoothGattCharacteristic
+{
+    val uuid: UUID
+}
+
 
 /**
  * Checks a characteristic property to see if the specified bit is set

@@ -7,13 +7,10 @@ import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothSocket
 import com.silverpine.uu.bluetooth.UUBluetoothConstants.DEFAULT_MTU
-import com.silverpine.uu.bluetooth.UUCharacteristicDataCallback
-import com.silverpine.uu.bluetooth.UUCharacteristicErrorCallback
-import com.silverpine.uu.bluetooth.UUDataErrorCallback
-import com.silverpine.uu.bluetooth.UUDiscoverServicesCompletionBlock
-import com.silverpine.uu.bluetooth.UUErrorCallback
-import com.silverpine.uu.bluetooth.UUIntErrorCallback
-import com.silverpine.uu.bluetooth.UUIntIntErrorCallback
+import com.silverpine.uu.bluetooth.UUErrorBlock
+import com.silverpine.uu.bluetooth.UUListErrorBlock
+import com.silverpine.uu.bluetooth.UUObjectBlock
+import com.silverpine.uu.bluetooth.UUObjectErrorBlock
 import com.silverpine.uu.bluetooth.UUPeripheral
 import com.silverpine.uu.bluetooth.UUPeripheralConnectedBlock
 import com.silverpine.uu.bluetooth.UUPeripheralConnectionState
@@ -71,7 +68,7 @@ internal class UUBluetoothDevicePeripheral(
 
     override fun discoverServices(
         timeout: Long,
-        completion: UUDiscoverServicesCompletionBlock)
+        completion: UUListErrorBlock<BluetoothGattService>)
     {
         val gatt = UUBluetoothGatt.get(bluetoothDevice)
         gatt.discoverServices(timeout)
@@ -87,8 +84,8 @@ internal class UUBluetoothDevicePeripheral(
         enabled: Boolean,
         characteristic: BluetoothGattCharacteristic,
         timeout: Long,
-        notifyHandler: UUCharacteristicDataCallback?,
-        completion: UUCharacteristicErrorCallback)
+        notifyHandler: UUObjectBlock<ByteArray>?,
+        completion: UUErrorBlock)
     {
         val gatt = UUBluetoothGatt.get(bluetoothDevice)
         gatt.setNotifyValue(enabled, characteristic, timeout, notifyHandler, completion)
@@ -97,7 +94,7 @@ internal class UUBluetoothDevicePeripheral(
     override fun read(
         characteristic: BluetoothGattCharacteristic,
         timeout: Long,
-        completion: UUDataErrorCallback)
+        completion: UUObjectErrorBlock<ByteArray>)
     {
         val gatt = UUBluetoothGatt.get(bluetoothDevice)
         gatt.read(characteristic, timeout, completion)
@@ -106,7 +103,7 @@ internal class UUBluetoothDevicePeripheral(
     override fun read(
         descriptor: BluetoothGattDescriptor,
         timeout: Long,
-        completion: UUDataErrorCallback)
+        completion: UUObjectErrorBlock<ByteArray>)
     {
         val gatt = UUBluetoothGatt.get(bluetoothDevice)
         gatt.read(descriptor, timeout, completion)
@@ -116,7 +113,7 @@ internal class UUBluetoothDevicePeripheral(
         data: ByteArray,
         characteristic: BluetoothGattCharacteristic,
         timeout: Long,
-        completion: UUErrorCallback)
+        completion: UUErrorBlock)
     {
         val gatt = UUBluetoothGatt.get(bluetoothDevice)
         gatt.write(data, characteristic, timeout, completion)
@@ -125,7 +122,7 @@ internal class UUBluetoothDevicePeripheral(
     override fun writeWithoutResponse(
         data: ByteArray,
         characteristic: BluetoothGattCharacteristic,
-        completion: UUErrorCallback)
+        completion: UUErrorBlock)
     {
         val gatt = UUBluetoothGatt.get(bluetoothDevice)
         gatt.writeWithoutResponse(data, characteristic, completion)
@@ -135,7 +132,7 @@ internal class UUBluetoothDevicePeripheral(
         data: ByteArray,
         descriptor: BluetoothGattDescriptor,
         timeout: Long,
-        completion: UUErrorCallback)
+        completion: UUErrorBlock)
     {
         val gatt = UUBluetoothGatt.get(bluetoothDevice)
         gatt.write(data, descriptor, timeout, completion)
@@ -143,7 +140,7 @@ internal class UUBluetoothDevicePeripheral(
 
     override fun readRSSI(
         timeout: Long,
-        completion: UUIntErrorCallback)
+        completion: UUObjectErrorBlock<Int>)
     {
         val gatt = UUBluetoothGatt.get(bluetoothDevice)
         gatt.readRSSI(timeout)
@@ -157,7 +154,7 @@ internal class UUBluetoothDevicePeripheral(
     override fun requestMtu(
         mtu: Int,
         timeout: Long,
-        completion: UUIntErrorCallback)
+        completion: UUObjectErrorBlock<Int>)
     {
         val gatt = UUBluetoothGatt.get(bluetoothDevice)
         gatt.requestMtu(mtu, timeout)
@@ -170,15 +167,15 @@ internal class UUBluetoothDevicePeripheral(
 
     override fun readPhy(
         timeout: Long,
-        completion: UUIntIntErrorCallback)
+        completion: UUObjectErrorBlock<Pair<Int,Int>>)
     {
         val gatt = UUBluetoothGatt.get(bluetoothDevice)
         gatt.readPhy(timeout)
-        { txPhyUpdated, rxPhyUpdated, error ->
+        { result, error ->
 
-            txPhy = txPhyUpdated
-            rxPhy = rxPhyUpdated
-            completion(txPhyUpdated, rxPhyUpdated, error)
+            txPhy = result?.first
+            rxPhy = result?.second
+            completion(result, error)
         }
     }
 
@@ -187,15 +184,15 @@ internal class UUBluetoothDevicePeripheral(
         rxPhy: Int,
         phyOptions: Int,
         timeout: Long,
-        completion: UUIntIntErrorCallback)
+        completion: UUObjectErrorBlock<Pair<Int,Int>>)
     {
         val gatt = UUBluetoothGatt.get(bluetoothDevice)
         gatt.updatePhy(txPhy, rxPhy, phyOptions, timeout)
-        { txPhyUpdated, rxPhyUpdated, error ->
+        { result, error ->
 
-            this.txPhy = txPhyUpdated
-            this.rxPhy = rxPhyUpdated
-            completion(txPhyUpdated, rxPhyUpdated, error)
+            this.txPhy = result?.first
+            this.rxPhy = result?.second
+            completion(result, error)
         }
     }
 

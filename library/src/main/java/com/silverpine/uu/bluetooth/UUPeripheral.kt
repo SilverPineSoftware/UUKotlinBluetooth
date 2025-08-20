@@ -8,16 +8,17 @@ import com.silverpine.uu.core.UUError
 
 typealias UUPeripheralConnectedBlock = (()->Unit)
 typealias UUPeripheralDisconnectedBlock = ((UUError?)->Unit)
-typealias UUDiscoverServicesCompletionBlock = ((List<BluetoothGattService>?, UUError?)->Unit)
-typealias UUIntIntCallback = (Int, Int)->Unit
-typealias UUErrorCallback = (UUError?)->Unit
-typealias UUServiceListCallback = (List<BluetoothGattService>?, UUError?)->Unit
-typealias UUDataErrorCallback = (ByteArray?, UUError?)->Unit
-typealias UUIntErrorCallback = (Int?, UUError?)->Unit
-typealias UUIntIntErrorCallback = (Int?, Int?, UUError?)->Unit
-typealias UUCharacteristicDataCallback = ((BluetoothGattCharacteristic, ByteArray?)->Unit)
-typealias UUCharacteristicErrorCallback = ((BluetoothGattCharacteristic, UUError?)->Unit)
-typealias UUVoidCallback = ()->Unit
+//typealias UUDiscoverServicesCompletionBlock = ((List<BluetoothGattService>?, UUError?)->Unit)
+//typealias UUIntIntCallback = (Int, Int)->Unit
+//typealias UUErrorCallback = (UUError?)->Unit
+//typealias UUServiceListCallback = (List<BluetoothGattService>?, UUError?)->Unit
+//typealias UUDataErrorCallback = (ByteArray?, UUError?)->Unit
+//typealias UUIntErrorCallback = (Int?, UUError?)->Unit
+//typealias UUIntIntErrorCallback = (Int?, Int?, UUError?)->Unit
+//typealias UUCharacteristicDataCallback = ((BluetoothGattCharacteristic, ByteArray?)->Unit)
+//typealias UUCharacteristicErrorCallback = ((BluetoothGattCharacteristic, UUError?)->Unit)
+//typealias UUVoidCallback = ()->Unit
+
 
 interface UUPeripheral
 {
@@ -48,61 +49,61 @@ interface UUPeripheral
 
     fun discoverServices(
         timeout: Long,
-        completion: UUDiscoverServicesCompletionBlock)
+        completion: UUListErrorBlock<BluetoothGattService>)
 
     fun setNotifyValue(
         enabled: Boolean,
         characteristic: BluetoothGattCharacteristic,
         timeout: Long,
-        notifyHandler: UUCharacteristicDataCallback?,
-        completion: UUCharacteristicErrorCallback)
+        notifyHandler: UUObjectBlock<ByteArray>?,
+        completion: UUErrorBlock)
 
     fun read(
         characteristic: BluetoothGattCharacteristic,
         timeout: Long,
-        completion: UUDataErrorCallback)
+        completion: UUObjectErrorBlock<ByteArray>)
 
     fun read(
         descriptor: BluetoothGattDescriptor,
         timeout: Long,
-        completion: UUDataErrorCallback)
+        completion: UUObjectErrorBlock<ByteArray>)
 
     fun write(
         data: ByteArray,
         characteristic: BluetoothGattCharacteristic,
         timeout: Long,
-        completion: UUErrorCallback)
+        completion: UUErrorBlock)
 
     fun writeWithoutResponse(
         data: ByteArray,
         characteristic: BluetoothGattCharacteristic,
-        completion: UUErrorCallback)
+        completion: UUErrorBlock)
 
     fun write(
         data: ByteArray,
         descriptor: BluetoothGattDescriptor,
         timeout: Long,
-        completion: UUErrorCallback)
+        completion: UUErrorBlock)
 
     fun readRSSI(
         timeout: Long,
-        completion: UUIntErrorCallback)
+        completion: UUObjectErrorBlock<Int>)
 
     fun requestMtu(
         mtu: Int,
         timeout: Long,
-        completion: UUIntErrorCallback)
+        completion: UUObjectErrorBlock<Int>)
 
     fun readPhy(
         timeout: Long,
-        completion: UUIntIntErrorCallback)
+        completion: UUObjectErrorBlock<Pair<Int,Int>>)
 
     fun updatePhy(
         txPhy: Int,
         rxPhy: Int,
         phyOptions: Int,
         timeout: Long,
-        completion: UUIntIntErrorCallback)
+        completion: UUObjectErrorBlock<Pair<Int,Int>>)
 
     // These need to be internal
     // func openL2CAPChannel(psm: CBL2CAPPSM)

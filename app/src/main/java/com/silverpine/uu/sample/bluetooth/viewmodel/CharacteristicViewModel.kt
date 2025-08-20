@@ -115,13 +115,13 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, var model: B
             !isNotifying,
             model,
             30000,
-            { characteristic, data -> //UULog.debug(javaClass, "setNotify.characteristicChanged",
+            { data -> //UULog.debug(javaClass, "setNotify.characteristicChanged",
                 //  "Characteristic changed, characteristic: " + characteristic.uuid +
                 //        ", data: " + UUString.byteToHex(characteristic.value) +
                 //      ", error: " + error)
 
                 this.characteristicData = data
-                this.model = characteristic
+                //this.model = characteristic
 
                 uuDispatchMain()
                 {
@@ -129,16 +129,16 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, var model: B
                     refreshNotifyLabel()
                 }
             }
-        ) { characteristic, error -> //UULog.debug(javaClass, "setNotify.onComplete",
+        ) { error -> //UULog.debug(javaClass, "setNotify.onComplete",
             //  ("Set Notify complete, characteristic: " + characteristic.uuid +
             //        ", error: " + error))
             //UUListView.reloadRow(listView, position)
 
             UULog.d(javaClass, "toggle.notify",
-                "original char.isNotifying: ${model.uuIsNotifying()}, updated char.isNotifying: ${characteristic.uuIsNotifying()}")
+                "original char.isNotifying: ${model.uuIsNotifying()}, updated char.isNotifying: ${model.uuIsNotifying()}")
 
 
-            this.model = characteristic
+            //this.model = characteristic
 
             uuDispatchMain()
             {

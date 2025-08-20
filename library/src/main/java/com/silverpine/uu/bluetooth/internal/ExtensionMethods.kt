@@ -2,12 +2,6 @@ package com.silverpine.uu.bluetooth.internal
 
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
-import android.bluetooth.BluetoothGattService
-import com.silverpine.uu.bluetooth.UUCharacteristicErrorCallback
-import com.silverpine.uu.bluetooth.UUDataErrorCallback
-import com.silverpine.uu.bluetooth.UUDiscoverServicesCompletionBlock
-import com.silverpine.uu.bluetooth.UUIntErrorCallback
-import com.silverpine.uu.bluetooth.UUIntIntErrorCallback
 import com.silverpine.uu.bluetooth.UUPeripheralConnectedBlock
 import com.silverpine.uu.bluetooth.UUPeripheralDisconnectedBlock
 import com.silverpine.uu.bluetooth.UUPeripheralSession
@@ -70,6 +64,8 @@ internal fun UUPeripheralDisconnectedBlock.safeNotify(error: UUError?)
     }
 }
 
+
+/*
 internal fun UUDiscoverServicesCompletionBlock.safeNotify(services: List<BluetoothGattService>?, error: UUError?)
 {
     try
@@ -131,7 +127,7 @@ internal fun UUCharacteristicErrorCallback.safeNotify(
         UULog.d(javaClass, "safeNotify", "", ex)
     }
 }
-
+*/
 
 /*
 internal fun UUCharacteristicDataCallback.safeNotify(

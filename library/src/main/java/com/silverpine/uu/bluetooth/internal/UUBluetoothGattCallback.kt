@@ -6,15 +6,11 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
 import com.silverpine.uu.bluetooth.UUBluetoothError
-import com.silverpine.uu.bluetooth.UUCharacteristicDataCallback
-import com.silverpine.uu.bluetooth.UUCharacteristicErrorCallback
-import com.silverpine.uu.bluetooth.UUDataErrorCallback
-import com.silverpine.uu.bluetooth.UUErrorCallback
-import com.silverpine.uu.bluetooth.UUIntErrorCallback
-import com.silverpine.uu.bluetooth.UUIntIntCallback
-import com.silverpine.uu.bluetooth.UUIntIntErrorCallback
-import com.silverpine.uu.bluetooth.UUServiceListCallback
-import com.silverpine.uu.bluetooth.UUVoidCallback
+import com.silverpine.uu.bluetooth.UUErrorBlock
+import com.silverpine.uu.bluetooth.UUListErrorBlock
+import com.silverpine.uu.bluetooth.UUObjectBlock
+import com.silverpine.uu.bluetooth.UUObjectErrorBlock
+import com.silverpine.uu.bluetooth.UUVoidBlock
 import com.silverpine.uu.core.UUError
 import com.silverpine.uu.core.uuDispatch
 import com.silverpine.uu.core.uuToHex
@@ -22,21 +18,21 @@ import com.silverpine.uu.logging.UULog
 
 internal class UUBluetoothGattCallback : BluetoothGattCallback()
 {
-    var connectionStateChangedCallback: UUIntIntCallback? = null
-    var servicesDiscoveredCallback: UUServiceListCallback? = null
-    private var readCharacteristicCallbacks: HashMap<String, UUDataErrorCallback> = hashMapOf()
-    private var characteristicDataChangedCallbacks: HashMap<String, UUCharacteristicDataCallback> = hashMapOf()
-    private var writeCharacteristicCallbacks: HashMap<String, UUErrorCallback> = hashMapOf()
-    private var readDescriptorCallbacks: HashMap<String, UUDataErrorCallback> = hashMapOf()
-    private var writeDescriptorCallbacks: HashMap<String, UUErrorCallback> = hashMapOf()
-    private var setCharacteristicNotificationCallbacks: HashMap<String, UUCharacteristicErrorCallback> = hashMapOf()
-    var readRssiCallback: UUIntErrorCallback? = null
-    var mtuChangedCallback: UUIntErrorCallback? = null
-    var phyReadCallback: UUIntIntErrorCallback? = null
-    var phyUpdatedCallback: UUIntIntErrorCallback? = null
+    var connectionStateChangedCallback: UUObjectBlock<Pair<Int,Int>>? = null
+    var servicesDiscoveredCallback: UUListErrorBlock<BluetoothGattService>? = null
+    private var readCharacteristicCallbacks: HashMap<String, UUObjectErrorBlock<ByteArray>> = hashMapOf()
+    private var characteristicDataChangedCallbacks: HashMap<String, UUObjectBlock<ByteArray>> = hashMapOf()
+    private var writeCharacteristicCallbacks: HashMap<String, UUErrorBlock> = hashMapOf()
+    private var readDescriptorCallbacks: HashMap<String, UUObjectErrorBlock<ByteArray>> = hashMapOf()
+    private var writeDescriptorCallbacks: HashMap<String, UUErrorBlock> = hashMapOf()
+    private var setCharacteristicNotificationCallbacks: HashMap<String, UUErrorBlock> = hashMapOf()
+    var readRssiCallback: UUObjectErrorBlock<Int>? = null
+    var mtuChangedCallback: UUObjectErrorBlock<Int>? = null
+    var phyReadCallback: UUObjectErrorBlock<Pair<Int,Int>>? = null
+    var phyUpdatedCallback: UUObjectErrorBlock<Pair<Int,Int>>? = null
 
-    var executeReliableWriteCallback: UUErrorCallback? = null
-    var serviceChangedCallback: UUVoidCallback? = null
+    var executeReliableWriteCallback: UUErrorBlock? = null
+    var serviceChangedCallback: UUVoidBlock? = null
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Public Methods
@@ -60,177 +56,172 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
         serviceChangedCallback = null
     }
 
-    fun registerReadCharacteristicCallback(characteristic: BluetoothGattCharacteristic, callback: UUDataErrorCallback)
+    fun registerReadCharacteristicCallback(identifier: String, callback: UUObjectErrorBlock<ByteArray>)
     {
         synchronized(readCharacteristicCallbacks)
         {
-            readCharacteristicCallbacks[characteristic.uuHashLookup()] = callback
+            readCharacteristicCallbacks[identifier] = callback
         }
     }
 
-    fun clearReadCharacteristicCallback(characteristic: BluetoothGattCharacteristic)
+    fun clearReadCharacteristicCallback(identifier: String)
     {
         synchronized(readCharacteristicCallbacks)
         {
-            readCharacteristicCallbacks.remove(characteristic.uuHashLookup())
+            readCharacteristicCallbacks.remove(identifier)
         }
     }
 
-    private fun popReadCharacteristicCallback(characteristic: BluetoothGattCharacteristic): UUDataErrorCallback?
+    private fun popReadCharacteristicCallback(identifier: String): UUObjectErrorBlock<ByteArray>?
     {
-        val block: UUDataErrorCallback?
+        val block: UUObjectErrorBlock<ByteArray>?
         synchronized(readCharacteristicCallbacks)
         {
-            val id = characteristic.uuHashLookup()
-            block = readCharacteristicCallbacks[id]
-            readCharacteristicCallbacks.remove(id)
+            block = readCharacteristicCallbacks[identifier]
+            readCharacteristicCallbacks.remove(identifier)
         }
 
         return block
     }
 
-    fun registerSetCharacteristicNotificationCallback(characteristic: BluetoothGattCharacteristic, callback: UUCharacteristicErrorCallback)
+    fun registerSetCharacteristicNotificationCallback(identifier: String, callback: UUErrorBlock)
     {
         synchronized(setCharacteristicNotificationCallbacks)
         {
-            setCharacteristicNotificationCallbacks[characteristic.uuHashLookup()] = callback
+            setCharacteristicNotificationCallbacks[identifier] = callback
         }
     }
 
-    fun clearSetCharacteristicNotificationCallback(characteristic: BluetoothGattCharacteristic)
+    fun clearSetCharacteristicNotificationCallback(identifier: String)
     {
         synchronized(setCharacteristicNotificationCallbacks)
         {
-            setCharacteristicNotificationCallbacks.remove(characteristic.uuHashLookup())
+            setCharacteristicNotificationCallbacks.remove(identifier)
         }
     }
 
-    private fun popSetCharacteristicNotificationCallback(characteristic: BluetoothGattCharacteristic): UUCharacteristicErrorCallback?
+    private fun popSetCharacteristicNotificationCallback(identifier: String): UUErrorBlock?
     {
-        val block: UUCharacteristicErrorCallback?
+        val block: UUErrorBlock?
         synchronized(setCharacteristicNotificationCallbacks)
         {
-            val id = characteristic.uuHashLookup()
-            block = setCharacteristicNotificationCallbacks[id]
-            setCharacteristicNotificationCallbacks.remove(id)
+            block = setCharacteristicNotificationCallbacks[identifier]
+            setCharacteristicNotificationCallbacks.remove(identifier)
         }
 
         return block
     }
 
     fun notifyCharacteristicSetNotifyCallback(
-        characteristic: BluetoothGattCharacteristic,
+        identifier: String,
         error: UUError?)
     {
-        val block = popSetCharacteristicNotificationCallback(characteristic)
+        val block = popSetCharacteristicNotificationCallback(identifier)
 
         block?.let()
         {
             uuDispatch()
             {
-                it(characteristic, error)
+                it(error)
             }
         }
     }
 
-    fun registerCharacteristicDataChangedCallback(characteristic: BluetoothGattCharacteristic, callback: UUCharacteristicDataCallback)
+    fun registerCharacteristicDataChangedCallback(identifier: String, callback: UUObjectBlock<ByteArray>)
     {
         synchronized(characteristicDataChangedCallbacks)
         {
-            characteristicDataChangedCallbacks[characteristic.uuHashLookup()] = callback
+            characteristicDataChangedCallbacks[identifier] = callback
         }
     }
 
-    fun clearCharacteristicDataChangedCallback(characteristic: BluetoothGattCharacteristic)
+    fun clearCharacteristicDataChangedCallback(identifier: String)
     {
         synchronized(characteristicDataChangedCallbacks)
         {
-            characteristicDataChangedCallbacks.remove(characteristic.uuHashLookup())
+            characteristicDataChangedCallbacks.remove(identifier)
         }
     }
 
-    fun registerWriteCharacteristicCallback(characteristic: BluetoothGattCharacteristic, callback: UUErrorCallback)
+    fun registerWriteCharacteristicCallback(identifier: String, callback: UUErrorBlock)
     {
         synchronized(writeCharacteristicCallbacks)
         {
-            writeCharacteristicCallbacks[characteristic.uuHashLookup()] = callback
+            writeCharacteristicCallbacks[identifier] = callback
         }
     }
 
-    fun clearWriteCharacteristicCallback(characteristic: BluetoothGattCharacteristic)
+    fun clearWriteCharacteristicCallback(identifier: String)
     {
         synchronized(writeCharacteristicCallbacks)
         {
-            writeCharacteristicCallbacks.remove(characteristic.uuHashLookup())
+            writeCharacteristicCallbacks.remove(identifier)
         }
     }
 
-    private fun popWriteCharacteristicCallback(characteristic: BluetoothGattCharacteristic): UUErrorCallback?
+    private fun popWriteCharacteristicCallback(identifier: String): UUErrorBlock?
     {
-        val block: UUErrorCallback?
+        val block: UUErrorBlock?
         synchronized(writeCharacteristicCallbacks)
         {
-            val id = characteristic.uuHashLookup()
-            block = writeCharacteristicCallbacks[id]
-            writeCharacteristicCallbacks.remove(id)
+            block = writeCharacteristicCallbacks[identifier]
+            writeCharacteristicCallbacks.remove(identifier)
         }
 
         return block
     }
 
-    fun registerReadDescriptorCallback(descriptor: BluetoothGattDescriptor, callback: UUDataErrorCallback)
+    fun registerReadDescriptorCallback(identifier: String, callback: UUObjectErrorBlock<ByteArray>)
     {
         synchronized(readDescriptorCallbacks)
         {
-            readDescriptorCallbacks[descriptor.uuHashLookup()] = callback
+            readDescriptorCallbacks[identifier] = callback
         }
     }
 
-    fun clearReadDescriptorCallback(descriptor: BluetoothGattDescriptor)
+    fun clearReadDescriptorCallback(identifier: String)
     {
         synchronized(readDescriptorCallbacks)
         {
-            readDescriptorCallbacks.remove(descriptor.uuHashLookup())
+            readDescriptorCallbacks.remove(identifier)
         }
     }
 
-    private fun popReadDescriptorCallback(descriptor: BluetoothGattDescriptor): UUDataErrorCallback?
+    private fun popReadDescriptorCallback(identifier: String): UUObjectErrorBlock<ByteArray>?
     {
-        val block: UUDataErrorCallback?
+        val block: UUObjectErrorBlock<ByteArray>?
         synchronized(readDescriptorCallbacks)
         {
-            val id = descriptor.uuHashLookup()
-            block = readDescriptorCallbacks[id]
-            readDescriptorCallbacks.remove(id)
+            block = readDescriptorCallbacks[identifier]
+            readDescriptorCallbacks.remove(identifier)
         }
 
         return block
     }
 
-    fun registerWriteDescriptorCallback(descriptor: BluetoothGattDescriptor, callback: UUErrorCallback)
+    fun registerWriteDescriptorCallback(identifier: String, callback: UUErrorBlock)
     {
         synchronized(writeDescriptorCallbacks)
         {
-            writeDescriptorCallbacks[descriptor.uuHashLookup()] = callback
+            writeDescriptorCallbacks[identifier] = callback
         }
     }
 
-    fun clearWriteDescriptorCallback(descriptor: BluetoothGattDescriptor)
+    fun clearWriteDescriptorCallback(identifier: String)
     {
         synchronized(writeDescriptorCallbacks)
         {
-            writeDescriptorCallbacks.remove(descriptor.uuHashLookup())
+            writeDescriptorCallbacks.remove(identifier)
         }
     }
 
-    private fun popWriteDescriptorCallback(descriptor: BluetoothGattDescriptor): UUErrorCallback?
+    private fun popWriteDescriptorCallback(identifier: String): UUErrorBlock?
     {
-        val block: UUErrorCallback?
+        val block: UUErrorBlock?
         synchronized(writeDescriptorCallbacks)
         {
-            val id = descriptor.uuHashLookup()
-            block = writeDescriptorCallbacks[id]
-            writeDescriptorCallbacks.remove(id)
+            block = writeDescriptorCallbacks[identifier]
+            writeDescriptorCallbacks.remove(identifier)
         }
 
         return block
@@ -266,7 +257,7 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
         UULog.d(javaClass, "onCharacteristicRead", "characteristic: ${characteristic?.uuid}, value: ${characteristic?.value?.uuToHex()}, status: $status")
 
         val chr = characteristic ?: return
-        notifyCharacteristicRead(chr, chr.value, UUBluetoothError.gattStatusError("onCharacteristicRead", status))
+        notifyCharacteristicRead(chr.uuHashLookup(), chr.value, UUBluetoothError.gattStatusError("onCharacteristicRead", status))
 
     }
 
@@ -278,7 +269,7 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
     {
         UULog.d(javaClass, "onCharacteristicRead", "characteristic: ${characteristic.uuid}, value: ${value.uuToHex()}, status: $status")
 
-        notifyCharacteristicRead(characteristic, value, UUBluetoothError.gattStatusError("onCharacteristicRead", status))
+        notifyCharacteristicRead(characteristic.uuHashLookup(), value, UUBluetoothError.gattStatusError("onCharacteristicRead", status))
     }
 
     override fun onCharacteristicChanged(
@@ -288,7 +279,7 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
     {
         UULog.d(javaClass, "onCharacteristicChanged", "characteristic: ${characteristic.uuid}, data: ${value.uuToHex()}")
 
-        notifyCharacteristicChanged(characteristic, value)
+        notifyCharacteristicChanged(characteristic.uuHashLookup(), value)
     }
 
     // This is called on Android 12 and below, so it needs to be implemented.  When it gets a value,
@@ -302,9 +293,10 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
         UULog.d(javaClass, "onCharacteristicChanged", "characteristic: ${characteristic?.uuid}, data: ${characteristic?.value?.uuToHex()}")
 
         val chr = characteristic ?: return
-        notifyCharacteristicChanged(characteristic, chr.value)
+        notifyCharacteristicChanged(characteristic.uuHashLookup(), chr.value)
     }
 
+    @Suppress("DEPRECATION")
     override fun onCharacteristicWrite(
         gatt: BluetoothGatt?,
         characteristic: BluetoothGattCharacteristic?,
@@ -313,7 +305,7 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
         UULog.d(javaClass, "onDescriptorRead", "characteristic: ${characteristic?.uuid}, data: ${characteristic?.value?.uuToHex()} status: $status")
 
         val chr = characteristic ?: return
-        notifyCharacteristicWrite(chr, UUBluetoothError.gattStatusError("onCharacteristicWrite", status))
+        notifyCharacteristicWrite(chr.uuHashLookup(), UUBluetoothError.gattStatusError("onCharacteristicWrite", status))
     }
 
     // This is called on Android 12 and below, so it needs to be implemented.  When it gets a value,
@@ -328,7 +320,7 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
         UULog.d(javaClass, "onDescriptorRead", "descriptor: ${descriptor?.uuid}, data: ${descriptor?.value?.uuToHex()} status: $status")
 
         val desc = descriptor ?: return
-        notifyDescriptorRead(desc, desc.value, UUBluetoothError.gattStatusError("onDescriptorRead", status))
+        notifyDescriptorRead(desc.uuHashLookup(), desc.value, UUBluetoothError.gattStatusError("onDescriptorRead", status))
     }
 
     override fun onDescriptorRead(
@@ -339,9 +331,10 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
     {
         UULog.d(javaClass, "onDescriptorRead", "descriptor: ${descriptor.uuid}, data: ${value.uuToHex()} status: $status")
 
-        notifyDescriptorRead(descriptor, value, UUBluetoothError.gattStatusError("onDescriptorRead", status))
+        notifyDescriptorRead(descriptor.uuHashLookup(), value, UUBluetoothError.gattStatusError("onDescriptorRead", status))
     }
 
+    @Suppress("DEPRECATION")
     override fun onDescriptorWrite(
         gatt: BluetoothGatt?,
         descriptor: BluetoothGattDescriptor?,
@@ -350,7 +343,7 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
         UULog.d(javaClass, "onDescriptorWrite", "descriptor: ${descriptor?.uuid}, data: ${descriptor?.value?.uuToHex()} status: $status")
 
         val desc = descriptor ?: return
-        notifyDescriptorWrite(desc, UUBluetoothError.gattStatusError("onDescriptorWrite", status))
+        notifyDescriptorWrite(desc.uuHashLookup(), UUBluetoothError.gattStatusError("onDescriptorWrite", status))
     }
 
     override fun onReliableWriteCompleted(gatt: BluetoothGatt?, status: Int)
@@ -409,7 +402,7 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
         {
             uuDispatch()
             {
-                block(status, newState)
+                block(Pair(status, newState))
             }
         }
     }
@@ -429,11 +422,11 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
     }
 
     fun notifyCharacteristicRead(
-        characteristic: BluetoothGattCharacteristic,
+        identifier: String,
         value: ByteArray?,
         error: UUError?)
     {
-        val block = popReadCharacteristicCallback(characteristic)
+        val block = popReadCharacteristicCallback(identifier)
 
         block?.let()
         {
@@ -445,31 +438,33 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
     }
 
     private fun notifyCharacteristicChanged(
-        characteristic: BluetoothGattCharacteristic,
+        identifier: String,
         value: ByteArray?)
     {
-        val block: UUCharacteristicDataCallback?
+        val block: UUObjectBlock<ByteArray>?
         synchronized(characteristicDataChangedCallbacks)
         {
-            val id = characteristic.uuHashLookup()
-            block = characteristicDataChangedCallbacks[id]
+            block = characteristicDataChangedCallbacks[identifier]
             // Do not clear the callback since this can be invoked multiple times
         }
 
         block?.let()
-        {
-            uuDispatch()
+        { blk ->
+            value?.let()
             {
-                it(characteristic, value)
+                uuDispatch()
+                {
+                    blk(value)
+                }
             }
         }
     }
 
     fun notifyCharacteristicWrite(
-        characteristic: BluetoothGattCharacteristic,
+        identifier: String,
         error: UUError?)
     {
-        val block = popWriteCharacteristicCallback(characteristic)
+        val block = popWriteCharacteristicCallback(identifier)
 
         block?.let()
         {
@@ -481,11 +476,11 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
     }
 
     fun notifyDescriptorRead(
-        descriptor: BluetoothGattDescriptor,
+        identifier: String,
         value: ByteArray?,
         error: UUError?)
     {
-        val block = popReadDescriptorCallback(descriptor)
+        val block = popReadDescriptorCallback(identifier)
 
         block?.let()
         {
@@ -497,10 +492,10 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
     }
 
     fun notifyDescriptorWrite(
-        descriptor: BluetoothGattDescriptor,
+        identifier: String,
         error: UUError?)
     {
-        val block = popWriteDescriptorCallback(descriptor)
+        val block = popWriteDescriptorCallback(identifier)
 
         block?.let()
         {
@@ -551,11 +546,18 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
         val block = phyReadCallback
         phyReadCallback = null
 
+        var result: Pair<Int, Int>? = null
+
+        if (txPhy != null && rxPhy != null)
+        {
+            result = Pair(txPhy, rxPhy)
+        }
+
         block?.let()
         {
             uuDispatch()
             {
-                it(txPhy, rxPhy, error)
+                it(result, error)
             }
         }
     }
@@ -568,11 +570,18 @@ internal class UUBluetoothGattCallback : BluetoothGattCallback()
         val block = phyUpdatedCallback
         phyUpdatedCallback = null
 
+        var result: Pair<Int, Int>? = null
+
+        if (txPhy != null && rxPhy != null)
+        {
+            result = Pair(txPhy, rxPhy)
+        }
+
         block?.let()
         {
             uuDispatch()
             {
-                it(txPhy, rxPhy, error)
+                it(result, error)
             }
         }
     }

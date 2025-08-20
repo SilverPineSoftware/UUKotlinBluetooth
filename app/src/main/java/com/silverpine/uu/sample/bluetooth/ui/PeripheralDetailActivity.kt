@@ -135,7 +135,9 @@ class PeripheralDetailActivity : UURecyclerActivity()
     private fun handleReadPhy()
     {
         peripheral.readPhy( 10000)
-        { txPhy, rxPhy, error ->
+        { result, error ->
+            val txPhy = result?.first
+            val rxPhy = result?.second
             uuShowToast("TxPhy: $txPhy, RxPhy: $rxPhy")
 
             refreshUi()
@@ -148,7 +150,9 @@ class PeripheralDetailActivity : UURecyclerActivity()
         val rxPhy = BluetoothDevice.PHY_LE_2M_MASK
         val options = BluetoothDevice.PHY_OPTION_NO_PREFERRED
         peripheral.updatePhy(txPhy, rxPhy, options, 10000)
-        { txPhyUpdated, rxPhyUpdated, error ->
+        { result, error ->
+            val txPhyUpdated = result?.first
+            val rxPhyUpdated = result?.second
             uuShowToast("TxPhy: $txPhyUpdated, RxPhy: $rxPhyUpdated")
 
             refreshUi()

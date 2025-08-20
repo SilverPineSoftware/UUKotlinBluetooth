@@ -8,12 +8,6 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
-ext {
-    PUBLISH_ARTIFACT_ID = 'uu-bluetooth-ktx'
-    PUBLISH_DESCRIPTION = 'Useful Utilities Bluetooth'
-    SCM_MODULE_NAME = 'UUKotlinBluetooth'
-}
-
 apply from: "${uu_build_common}/uu-build-library-common.gradle"
 
 dependencies {

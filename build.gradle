@@ -1,17 +1,23 @@
 buildscript {
     ext.uu_namespace = 'com.silverpine.uu.bluetooth'
+    ext.uu_publish_artifact_id = 'uu-bluetooth-ktx'
+    ext.uu_publish_description = 'Useful Utilities Bluetooth'
+    ext.uu_scm_module_name = 'UUKotlinBluetooth'
+
     ext.uu_min_sdk = 26
     ext.uu_target_sdk = 36
     ext.uu_gradle_version = '8.10.1'
     ext.uu_kotlin_version = '2.1.20'
     ext.uu_nexus_version = '2.0.0'
-    ext.uu_test_version = '0.0.7'
-    ext.uu_core_version = '0.0.16'
-    ext.uu_ux_version = '0.0.12'
     ext.uu_java_version = JavaVersion.VERSION_17
-    ext.uu_build_common_version = '0.0.9'
+
+    ext.uu_build_common_version = '0.0.10'
     ext.uu_build_common_url = 'https://raw.githubusercontent.com/SilverPineSoftware/UUKotlinBuild'
     ext.uu_build_common = "${uu_build_common_url}/${uu_build_common_version}"
+
+    ext.uu_test_version = '0.0.8'
+    ext.uu_core_version = '0.0.17'
+    ext.uu_ux_version = '0.0.13'
 }
 
 plugins {

@@ -1,6 +1,7 @@
 package com.silverpine.uu.bluetooth
 
 import com.silverpine.uu.core.UUError
+import com.silverpine.uu.core.uuDispatch
 
 typealias UUVoidBlock = () -> Unit
 typealias UUErrorBlock = (UUError?) -> Unit
@@ -9,76 +10,52 @@ typealias UUListBlock<T> = (List<T>) -> Unit
 typealias UUObjectErrorBlock<T> = (T?, UUError?) -> Unit
 typealias UUListErrorBlock<T> = (List<T>?, UUError?) -> Unit
 
-/*
-fun UUVoidBlock.safeNotify()
+
+fun UUVoidBlock.dispatch()
 {
-    try
+    uuDispatch()
     {
         this()
     }
-    catch (ex: Exception)
-    {
-        UULog.d(javaClass, "safeNotify", "", ex)
-    }
 }
 
-fun UUErrorBlock.safeNotify(error: UUError?)
+fun UUErrorBlock.dispatch(error: UUError?)
 {
-    try
+    uuDispatch()
     {
         this(error)
     }
-    catch (ex: Exception)
-    {
-        UULog.d(javaClass, "safeNotify", "", ex)
-    }
 }
 
-fun <T> UUObjectBlock<T>.safeNotify(obj: T)
+fun <T> UUObjectBlock<T>.dispatch(obj: T)
 {
-    try
+    uuDispatch()
     {
         this(obj)
     }
-    catch (ex: Exception)
-    {
-        UULog.d(javaClass, "safeNotify", "", ex)
-    }
 }
 
-fun <T> UUListBlock<T>.safeNotify(obj: List<T>)
+fun <T> UUListBlock<T>.dispatch(obj: List<T>)
 {
-    try
+    uuDispatch()
     {
         this(obj)
     }
-    catch (ex: Exception)
-    {
-        UULog.d(javaClass, "safeNotify", "", ex)
-    }
 }
 
-fun <T> UUObjectErrorBlock<T>.safeNotify(obj: T?, error: UUError?)
+fun <T> UUObjectErrorBlock<T>.dispatch(obj: T?, error: UUError?)
 {
-    try
+    uuDispatch()
     {
         this(obj, error)
     }
-    catch (ex: Exception)
-    {
-        UULog.d(javaClass, "safeNotify", "", ex)
-    }
 }
 
-fun <T> UUListErrorBlock<T>.safeNotify(obj: List<T>?, error: UUError?)
+fun <T> UUListErrorBlock<T>.dispatch(obj: List<T>?, error: UUError?)
 {
-    try
+    uuDispatch()
     {
         this(obj, error)
     }
-    catch (ex: Exception)
-    {
-        UULog.d(javaClass, "safeNotify", "", ex)
-    }
 }
-*/
+

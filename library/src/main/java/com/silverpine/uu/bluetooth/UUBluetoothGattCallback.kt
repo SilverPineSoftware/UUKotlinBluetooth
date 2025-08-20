@@ -112,14 +112,7 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
         error: UUError?)
     {
         val block = popSetCharacteristicNotificationCallback(identifier)
-
-        block?.let()
-        {
-            uuDispatch()
-            {
-                it(error)
-            }
-        }
+        block?.dispatch(error)
     }
 
     fun registerCharacteristicDataChangedCallback(identifier: String, callback: UUObjectBlock<ByteArray>)
@@ -393,27 +386,14 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
 
         // Do not clear the delegate because the connection state can be invoked multiple times.
 
-        block?.let()
-        {
-            uuDispatch()
-            {
-                block(Pair(status, newState))
-            }
-        }
+        block?.dispatch(Pair(status, newState))
     }
 
     fun notifyServicesDiscovered(services: List<BluetoothGattService>?, error: UUError?)
     {
         val block = servicesDiscoveredCallback
         servicesDiscoveredCallback = null
-
-        block?.let()
-        {
-            uuDispatch()
-            {
-                it(services, error)
-            }
-        }
+        block?.dispatch(services, error)
     }
 
     fun notifyCharacteristicRead(
@@ -422,14 +402,7 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
         error: UUError?)
     {
         val block = popReadCharacteristicCallback(identifier)
-
-        block?.let()
-        {
-            uuDispatch()
-            {
-                it(value, error)
-            }
-        }
+        block?.dispatch(value, error)
     }
 
     private fun notifyCharacteristicChanged(
@@ -443,15 +416,9 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
             // Do not clear the callback since this can be invoked multiple times
         }
 
-        block?.let()
-        { blk ->
-            value?.let()
-            {
-                uuDispatch()
-                {
-                    blk(value)
-                }
-            }
+        value?.let()
+        { actualValue ->
+            block?.dispatch(actualValue)
         }
     }
 
@@ -460,14 +427,7 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
         error: UUError?)
     {
         val block = popWriteCharacteristicCallback(identifier)
-
-        block?.let()
-        {
-            uuDispatch()
-            {
-                it(error)
-            }
-        }
+        block?.dispatch(error)
     }
 
     fun notifyDescriptorRead(
@@ -476,14 +436,7 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
         error: UUError?)
     {
         val block = popReadDescriptorCallback(identifier)
-
-        block?.let()
-        {
-            uuDispatch()
-            {
-                it(value, error)
-            }
-        }
+        block?.dispatch(value, error)
     }
 
     fun notifyDescriptorWrite(
@@ -491,14 +444,7 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
         error: UUError?)
     {
         val block = popWriteDescriptorCallback(identifier)
-
-        block?.let()
-        {
-            uuDispatch()
-            {
-                it(error)
-            }
-        }
+        block?.dispatch(error)
     }
 
     fun notifyRemoteRssiRead(
@@ -507,14 +453,7 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
     {
         val block = readRssiCallback
         readRssiCallback = null
-
-        block?.let()
-        {
-            uuDispatch()
-            {
-                it(value, error)
-            }
-        }
+        block?.dispatch(value, error)
     }
 
     fun notifyMtuChanged(
@@ -523,14 +462,7 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
     {
         val block = mtuChangedCallback
         mtuChangedCallback = null
-
-        block?.let()
-        {
-            uuDispatch()
-            {
-                it(value, error)
-            }
-        }
+        block?.dispatch(value, error)
     }
 
     fun notifyPhyRead(
@@ -548,13 +480,7 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
             result = Pair(txPhy, rxPhy)
         }
 
-        block?.let()
-        {
-            uuDispatch()
-            {
-                it(result, error)
-            }
-        }
+        block?.dispatch(result, error)
     }
 
     fun notifyPhyUpdate(
@@ -572,27 +498,14 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
             result = Pair(txPhy, rxPhy)
         }
 
-        block?.let()
-        {
-            uuDispatch()
-            {
-                it(result, error)
-            }
-        }
+        block?.dispatch(result, error)
     }
 
     private fun notifyReliableWriteComplete(error: UUError?)
     {
         val block = executeReliableWriteCallback
         executeReliableWriteCallback = null
-
-        block?.let()
-        {
-            uuDispatch()
-            {
-                it(error)
-            }
-        }
+        block?.dispatch(error)
     }
 
     private fun notifyServiceChanged()
@@ -601,9 +514,6 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
 
         // Don't null out block since this potentially could be invoked many times within a session
 
-        block?.let()
-        {
-            uuDispatch(it)
-        }
+        block?.dispatch()
     }
 }

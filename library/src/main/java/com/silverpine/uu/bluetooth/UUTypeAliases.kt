@@ -1,7 +1,6 @@
 package com.silverpine.uu.bluetooth
 
 import com.silverpine.uu.core.UUError
-import com.silverpine.uu.logging.UULog
 
 typealias UUVoidBlock = () -> Unit
 typealias UUErrorBlock = (UUError?) -> Unit
@@ -10,7 +9,7 @@ typealias UUListBlock<T> = (List<T>) -> Unit
 typealias UUObjectErrorBlock<T> = (T?, UUError?) -> Unit
 typealias UUListErrorBlock<T> = (List<T>?, UUError?) -> Unit
 
-
+/*
 fun UUVoidBlock.safeNotify()
 {
     try
@@ -82,4 +81,4 @@ fun <T> UUListErrorBlock<T>.safeNotify(obj: List<T>?, error: UUError?)
         UULog.d(javaClass, "safeNotify", "", ex)
     }
 }
-
+*/

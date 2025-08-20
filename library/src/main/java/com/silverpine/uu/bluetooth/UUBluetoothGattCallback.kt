@@ -1,22 +1,17 @@
-package com.silverpine.uu.bluetooth.internal
+package com.silverpine.uu.bluetooth
 
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
-import com.silverpine.uu.bluetooth.UUBluetoothError
-import com.silverpine.uu.bluetooth.UUErrorBlock
-import com.silverpine.uu.bluetooth.UUListErrorBlock
-import com.silverpine.uu.bluetooth.UUObjectBlock
-import com.silverpine.uu.bluetooth.UUObjectErrorBlock
-import com.silverpine.uu.bluetooth.UUVoidBlock
+import com.silverpine.uu.bluetooth.internal.uuHashLookup
 import com.silverpine.uu.core.UUError
 import com.silverpine.uu.core.uuDispatch
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.logging.UULog
 
-internal class UUBluetoothGattCallback : BluetoothGattCallback()
+class UUBluetoothGattCallback : BluetoothGattCallback()
 {
     var connectionStateChangedCallback: UUObjectBlock<Pair<Int,Int>>? = null
     var servicesDiscoveredCallback: UUListErrorBlock<BluetoothGattService>? = null

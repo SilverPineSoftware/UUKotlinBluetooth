@@ -22,6 +22,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 @Suppress("Deprecation")
+@OptIn(ExperimentalAtomicApi::class)
 class UUBluetoothGattCallbackTests
 {
     // clearAll tests
@@ -84,7 +85,6 @@ class UUBluetoothGattCallbackTests
 
     // registerReadCallback
 
-    @OptIn(ExperimentalAtomicApi::class)
     @Test
     fun register_thenNotify_invokesCallback_andThenPops()
     {
@@ -455,7 +455,6 @@ class UUBluetoothGattCallbackTests
         assertFalse(oldCalled.get(), "old callback should be replaced")
     }
 
-    @OptIn(ExperimentalAtomicApi::class)
     @Test
     fun dataChanged_clearCharacteristicDataChangedCallback_stopsFurtherInvocations()
     {
@@ -501,7 +500,6 @@ class UUBluetoothGattCallbackTests
         assertFalse(called.load(), "callback should not be called after clear")
     }
 
-    @OptIn(ExperimentalAtomicApi::class)
     @Test
     fun dataChanged_multipleIds_areIndependent_and_persistent()
     {
@@ -608,12 +606,12 @@ class UUBluetoothGattCallbackTests
         // Use the same ID format as the impl when mapping a characteristic to an ID
         val id = uuid.uuToLowercaseString()
 
-        val called = java.util.concurrent.atomic.AtomicBoolean(false)
+        val called = AtomicBoolean(false)
         val latch = CountDownLatch(1)
 
         cb.registerCharacteristicDataChangedCallback(id)
         {
-            called.set(true)
+            called.store(true)
             latch.countDown()
         }
 
@@ -621,6 +619,185 @@ class UUBluetoothGattCallbackTests
         cb.onCharacteristicChanged(null, ch)
 
         assertFalse(latch.await(200, TimeUnit.MILLISECONDS), "callback should not fire when value is null")
-        assertFalse(called.get(), "callback should not be called when value is null")
+        assertFalse(called.load(), "callback should not be called when value is null")
     }
+
+    @Test
+    fun notifyCharacteristicRead_clearedCallback_doesNotInvoke()
+    {
+        val cb = UUBluetoothGattCallback()
+        val id = "char-read"
+        val called = AtomicReference(false)
+        val latch = CountDownLatch(1)
+
+        cb.registerReadCharacteristicCallback(id) { _, _ ->
+            called.store(true); latch.countDown()
+        }
+        cb.clearReadCharacteristicCallback(id)
+
+        cb.notifyCharacteristicRead(id, byteArrayOf(0x01), null)
+
+        assertFalse(latch.await(200, TimeUnit.MILLISECONDS), "should not fire after clear")
+        assertFalse(called.load(), "callback should not be called")
+    }
+
+    @Test
+    fun notifyCharacteristicWrite_clearedCallback_doesNotInvoke()
+    {
+        val cb = UUBluetoothGattCallback()
+        val id = "char-write"
+        val called = AtomicReference(false)
+        val latch = CountDownLatch(1)
+
+        cb.registerWriteCharacteristicCallback(id) {
+            called.store(true); latch.countDown()
+        }
+        cb.clearWriteCharacteristicCallback(id)
+
+        cb.notifyCharacteristicWrite(id, null)
+
+        assertFalse(latch.await(200, TimeUnit.MILLISECONDS), "should not fire after clear")
+        assertFalse(called.load(), "callback should not be called")
+    }
+
+    @Test
+    fun notifyDescriptorRead_clearedCallback_doesNotInvoke()
+    {
+        val cb = UUBluetoothGattCallback()
+        val id = "desc-read"
+        val called = AtomicReference(false)
+        val latch = CountDownLatch(1)
+
+        cb.registerReadDescriptorCallback(id) { _, _ ->
+            called.store(true); latch.countDown()
+        }
+        cb.clearReadDescriptorCallback(id)
+
+        cb.notifyDescriptorRead(id, byteArrayOf(0x02), null)
+
+        assertFalse(latch.await(200, TimeUnit.MILLISECONDS), "should not fire after clear")
+        assertFalse(called.load(), "callback should not be called")
+    }
+
+    @Test
+    fun notifyDescriptorWrite_clearedCallback_doesNotInvoke()
+    {
+        val cb = UUBluetoothGattCallback()
+        val id = "desc-write"
+        val called = AtomicReference(false)
+        val latch = CountDownLatch(1)
+
+        cb.registerWriteDescriptorCallback(id) {
+            called.store(true); latch.countDown()
+        }
+        cb.clearWriteDescriptorCallback(id)
+
+        cb.notifyDescriptorWrite(id, null)
+
+        assertFalse(latch.await(200, TimeUnit.MILLISECONDS), "should not fire after clear")
+        assertFalse(called.load(), "callback should not be called")
+    }
+
+    @Test
+    fun notifySetCharacteristicNotification_clearedCallback_doesNotInvoke()
+    {
+        val cb = UUBluetoothGattCallback()
+        val id = "set-notify"
+        val called = AtomicReference(false)
+        val latch = CountDownLatch(1)
+
+        cb.registerSetCharacteristicNotificationCallback(id) {
+            called.store(true); latch.countDown()
+        }
+        cb.clearSetCharacteristicNotificationCallback(id)
+
+        cb.notifyCharacteristicSetNotifyCallback(id, null)
+
+        assertFalse(latch.await(200, TimeUnit.MILLISECONDS), "should not fire after clear")
+        assertFalse(called.load(), "callback should not be called")
+    }
+
+    @Test
+    fun notifyRemoteRssiRead_nullProperty_doesNotInvoke()
+    {
+        val cb = UUBluetoothGattCallback()
+        val called = AtomicReference(false)
+        val latch = CountDownLatch(1)
+
+        cb.readRssiCallback = { _, _ -> called.store(true); latch.countDown() }
+        cb.readRssiCallback = null
+
+        cb.notifyRemoteRssiRead(-42, null)
+
+        assertFalse(latch.await(200, TimeUnit.MILLISECONDS), "should not fire after nulling")
+        assertFalse(called.load(), "callback should not be called")
+    }
+
+    @Test
+    fun notifyMtuChanged_nullProperty_doesNotInvoke()
+    {
+        val cb = UUBluetoothGattCallback()
+        val called = AtomicReference(false)
+        val latch = CountDownLatch(1)
+
+        cb.mtuChangedCallback = { _, _ -> called.store(true); latch.countDown() }
+        cb.mtuChangedCallback = null
+
+        cb.notifyMtuChanged(247, null)
+
+        assertFalse(latch.await(200, TimeUnit.MILLISECONDS), "should not fire after nulling")
+        assertFalse(called.load(), "callback should not be called")
+    }
+
+    @Test
+    fun notifyPhyRead_nullProperty_doesNotInvoke()
+    {
+        val cb = UUBluetoothGattCallback()
+        val called = AtomicReference(false)
+        val latch = CountDownLatch(1)
+
+        cb.phyReadCallback = { _, _ -> called.store(true); latch.countDown() }
+        cb.phyReadCallback = null
+
+        cb.notifyPhyRead(2, 2, null)
+
+        assertFalse(latch.await(200, TimeUnit.MILLISECONDS), "should not fire after nulling")
+        assertFalse(called.load(), "callback should not be called")
+    }
+
+    @Test
+    fun notifyPhyUpdate_nullProperty_doesNotInvoke()
+    {
+        val cb = UUBluetoothGattCallback()
+        val called = AtomicReference(false)
+        val latch = CountDownLatch(1)
+
+        cb.phyUpdatedCallback = { _, _ -> called.store(true); latch.countDown() }
+        cb.phyUpdatedCallback = null
+
+        cb.notifyPhyUpdate(1, 3, null)
+
+        assertFalse(latch.await(200, TimeUnit.MILLISECONDS), "should not fire after nulling")
+        assertFalse(called.load(), "callback should not be called")
+    }
+
+    @Test
+    fun notifyServicesDiscovered_nullProperty_doesNotInvoke()
+    {
+        val cb = UUBluetoothGattCallback()
+        val called = AtomicReference(false)
+        val latch = CountDownLatch(1)
+
+        cb.servicesDiscoveredCallback = { _, _ -> called.store(true); latch.countDown() }
+        cb.servicesDiscoveredCallback = null
+
+        cb.notifyServicesDiscovered(emptyList(), null)
+
+        assertFalse(latch.await(200, TimeUnit.MILLISECONDS), "should not fire after nulling")
+        assertFalse(called.load(), "callback should not be called")
+    }
+
+
+
+
 }

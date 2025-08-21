@@ -19,7 +19,10 @@ dependencies {
     implementation "com.silverpine.uu:uu-core-ktx:${uu_core_version}"
 
     testImplementation 'junit:junit:4.13.2'
+    testImplementation "org.jetbrains.kotlin:kotlin-test:${uu_kotlin_version}"
+    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0"
     testImplementation 'org.mockito:mockito-core:5.12.0'
+    testImplementation 'org.mockito:mockito-inline:5.2.0'
     testImplementation "com.silverpine.uu:uu-core-ktx:${uu_core_version}"
     testImplementation "com.silverpine.uu:uu-test-ktx:${uu_test_version}"
 
@@ -29,6 +32,7 @@ dependencies {
     androidTestImplementation "com.silverpine.uu:uu-ux-ktx:${uu_ux_version}"
     androidTestImplementation "com.silverpine.uu:uu-test-ktx:${uu_test_version}"
     androidTestImplementation 'androidx.constraintlayout:constraintlayout:2.2.1'
+
 }
 
 

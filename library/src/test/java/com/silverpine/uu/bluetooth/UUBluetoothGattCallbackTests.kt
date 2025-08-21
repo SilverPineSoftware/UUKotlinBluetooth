@@ -5,6 +5,8 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattService
 import com.silverpine.uu.bluetooth.internal.uuToLowercaseString
 import com.silverpine.uu.core.UUError
+import io.mockk.every
+import io.mockk.mockkObject
 import junit.framework.TestCase.assertNull
 import junit.framework.TestCase.fail
 import org.junit.Assert.assertArrayEquals
@@ -1022,5 +1024,145 @@ class UUBluetoothGattCallbackTests
         assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
         assertEquals(expected, got.load(), "status/state pair mismatch")
     }
+
+    @Test
+    fun onServicesDiscovered_success_invokesCallback_withServices_andClears()
+    {
+        val cb = UUBluetoothGattCallback()
+
+        // Mock GATT + services
+        val gatt = mock(BluetoothGatt::class.java)
+        val svc = mock(BluetoothGattService::class.java)
+        `when`(gatt.services).thenReturn(listOf(svc))
+
+        val gotServices = AtomicReference<List<BluetoothGattService>?>(null)
+        val gotError = AtomicReference<UUError?>(null)
+        val latch = CountDownLatch(1)
+
+        cb.servicesDiscoveredCallback =
+        { services, error ->
+            gotServices.store(services)
+            gotError.store(error)
+            latch.countDown()
+        }
+
+        // status = 0 → success
+        cb.onServicesDiscovered(gatt, /*status=*/0)
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
+        assertEquals(listOf(svc), gotServices.load(), "services list mismatch")
+        assertEquals(null, gotError.load(), "error should be null for success")
+
+        // Ensure single-shot: second call should not invoke (callback is cleared)
+        val second = CountDownLatch(1)
+        cb.onServicesDiscovered(gatt, 0)
+        assertFalse(second.await(200, TimeUnit.MILLISECONDS), "callback should not fire a second time")
+    }
+
+    @Test
+    fun onServicesDiscovered_error_withStaticMock_invokesCallback_withNonNullError_andClears() {
+        val cb = UUBluetoothGattCallback()
+
+        val gatt = mock(BluetoothGatt::class.java)
+        val svc = mock(BluetoothGattService::class.java)
+        `when`(gatt.services).thenReturn(listOf(svc))
+
+        val gotServices = AtomicReference<List<BluetoothGattService>?>(null)
+        val gotError = AtomicReference<UUError?>(null)
+        val latch = CountDownLatch(1)
+
+        cb.servicesDiscoveredCallback = { services, error ->
+            gotServices.store(services)
+            gotError.store(error)
+            latch.countDown()
+        }
+
+        val err = mock(UUError::class.java)
+
+        // Intercept the factory that would create a real UUError (and hit Bundle)
+        /*Mockito.mockStatic(UUBluetoothError::class.java).use()
+        { mocked ->
+            mocked.`when`<UUError>()
+            {
+                UUBluetoothError.gattStatusError("onServicesDiscovered", 129)
+            }.thenReturn(err)
+        }*/
+
+        // Arrange
+        mockkObject(UUBluetoothError)
+        //val fake = mockk<UUError>(relaxed = true)
+
+        every {
+            UUBluetoothError.makeError(UUBluetoothErrorCode.OperationFailed, any())
+        } returns err
+
+
+        cb.onServicesDiscovered(gatt, /*status=*/129)
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
+        assertEquals(listOf(svc), gotServices.load(), "services list mismatch")
+        assertTrue(gotError.load() === err, "should be the mocked UUError")
+
+        // single-shot clear
+        val second = CountDownLatch(1)
+        cb.onServicesDiscovered(gatt, 129)
+        assertFalse(second.await(200, TimeUnit.MILLISECONDS), "callback should not fire after clearing")
+    }
+
+    @Test
+    fun onServicesDiscovered_clearedProperty_doesNotInvoke()
+    {
+        val cb = UUBluetoothGattCallback()
+
+        val gatt = mock(BluetoothGatt::class.java)
+        `when`(gatt.services).thenReturn(emptyList())
+
+        val called = AtomicReference(false)
+        val latch = CountDownLatch(1)
+
+        cb.servicesDiscoveredCallback =
+        { _, _ ->
+            called.store(true)
+            latch.countDown()
+        }
+
+        // Clear before calling
+        cb.servicesDiscoveredCallback = null
+
+        cb.onServicesDiscovered(gatt, /*status=*/0)
+
+        assertFalse(latch.await(200, TimeUnit.MILLISECONDS), "should not fire when callback cleared")
+        assertFalse(called.load(), "callback must not be invoked after clearing")
+    }
+
+    @Test
+    fun onServicesDiscovered_propagatesExactServicesReference()
+    {
+        val cb = UUBluetoothGattCallback()
+
+        val gatt = mock(BluetoothGatt::class.java)
+        val svcA = mock(BluetoothGattService::class.java)
+        val svcB = mock(BluetoothGattService::class.java)
+        val expected = listOf(svcA, svcB)
+        `when`(gatt.services).thenReturn(expected)
+
+        val got = AtomicReference<List<BluetoothGattService>?>(null)
+        val latch = CountDownLatch(1)
+
+        cb.servicesDiscoveredCallback =
+        { services, _ ->
+            got.store(services)
+            latch.countDown()
+        }
+
+        cb.onServicesDiscovered(gatt, 0)
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
+        assertTrue(got.load() === expected, "should pass through the same list instance")
+    }
+
+
+
+
 
 }

@@ -23,6 +23,7 @@ dependencies {
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0"
     testImplementation 'org.mockito:mockito-core:5.12.0'
     testImplementation 'org.mockito:mockito-inline:5.2.0'
+    testImplementation 'io.mockk:mockk:1.13.12'
     testImplementation "com.silverpine.uu:uu-core-ktx:${uu_core_version}"
     testImplementation "com.silverpine.uu:uu-test-ktx:${uu_test_version}"
 

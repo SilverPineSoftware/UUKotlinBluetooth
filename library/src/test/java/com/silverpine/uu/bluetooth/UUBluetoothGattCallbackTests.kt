@@ -1,5 +1,6 @@
 package com.silverpine.uu.bluetooth
 
+import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattService
 import com.silverpine.uu.bluetooth.internal.uuToLowercaseString
@@ -118,25 +119,27 @@ class UUBluetoothGattCallbackTests
     }
 
     @Test
-    fun reRegister_sameId_replacesOldCallback() {
+    fun reRegister_sameId_replacesOldCallback()
+    {
         val cb = UUBluetoothGattCallback()
         val id = "char-dup"
 
-        val oldCalled = java.util.concurrent.atomic.AtomicBoolean(false)
-        val newCalled = java.util.concurrent.atomic.AtomicBoolean(false)
+        val oldCalled = AtomicBoolean(false)
+        val newCalled = AtomicBoolean(false)
 
         val oldLatch = CountDownLatch(1)
         val newLatch = CountDownLatch(1)
 
         // First registration (should be replaced)
         cb.registerReadCharacteristicCallback(id) { _, _ ->
-            oldCalled.set(true)
+            oldCalled.store(true)
             oldLatch.countDown()
         }
 
         // Second registration replaces the first
-        cb.registerReadCharacteristicCallback(id) { _, _ ->
-            newCalled.set(true)
+        cb.registerReadCharacteristicCallback(id)
+        { _, _ ->
+            newCalled.store(true)
             newLatch.countDown()
         }
 
@@ -145,11 +148,11 @@ class UUBluetoothGattCallbackTests
 
         // The new callback should fire
         assertTrue(newLatch.await(1, TimeUnit.SECONDS), "New callback did not fire in time")
-        assertTrue(newCalled.get(), "New callback should run")
+        assertTrue(newCalled.load(), "New callback should run")
 
         // The old callback must NOT fire
         assertFalse(oldLatch.await(200, TimeUnit.MILLISECONDS), "Old callback must be replaced")
-        assertFalse(oldCalled.get(), "Old callback must not run")
+        assertFalse(oldCalled.load(), "Old callback must not run")
     }
 
     @Test
@@ -942,5 +945,82 @@ class UUBluetoothGattCallbackTests
         assertFalse(called.load(), "callback should be popped after first use")
     }
 
+    @Test
+    fun connectionStateChanged_invokesCallback_twice_and_doesNotPop()
+    {
+        val cb = UUBluetoothGattCallback()
+
+        val calls = AtomicInteger(0)
+        val first = CountDownLatch(1)
+        val second = CountDownLatch(1)
+        val lastPair = AtomicReference<Pair<Int, Int>?>(null)
+
+        cb.connectionStateChangedCallback =
+        { p ->
+            lastPair.store(p)
+
+            when (calls.incrementAndGet())
+            {
+                1 -> first.countDown()
+                2 -> second.countDown()
+            }
+        }
+
+        val gatt = mock(BluetoothGatt::class.java)
+        cb.onConnectionStateChange(gatt, 0, android.bluetooth.BluetoothProfile.STATE_CONNECTED)
+        assertTrue(first.await(1, TimeUnit.SECONDS), "first change not observed")
+
+        cb.onConnectionStateChange(gatt, 5, android.bluetooth.BluetoothProfile.STATE_DISCONNECTED)
+        assertTrue(second.await(1, TimeUnit.SECONDS), "second change not observed")
+
+        assertEquals(2, calls.get(), "callback should persist and be called twice")
+        assertEquals(Pair(5, android.bluetooth.BluetoothProfile.STATE_DISCONNECTED), lastPair.load(), "last pair mismatch")
+    }
+
+    @Test
+    fun connectionStateChanged_clearedProperty_doesNotInvoke()
+    {
+        val cb = UUBluetoothGattCallback()
+
+        val called = AtomicReference(false)
+        val latch = CountDownLatch(1)
+
+        cb.connectionStateChangedCallback =
+        {
+            called.store(true)
+            latch.countDown()
+        }
+
+        cb.connectionStateChangedCallback = null
+
+        val gatt = mock(BluetoothGatt::class.java)
+        cb.onConnectionStateChange(gatt, 0, android.bluetooth.BluetoothProfile.STATE_CONNECTED)
+
+        assertFalse(latch.await(200, TimeUnit.MILLISECONDS), "should not fire after clearing callback")
+        assertFalse(called.load(), "callback should not be invoked after clearing")
+    }
+
+    @Test
+    fun connectionStateChanged_deliversExactStatusAndState()
+    {
+        val cb = UUBluetoothGattCallback()
+
+        val got = AtomicReference<Pair<Int, Int>?>(null)
+        val latch = CountDownLatch(1)
+
+        cb.connectionStateChangedCallback =
+        { p ->
+            got.store(p)
+            latch.countDown()
+        }
+
+        val expected = Pair(42, android.bluetooth.BluetoothProfile.STATE_CONNECTING)
+
+        val gatt = mock(BluetoothGatt::class.java)
+        cb.onConnectionStateChange(gatt, expected.first, expected.second)
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
+        assertEquals(expected, got.load(), "status/state pair mismatch")
+    }
 
 }

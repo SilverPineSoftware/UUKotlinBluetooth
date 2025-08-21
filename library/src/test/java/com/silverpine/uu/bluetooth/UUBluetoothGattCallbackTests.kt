@@ -797,7 +797,150 @@ class UUBluetoothGattCallbackTests
         assertFalse(called.load(), "callback should not be called")
     }
 
+    @Test
+    fun readCharacteristic_withError_invokesAndPops()
+    {
+        val cb = UUBluetoothGattCallback()
+        val id = "char-read-error"
+        val called = AtomicReference(false)
+        val sawError = AtomicReference(false)
+        val latch = CountDownLatch(1)
+        val err = mock(UUError::class.java)
 
+        cb.registerReadCharacteristicCallback(id)
+        { _, e ->
+            called.store(true)
+            sawError.store(e != null)
+            latch.countDown()
+        }
+
+        cb.notifyCharacteristicRead(id, byteArrayOf(0x01, 0x02), err)
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire in time")
+        assertTrue(called.load(), "callback flag not set")
+        assertTrue(sawError.load(), "error should be non-null")
+
+        // verify one-shot pop
+        called.store(false)
+        cb.notifyCharacteristicRead(id, byteArrayOf(0x03), err)
+        assertFalse(called.load(), "callback should be popped after first use")
+    }
+
+    @Test
+    fun writeCharacteristic_withError_invokesAndPops()
+    {
+        val cb = UUBluetoothGattCallback()
+        val id = "char-write-error"
+        val called = AtomicReference(false)
+        val sawError = AtomicReference(false)
+        val latch = CountDownLatch(1)
+        val err = mock(UUError::class.java)
+
+        cb.registerWriteCharacteristicCallback(id)
+        { e ->
+            called.store(true)
+            sawError.store(e != null)
+            latch.countDown()
+        }
+
+        cb.notifyCharacteristicWrite(id, err)
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire in time")
+        assertTrue(called.load(), "callback flag not set")
+        assertTrue(sawError.load(), "error should be non-null")
+
+        // verify one-shot pop
+        called.store(false)
+        cb.notifyCharacteristicWrite(id, err)
+        assertFalse(called.load(), "callback should be popped after first use")
+    }
+
+    @Test
+    fun readDescriptor_withError_invokesAndPops()
+    {
+        val cb = UUBluetoothGattCallback()
+        val id = "desc-read-error"
+        val called = AtomicReference(false)
+        val sawError = AtomicReference(false)
+        val latch = CountDownLatch(1)
+        val err = mock(UUError::class.java)
+
+        cb.registerReadDescriptorCallback(id)
+        { _, e ->
+            called.store(true)
+            sawError.store(e != null)
+            latch.countDown()
+        }
+
+        cb.notifyDescriptorRead(id, byteArrayOf(0x09), err)
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire in time")
+        assertTrue(called.load(), "callback flag not set")
+        assertTrue(sawError.load(), "error should be non-null")
+
+        // verify one-shot pop
+        called.store(false)
+        cb.notifyDescriptorRead(id, byteArrayOf(0x09), err)
+        assertFalse(called.load(), "callback should be popped after first use")
+    }
+
+    @Test
+    fun writeDescriptor_withError_invokesAndPops()
+    {
+        val cb = UUBluetoothGattCallback()
+        val id = "desc-write-error"
+        val called = AtomicReference(false)
+        val sawError = AtomicReference(false)
+        val latch = CountDownLatch(1)
+        val err = mock(UUError::class.java)
+
+        cb.registerWriteDescriptorCallback(id)
+        { e ->
+            called.store(true)
+            sawError.store(e != null)
+            latch.countDown()
+        }
+
+        cb.notifyDescriptorWrite(id, err)
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire in time")
+        assertTrue(called.load(), "callback flag not set")
+        assertTrue(sawError.load(), "error should be non-null")
+
+        // verify one-shot pop
+        called.store(false)
+        cb.notifyDescriptorWrite(id, err)
+        assertFalse(called.load(), "callback should be popped after first use")
+    }
+
+    @Test
+    fun setCharacteristicNotification_withError_invokesAndPops()
+    {
+        val cb = UUBluetoothGattCallback()
+        val id = "set-notify-error"
+        val called = AtomicReference(false)
+        val sawError = AtomicReference(false)
+        val latch = CountDownLatch(1)
+        val err = mock(UUError::class.java)
+
+        cb.registerSetCharacteristicNotificationCallback(id)
+        { e ->
+            called.store(true)
+            sawError.store(e != null)
+            latch.countDown()
+        }
+
+        cb.notifyCharacteristicSetNotifyCallback(id, err)
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire in time")
+        assertTrue(called.load(), "callback flag not set")
+        assertTrue(sawError.load(), "error should be non-null")
+
+        // verify one-shot pop
+        called.store(false)
+        cb.notifyCharacteristicSetNotifyCallback(id, err)
+        assertFalse(called.load(), "callback should be popped after first use")
+    }
 
 
 }

@@ -2,9 +2,12 @@ package com.silverpine.uu.bluetooth
 
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
+import com.silverpine.uu.bluetooth.internal.uuHashLookup
 import com.silverpine.uu.bluetooth.internal.uuToLowercaseString
 import com.silverpine.uu.core.UUError
+import com.silverpine.uu.test.uuRandomBytes
 import io.mockk.every
 import io.mockk.mockkObject
 import junit.framework.TestCase.assertNull
@@ -1079,18 +1082,8 @@ class UUBluetoothGattCallbackTests
 
         val err = mock(UUError::class.java)
 
-        // Intercept the factory that would create a real UUError (and hit Bundle)
-        /*Mockito.mockStatic(UUBluetoothError::class.java).use()
-        { mocked ->
-            mocked.`when`<UUError>()
-            {
-                UUBluetoothError.gattStatusError("onServicesDiscovered", 129)
-            }.thenReturn(err)
-        }*/
-
         // Arrange
         mockkObject(UUBluetoothError)
-        //val fake = mockk<UUError>(relaxed = true)
 
         every {
             UUBluetoothError.makeError(UUBluetoothErrorCode.OperationFailed, any())
@@ -1161,8 +1154,511 @@ class UUBluetoothGattCallbackTests
         assertTrue(got.load() === expected, "should pass through the same list instance")
     }
 
+    // onCharacteristicRead
+
+    @Test
+    fun onCharacteristicRead_deprecated_success_invokes_and_clears()
+    {
+        val cb = UUBluetoothGattCallback()
+
+        val ch = mock(BluetoothGattCharacteristic::class.java)
+        val uuid = UUID.randomUUID()
+        `when`(ch.uuid).thenReturn(uuid)
+        `when`(ch.value).thenReturn(byteArrayOf(0x01, 0x02))
+        val id = ch.uuid.uuToLowercaseString()
+
+        val got = AtomicReference<ByteArray?>(null)
+        val gotErr = AtomicReference<UUError?>(null)
+        val latch = CountDownLatch(1)
+
+        cb.registerReadCharacteristicCallback(id)
+        { bytes, e ->
+            got.store(bytes); gotErr.store(e); latch.countDown()
+        }
+
+        val err = mock(UUError::class.java)
+
+        mockkObject(UUBluetoothError)
+
+        every {
+            UUBluetoothError.makeError(UUBluetoothErrorCode.OperationFailed, any())
+        } returns err
+
+        cb.onCharacteristicRead(null, ch, 0)
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
+        assertArrayEquals("payload mismatch", byteArrayOf(0x01, 0x02), got.load())
+        assertEquals(null, gotErr.load(), "error should be null")
+
+        // one-shot pop
+        val again = CountDownLatch(1)
+        cb.onCharacteristicRead(null, ch, 0)
+        assertFalse(again.await(200, TimeUnit.MILLISECONDS), "callback should be popped")
+    }
+
+    @Test
+    fun onCharacteristicRead_deprecated_error_invokes_with_error_and_clears()
+    {
+        val cb = UUBluetoothGattCallback()
+
+        val ch = mock(BluetoothGattCharacteristic::class.java)
+        val uuid = UUID.randomUUID()
+        `when`(ch.uuid).thenReturn(uuid)
+        `when`(ch.value).thenReturn(byteArrayOf(0x09))
+        val id = ch.uuid.uuToLowercaseString()
+
+        val gotErr = AtomicReference<UUError?>(null)
+        val latch = CountDownLatch(1)
+
+        cb.registerReadCharacteristicCallback(id)
+        { _, e ->
+            gotErr.store(e); latch.countDown()
+        }
+
+        val err = mock(UUError::class.java)
+
+        mockkObject(UUBluetoothError)
+
+        every {
+            UUBluetoothError.makeError(UUBluetoothErrorCode.OperationFailed, any())
+        } returns err
+
+        cb.onCharacteristicRead(null, ch, 129)
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
+        assertTrue(gotErr.load() === err, "should receive mocked error instance")
+    }
+
+    @Test
+    fun onCharacteristicRead_deprecated_nullCharacteristic_doesNothing()
+    {
+        val cb = UUBluetoothGattCallback()
+
+        val called = AtomicReference(false)
+        val latch = CountDownLatch(1)
+        cb.registerReadCharacteristicCallback("won’t-be-used")
+        { _, _ ->
+            called.store(true); latch.countDown()
+        }
+
+        // Null characteristic → early return, no dispatch
+        cb.onCharacteristicRead(null, null, 0)
+
+        assertFalse(latch.await(200, TimeUnit.MILLISECONDS), "should not fire for null characteristic")
+        assertFalse(called.load(), "callback should not be called")
+    }
+
+    @Test
+    fun onCharacteristicRead_deprecated_nullValue_invokes_with_null_bytes()
+    {
+        val cb = UUBluetoothGattCallback()
+
+        val ch = mock(BluetoothGattCharacteristic::class.java)
+        val uuid = UUID.randomUUID()
+        `when`(ch.uuid).thenReturn(uuid)
+        `when`(ch.value).thenReturn(null)
+        val id = ch.uuid.uuToLowercaseString()
+
+        val got = AtomicReference<ByteArray?>(null)
+        val latch = CountDownLatch(1)
+
+        cb.registerReadCharacteristicCallback(id) { bytes, _ ->
+            got.store(bytes); latch.countDown()
+        }
+
+        cb.onCharacteristicRead(null, ch, 0)
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
+        assertEquals(null, got.load(), "bytes should be null")
+    }
+
+    @Test
+    fun onCharacteristicRead_new_success_invokes_and_clears()
+    {
+        val cb = UUBluetoothGattCallback()
+
+        val ch = mock(BluetoothGattCharacteristic::class.java)
+        val uuid = UUID.randomUUID()
+        `when`(ch.uuid).thenReturn(uuid)
+        val id = ch.uuid.uuToLowercaseString()
+        val value = byteArrayOf(0x0A, 0x0B)
+
+        val got = AtomicReference<ByteArray?>(null)
+        val gotErr = AtomicReference<UUError?>(null)
+        val latch = CountDownLatch(1)
+
+        cb.registerReadCharacteristicCallback(id)
+        { bytes, e ->
+            got.store(bytes); gotErr.store(e); latch.countDown()
+        }
+
+        mockkObject(UUBluetoothError)
+
+        cb.onCharacteristicRead(mock(BluetoothGatt::class.java), ch, value, 0)
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
+        assertArrayEquals("payload mismatch", value, got.load())
+        assertEquals(null, gotErr.load(), "error should be null")
+    }
+
+    @Test
+    fun onCharacteristicRead_new_error_invokes_with_error_and_clears()
+    {
+        val cb = UUBluetoothGattCallback()
+
+        val ch = mock(BluetoothGattCharacteristic::class.java)
+        val uuid = UUID.randomUUID()
+        `when`(ch.uuid).thenReturn(uuid)
+        val id = ch.uuid.uuToLowercaseString()
+        val value = byteArrayOf(0x7F)
+
+        val gotErr = AtomicReference<UUError?>(null)
+        val latch = CountDownLatch(1)
+
+        cb.registerReadCharacteristicCallback(id)
+        { _, e ->
+            gotErr.store(e); latch.countDown()
+        }
+
+        val err = mock(UUError::class.java)
+
+        mockkObject(UUBluetoothError)
+
+        every {
+            UUBluetoothError.makeError(UUBluetoothErrorCode.OperationFailed, any())
+        } returns err
+
+        cb.onCharacteristicRead(mock(BluetoothGatt::class.java), ch, value, 257)
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
+        assertTrue(gotErr.load() === err, "should receive mocked error instance")
+    }
+
+    @Test
+    fun onCharacteristicWrite_success_invokes_and_clears()
+    {
+        val cb = UUBluetoothGattCallback()
+
+        val ch = mock(BluetoothGattCharacteristic::class.java)
+        val uuid = UUID.randomUUID()
+        `when`(ch.uuid).thenReturn(uuid)
+        `when`(ch.value).thenReturn(byteArrayOf(0x22))
+        val id = ch.uuid.uuToLowercaseString()
+
+        val called = AtomicReference(false)
+        val gotErr = AtomicReference<UUError?>(null)
+        val latch = CountDownLatch(1)
+
+        cb.registerWriteCharacteristicCallback(id)
+        { e ->
+            called.store(true); gotErr.store(e); latch.countDown()
+        }
+
+        cb.onCharacteristicWrite(null, ch, 0)
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
+        assertTrue(called.load(), "callback flag not set")
+        assertEquals(null, gotErr.load(), "error should be null")
+
+        // pop
+        called.store(false)
+        cb.onCharacteristicWrite(null, ch, 0)
+        assertFalse(called.load(), "callback should be popped")
+    }
+
+    @Test
+    fun onCharacteristicWrite_error_invokes_with_error_and_clears()
+    {
+        val cb = UUBluetoothGattCallback()
+
+        val ch = mock(BluetoothGattCharacteristic::class.java)
+        val uuid = UUID.randomUUID()
+        `when`(ch.uuid).thenReturn(uuid)
+        `when`(ch.value).thenReturn(byteArrayOf(0x33))
+        val id = ch.uuid.uuToLowercaseString()
+
+        val gotErr = AtomicReference<UUError?>(null)
+        val latch = CountDownLatch(1)
+
+        cb.registerWriteCharacteristicCallback(id)
+        { e ->
+            gotErr.store(e); latch.countDown()
+        }
+
+        val err = mock(UUError::class.java)
+        mockkObject(UUBluetoothError)
+
+        every {
+            UUBluetoothError.makeError(UUBluetoothErrorCode.OperationFailed, any())
+        } returns err
+
+        cb.onCharacteristicWrite(null, ch, 5)
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
+        assertTrue(gotErr.load() === err, "should receive mocked error instance")
+    }
+
+    @Test
+    fun onCharacteristicWrite_nullCharacteristic_doesNothing()
+    {
+        val cb = UUBluetoothGattCallback()
+
+        val called = AtomicReference(false)
+        val latch = CountDownLatch(1)
+        cb.registerWriteCharacteristicCallback("unused")
+        {
+            called.store(true); latch.countDown()
+        }
+
+        cb.onCharacteristicWrite(null, null, 0)
+
+        assertFalse(latch.await(200, TimeUnit.MILLISECONDS), "should not fire for null characteristic")
+        assertFalse(called.load(), "callback should not be called")
+    }
+
+
+    @Test
+    fun onDescriptorRead_deprecated_success_invokes_and_clears()
+    {
+        val cb = UUBluetoothGattCallback()
+
+        val bytes = uuRandomBytes(20)
+        val d = mockDescriptor(data = bytes)
+        val id = d.uuHashLookup()
+
+        val got = AtomicReference<ByteArray?>(null)
+        val gotErr = AtomicReference<UUError?>(null)
+        val latch = CountDownLatch(1)
+
+        cb.registerReadDescriptorCallback(id)
+        { bytes, e ->
+            got.store(bytes)
+            gotErr.store(e)
+            latch.countDown()
+        }
+
+        cb.onDescriptorRead(null, d, 0)
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
+        assertArrayEquals("payload mismatch", bytes, got.load())
+        assertEquals(null, gotErr.load(), "error should be null")
+    }
+
+    @Test
+    fun onDescriptorRead_deprecated_error_invokes_with_error_and_clears()
+    {
+        val cb = UUBluetoothGattCallback()
+
+        val bytes = uuRandomBytes(0x55)
+        val d = mockDescriptor(data = bytes)
+        val id = d.uuHashLookup()
+
+        val gotErr = AtomicReference<UUError?>(null)
+        val latch = CountDownLatch(1)
+
+        cb.registerReadDescriptorCallback(id)
+        { _, e ->
+            gotErr.store(e); latch.countDown()
+        }
+
+        val err = mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
+
+        cb.onDescriptorRead(null, d, 8)
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
+        assertTrue(gotErr.load() === err, "should receive mocked error instance")
+    }
+
+    @Test
+    fun onDescriptorRead_deprecated_nullDescriptor_doesNothing()
+    {
+        val cb = UUBluetoothGattCallback()
+
+        val called = AtomicReference(false)
+        val latch = CountDownLatch(1)
+
+        cb.registerReadDescriptorCallback("unused")
+        { _, _ ->
+            called.store(true); latch.countDown()
+        }
+
+        cb.onDescriptorRead(null, null, 0)
+
+        assertFalse(latch.await(200, TimeUnit.MILLISECONDS), "should not fire for null descriptor")
+        assertFalse(called.load(), "callback should not be called")
+    }
+
+    @Test
+    fun onDescriptorRead_deprecated_nullValue_invokes_with_null_bytes()
+    {
+        val cb = UUBluetoothGattCallback()
+
+        val d = mockDescriptor(data = null)
+        val id = d.uuHashLookup()
+
+        val got = AtomicReference<ByteArray?>(null)
+        val latch = CountDownLatch(1)
+
+        cb.registerReadDescriptorCallback(id)
+        { bytes, _ ->
+            got.store(bytes); latch.countDown()
+        }
+
+        cb.onDescriptorRead(null, d, 0)
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
+        assertEquals(null, got.load(), "bytes should be null")
+    }
+
+    @Test
+    fun onDescriptorRead_new_success_invokes_and_clears()
+    {
+        val cb = UUBluetoothGattCallback()
+
+        val value = byteArrayOf(0x66)
+        val d = mockDescriptor(data = value)
+        val id = d.uuHashLookup()
+
+        val got = AtomicReference<ByteArray?>(null)
+        val gotErr = AtomicReference<UUError?>(null)
+        val latch = CountDownLatch(1)
+
+        cb.registerReadDescriptorCallback(id) { bytes, e ->
+            got.store(bytes); gotErr.store(e); latch.countDown()
+        }
+
+        cb.onDescriptorRead(mock(BluetoothGatt::class.java), d, 0, value)
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
+        assertArrayEquals("payload mismatch", value, got.load())
+        assertEquals(null, gotErr.load(), "error should be null")
+    }
+
+    @Test
+    fun onDescriptorRead_new_error_invokes_with_error_and_clears()
+    {
+        val cb = UUBluetoothGattCallback()
+
+        val d = mock(BluetoothGattDescriptor::class.java)
+        val uuid = UUID.randomUUID()
+        `when`(d.uuid).thenReturn(uuid)
+        val id = d.uuHashLookup()
+        val value = byteArrayOf(0x77)
+
+        val gotErr = AtomicReference<UUError?>(null)
+        val latch = CountDownLatch(1)
+
+        cb.registerReadDescriptorCallback(id) { _, e ->
+            gotErr.store(e); latch.countDown()
+        }
+
+        val err = mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
+
+        cb.onDescriptorRead(mock(BluetoothGatt::class.java), d, 42, value)
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
+        assertTrue(gotErr.load() === err, "should receive mocked error instance")
+    }
+
+    @Test
+    fun onDescriptorWrite_success_invokes_and_clears()
+    {
+        val cb = UUBluetoothGattCallback()
+
+        val d = mockDescriptor()
+        val id = d.uuHashLookup()
+
+        val called = AtomicReference(false)
+        val gotErr = AtomicReference<UUError?>(null)
+        val latch = CountDownLatch(1)
+
+        cb.registerWriteDescriptorCallback(id) { e ->
+            called.store(true); gotErr.store(e); latch.countDown()
+        }
+
+        cb.onDescriptorWrite(null, d, 0)
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
+        assertTrue(called.load(), "callback flag not set")
+        assertEquals(null, gotErr.load(), "error should be null")
+
+        // popped
+        called.store(false)
+        cb.onDescriptorWrite(null, d, 0)
+        assertFalse(called.load(), "callback should be popped")
+    }
+
+    @Test
+    fun onDescriptorWrite_error_invokes_with_error_and_clears()
+    {
+        val cb = UUBluetoothGattCallback()
+
+        val d = mockDescriptor()
+        val id = d.uuHashLookup()
+
+        val gotErr = AtomicReference<UUError?>(null)
+        val latch = CountDownLatch(1)
+
+        cb.registerWriteDescriptorCallback(id) { e ->
+            gotErr.store(e); latch.countDown()
+        }
+
+        val err = mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
+
+        cb.onDescriptorWrite(null, d, 6)
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
+        assertTrue(gotErr.load() === err, "should receive mocked error instance")
+    }
+
+    @Test
+    fun onDescriptorWrite_nullDescriptor_doesNothing()
+    {
+        val cb = UUBluetoothGattCallback()
+
+        val called = AtomicReference(false)
+        val latch = CountDownLatch(1)
+        cb.registerWriteDescriptorCallback("unused")
+        {
+            called.store(true); latch.countDown()
+        }
+
+        cb.onDescriptorWrite(null, null, 0)
+
+        assertFalse(latch.await(200, TimeUnit.MILLISECONDS), "should not fire for null descriptor")
+        assertFalse(called.load(), "callback should not be called")
+    }
 
 
 
+}
 
+
+fun mockNextBluetoothError(code: UUBluetoothErrorCode): UUError
+{
+    val err = mock(UUError::class.java)
+    mockkObject(UUBluetoothError)
+
+    every {
+        UUBluetoothError.makeError(code, any())
+    } returns err
+
+    return err
+}
+
+fun mockCharacteristic(uuid: UUID = UUID.randomUUID(), data: ByteArray? = byteArrayOf(0x00)): BluetoothGattCharacteristic
+{
+    val ch = mock(BluetoothGattCharacteristic::class.java)
+    `when`(ch.uuid).thenReturn(uuid)
+    `when`(ch.value).thenReturn(data)
+    return ch
+}
+
+fun mockDescriptor(uuid: UUID = UUID.randomUUID(), data: ByteArray? = byteArrayOf(0x00), characteristic: BluetoothGattCharacteristic = mockCharacteristic()): BluetoothGattDescriptor
+{
+    val d = mock(BluetoothGattDescriptor::class.java)
+    `when`(d.uuid).thenReturn(uuid)
+    `when`(d.value).thenReturn(data)
+    `when`(d.characteristic).thenReturn(characteristic)
+    return d
 }

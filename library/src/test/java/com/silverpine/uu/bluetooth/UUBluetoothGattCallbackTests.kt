@@ -2140,6 +2140,19 @@ class UUBluetoothGattCallbackTests
     }
 
     @Test
+    fun onCharacteristicWrite_nullData()
+    {
+        val cb = UUBluetoothGattCallback()
+        val logger = UnitTestLogger()
+        UULog.init(logger)
+
+        val chr = mockCharacteristic(data = null)
+
+        cb.onCharacteristicWrite(mockGatt(), chr, 0)
+        assertEquals(1, logger.logLines.count())
+    }
+
+    @Test
     fun onDescriptorWrite_nullGatt_nullChar()
     {
         val cb = UUBluetoothGattCallback()
@@ -2147,6 +2160,18 @@ class UUBluetoothGattCallbackTests
         UULog.init(logger)
 
         cb.onDescriptorWrite(null, null, 0)
+        assertEquals(1, logger.logLines.count())
+    }
+
+    @Test
+    fun onDescriptorWrite_nullData()
+    {
+        val cb = UUBluetoothGattCallback()
+        val logger = UnitTestLogger()
+        UULog.init(logger)
+
+        val d = mockDescriptor(data = null)
+        cb.onDescriptorWrite(null, d, 0)
         assertEquals(1, logger.logLines.count())
     }
 

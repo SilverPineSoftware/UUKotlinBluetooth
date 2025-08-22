@@ -7,6 +7,8 @@ import android.bluetooth.BluetoothGattService
 import com.silverpine.uu.bluetooth.internal.uuHashLookup
 import com.silverpine.uu.bluetooth.internal.uuToLowercaseString
 import com.silverpine.uu.core.UUError
+import com.silverpine.uu.logging.UULog
+import com.silverpine.uu.logging.UULogger
 import com.silverpine.uu.test.uuRandomBytes
 import io.mockk.every
 import io.mockk.mockkObject
@@ -1883,6 +1885,102 @@ class UUBluetoothGattCallbackTests
     }
 
     @Test
+    fun notifyPhyRead_success_null_tx_invokes_pair_and_clears()
+    {
+        val cb = UUBluetoothGattCallback()
+        val got = AtomicReference<Pair<Int, Int>?>(null)
+        val gotErr = AtomicReference<UUError?>(null)
+        val latch = CountDownLatch(1)
+
+        cb.phyReadCallback =
+        { p, e ->
+            got.store(p); gotErr.store(e); latch.countDown()
+        }
+
+        cb.notifyPhyRead(/*tx=*/null, /*rx=*/3, /*status=*/null)
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
+        assertEquals(null, got.load(), "phy pair mismatch")
+        assertEquals(null, gotErr.load(), "error should be null")
+
+        val second = CountDownLatch(1)
+        cb.onPhyRead(null, 1, 1, 0)
+        assertFalse(second.await(200, TimeUnit.MILLISECONDS), "callback should not fire after clearing")
+    }
+
+    @Test
+    fun notifyPhyRead_success_null_rx_invokes_pair_and_clears()
+    {
+        val cb = UUBluetoothGattCallback()
+        val got = AtomicReference<Pair<Int, Int>?>(null)
+        val gotErr = AtomicReference<UUError?>(null)
+        val latch = CountDownLatch(1)
+
+        cb.phyReadCallback =
+            { p, e ->
+                got.store(p); gotErr.store(e); latch.countDown()
+            }
+
+        cb.notifyPhyRead(/*tx=*/2, /*rx=*/null, /*status=*/null)
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
+        assertEquals(null, got.load(), "phy pair mismatch")
+        assertEquals(null, gotErr.load(), "error should be null")
+
+        val second = CountDownLatch(1)
+        cb.onPhyRead(null, 1, 1, 0)
+        assertFalse(second.await(200, TimeUnit.MILLISECONDS), "callback should not fire after clearing")
+    }
+
+    @Test
+    fun notifyPhyUpdate_success_null_tx_invokes_pair_and_clears()
+    {
+        val cb = UUBluetoothGattCallback()
+        val got = AtomicReference<Pair<Int, Int>?>(null)
+        val gotErr = AtomicReference<UUError?>(null)
+        val latch = CountDownLatch(1)
+
+        cb.phyUpdatedCallback =
+        { p, e ->
+            got.store(p); gotErr.store(e); latch.countDown()
+        }
+
+        cb.notifyPhyUpdate(/*tx=*/null, /*rx=*/3, /*status=*/null)
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
+        assertEquals(null, got.load(), "phy pair mismatch")
+        assertEquals(null, gotErr.load(), "error should be null")
+
+        val second = CountDownLatch(1)
+        cb.onPhyRead(null, 1, 1, 0)
+        assertFalse(second.await(200, TimeUnit.MILLISECONDS), "callback should not fire after clearing")
+    }
+
+    @Test
+    fun notifyPhyUpdate_success_null_rx_invokes_pair_and_clears()
+    {
+        val cb = UUBluetoothGattCallback()
+        val got = AtomicReference<Pair<Int, Int>?>(null)
+        val gotErr = AtomicReference<UUError?>(null)
+        val latch = CountDownLatch(1)
+
+        cb.phyUpdatedCallback =
+        { p, e ->
+            got.store(p); gotErr.store(e); latch.countDown()
+        }
+
+        cb.notifyPhyUpdate(/*tx=*/2, /*rx=*/null, /*status=*/null)
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
+        assertEquals(null, got.load(), "phy pair mismatch")
+        assertEquals(null, gotErr.load(), "error should be null")
+
+        val second = CountDownLatch(1)
+        cb.onPhyRead(null, 1, 1, 0)
+        assertFalse(second.await(200, TimeUnit.MILLISECONDS), "callback should not fire after clearing")
+    }
+
+    @Test
     fun onPhyRead_error_invokes_with_mockedError_and_clears()
     {
         val cb = UUBluetoothGattCallback()
@@ -2008,6 +2106,49 @@ class UUBluetoothGattCallbackTests
         assertFalse(called.load(), "callback should not be invoked after clearing")
     }
 
+    @Test
+    fun onCharacteristicChanged_nullChar()
+    {
+        val cb = UUBluetoothGattCallback()
+        val logger = UnitTestLogger()
+        UULog.init(logger)
+
+        cb.onCharacteristicChanged(mockGatt(), null)
+        assertEquals(1, logger.logLines.count())
+    }
+
+    @Test
+    fun onCharacteristicWriteChanged_nullChar()
+    {
+        val cb = UUBluetoothGattCallback()
+        val logger = UnitTestLogger()
+        UULog.init(logger)
+
+        cb.onCharacteristicWrite(mockGatt(), null, 0)
+        assertEquals(1, logger.logLines.count())
+    }
+
+    @Test
+    fun onDescriptorWrite_nullChar()
+    {
+        val cb = UUBluetoothGattCallback()
+        val logger = UnitTestLogger()
+        UULog.init(logger)
+
+        cb.onDescriptorWrite(mockGatt(), null, 0)
+        assertEquals(1, logger.logLines.count())
+    }
+
+    @Test
+    fun onDescriptorWrite_nullGatt_nullChar()
+    {
+        val cb = UUBluetoothGattCallback()
+        val logger = UnitTestLogger()
+        UULog.init(logger)
+
+        cb.onDescriptorWrite(null, null, 0)
+        assertEquals(1, logger.logLines.count())
+    }
 
 
 }
@@ -2047,4 +2188,20 @@ fun mockDescriptor(uuid: UUID = UUID.randomUUID(), data: ByteArray? = byteArrayO
     `when`(d.value).thenReturn(data)
     `when`(d.characteristic).thenReturn(characteristic)
     return d
+}
+
+class UnitTestLogger: UULogger
+{
+    var logLines: ArrayList<String> = arrayListOf()
+
+    override fun writeToLog(
+        level: Int,
+        callingClass: Class<*>,
+        method: String,
+        message: String,
+        exception: Throwable?
+    )
+    {
+        logLines.add("level: $level, callingClass: ${callingClass.javaClass.name}, method: $method, message: $message, exception: $exception")
+    }
 }

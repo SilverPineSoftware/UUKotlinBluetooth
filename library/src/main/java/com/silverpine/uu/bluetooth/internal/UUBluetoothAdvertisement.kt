@@ -1,5 +1,6 @@
 package com.silverpine.uu.bluetooth.internal
 
+/*
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.le.ScanResult
 import android.os.Build
@@ -77,4 +78,4 @@ internal class UUBluetoothAdvertisement(
         }
 
     }
-}
+}*/

@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothSocket
+import com.silverpine.uu.bluetooth.UUAdvertisement
 import com.silverpine.uu.bluetooth.UUBluetoothConstants.DEFAULT_MTU
 import com.silverpine.uu.bluetooth.UUErrorBlock
 import com.silverpine.uu.bluetooth.UUListErrorBlock
@@ -18,10 +19,10 @@ import com.silverpine.uu.bluetooth.UUPeripheralDisconnectedBlock
 
 @SuppressLint("MissingPermission")
 internal class UUBluetoothDevicePeripheral(
-    override val advertisement: UUBluetoothAdvertisement
+    override val advertisement: UUAdvertisement
 ) : UUPeripheral
 {
-    private val bluetoothDevice: BluetoothDevice = advertisement.device
+    private val bluetoothDevice: BluetoothDevice = advertisement.device!!
 
     override var rssi: Int = advertisement.rssi
     override var firstDiscoveryTime: Long = 0L

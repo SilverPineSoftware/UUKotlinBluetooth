@@ -7,7 +7,6 @@ import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.content.Context
-import com.silverpine.uu.bluetooth.internal.UUBluetoothAdvertisement
 import com.silverpine.uu.bluetooth.internal.UUBluetoothDevicePeripheral
 import com.silverpine.uu.logging.UULog
 import kotlinx.coroutines.CoroutineScope
@@ -169,7 +168,7 @@ class UUBlePeripheralScanner(context: Context) : UUPeripheralScanner
                 return
             }
 
-            val advertisement = UUBluetoothAdvertisement(scanResult)
+            val advertisement = UUAdvertisement(scanResult)
             handleAdvertisement(advertisement)
         }
         catch (ex: Exception)
@@ -178,7 +177,7 @@ class UUBlePeripheralScanner(context: Context) : UUPeripheralScanner
         }
     }
 
-    private fun handleAdvertisement(advertisement: UUBluetoothAdvertisement)
+    private fun handleAdvertisement(advertisement: UUAdvertisement)
     {
         if (advertisement.address.isEmpty())
         {

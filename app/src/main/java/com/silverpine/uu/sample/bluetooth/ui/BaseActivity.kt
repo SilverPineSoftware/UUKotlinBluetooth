@@ -5,7 +5,6 @@ import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
-import android.view.WindowInsets
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.databinding.ViewDataBinding
@@ -26,27 +25,7 @@ open class BaseActivity : AppCompatActivity()
     override fun onCreate(savedInstanceState: Bundle?)
     {
         super.onCreate(savedInstanceState)
-
-        val color = Color.BLACK
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM)
-        { // Android 15+
-            window.decorView.setOnApplyWindowInsetsListener()
-            { view, insets ->
-                view.setBackgroundColor(color)
-                insets
-            }
-        }
-        else
-        {
-            // For Android 14 and below
-            window.statusBarColor = color
-        }
-
-        WindowCompat.getInsetsController(window, window.decorView).apply()
-        {
-            isAppearanceLightStatusBars = false
-        }
+        appSetBackgroundColor()
     }
 
 
@@ -101,5 +80,27 @@ open class BaseActivity : AppCompatActivity()
     override fun onOptionsItemSelected(item: MenuItem): Boolean
     {
         return menuHandler.handleMenuClick(item)
+    }
+}
+
+fun AppCompatActivity.appSetBackgroundColor(color: Int = Color.BLACK)
+{
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    { // Android 15+
+        window.decorView.setOnApplyWindowInsetsListener()
+        { view, insets ->
+            view.setBackgroundColor(color)
+            insets
+        }
+    }
+    else
+    {
+        // For Android 14 and below
+        window.statusBarColor = color
+    }
+
+    WindowCompat.getInsetsController(window, window.decorView).apply()
+    {
+        isAppearanceLightStatusBars = false
     }
 }

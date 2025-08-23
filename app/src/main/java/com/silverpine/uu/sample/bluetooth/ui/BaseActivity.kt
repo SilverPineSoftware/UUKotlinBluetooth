@@ -27,7 +27,7 @@ open class BaseActivity : AppCompatActivity()
     {
         super.onCreate(savedInstanceState)
 
-        val color = Color.WHITE
+        val color = Color.BLACK
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM)
         { // Android 15+
@@ -45,7 +45,7 @@ open class BaseActivity : AppCompatActivity()
 
         WindowCompat.getInsetsController(window, window.decorView).apply()
         {
-            isAppearanceLightStatusBars = true
+            isAppearanceLightStatusBars = false
         }
     }
 

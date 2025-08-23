@@ -1,8 +1,13 @@
 package com.silverpine.uu.sample.bluetooth.ui
 
+import android.graphics.Color
+import android.os.Build
+import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.WindowInsets
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
 import androidx.databinding.ViewDataBinding
 import com.silverpine.uu.logging.UULog
 import com.silverpine.uu.sample.bluetooth.BR
@@ -17,6 +22,33 @@ open class BaseActivity : AppCompatActivity()
 {
     private lateinit var menuHandler: UUMenuHandler
     private var menuViewModels: ArrayList<UUMenuItem> = arrayListOf()
+
+    override fun onCreate(savedInstanceState: Bundle?)
+    {
+        super.onCreate(savedInstanceState)
+
+        val color = Color.WHITE
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM)
+        { // Android 15+
+            window.decorView.setOnApplyWindowInsetsListener()
+            { view, insets ->
+                view.setBackgroundColor(color)
+                insets
+            }
+        }
+        else
+        {
+            // For Android 14 and below
+            window.statusBarColor = color
+        }
+
+        WindowCompat.getInsetsController(window, window.decorView).apply()
+        {
+            isAppearanceLightStatusBars = true
+        }
+    }
+
 
     open fun setupViewModel(viewModel: BaseViewModel, binding: ViewDataBinding)
     {

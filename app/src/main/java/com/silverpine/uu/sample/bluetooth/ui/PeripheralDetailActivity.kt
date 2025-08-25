@@ -3,6 +3,7 @@ package com.silverpine.uu.sample.bluetooth.ui
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattService
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -23,14 +24,20 @@ import com.silverpine.uu.ux.uuShowToast
 import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModel
 import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModelMapping
 
-class PeripheralDetailActivity : UURecyclerActivity()
+class PeripheralDetailActivity : UURecyclerActivity(layoutResourceId = R.layout.recycler_activity)
 {
     private lateinit var peripheral: UUPeripheral
 
     private var discoveredServices: List<BluetoothGattService> = listOf()
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?)
+    {
         super.onCreate(savedInstanceState)
+        appSetBackgroundColor()
+
+//        val recyclerView = findViewById<RecyclerView>(com.silverpine.uu.ux.R.id.recyclerView)
+//        recyclerView.fitsSystemWindows = true
+//        recyclerView.setBackgroundColor(Color.WHITE)
 
         val peripheralIdentifier = intent.uuRequireString("peripheral.identifier")
         val p = UUBluetooth.scanner.getPeripheral(peripheralIdentifier)
@@ -161,7 +168,7 @@ class PeripheralDetailActivity : UURecyclerActivity()
 
     private fun handleDisconnect()
     {
-        peripheral.disconnect(10000)
+        peripheral.disconnect(null) //10000)
     }
 
     private fun refreshUi()

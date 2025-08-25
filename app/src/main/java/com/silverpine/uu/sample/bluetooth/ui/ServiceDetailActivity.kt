@@ -24,7 +24,7 @@ import com.silverpine.uu.ux.uuShowToast
 import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModel
 import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModelMapping
 
-class ServiceDetailActivity: UURecyclerActivity()
+class ServiceDetailActivity: UURecyclerActivity(layoutResourceId = R.layout.recycler_activity)
 {
     private lateinit var peripheral: UUPeripheral
     private lateinit var service: BluetoothGattService
@@ -34,6 +34,7 @@ class ServiceDetailActivity: UURecyclerActivity()
     override fun onCreate(savedInstanceState: Bundle?)
     {
         super.onCreate(savedInstanceState)
+        appSetBackgroundColor()
 
         val peripheralIdentifier = intent.uuRequireString("peripheral.identifier")
         val p = UUBluetooth.scanner.getPeripheral(peripheralIdentifier)
@@ -95,7 +96,7 @@ class ServiceDetailActivity: UURecyclerActivity()
 
     private fun handleDisconnect()
     {
-        peripheral.disconnect(10000) //null)
+        peripheral.disconnect(null) //10000) //null)
     }
 
     private fun handleReadAll()

@@ -1,5 +1,6 @@
 package com.silverpine.uu.bluetooth.internal
 
+/*
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
@@ -1071,3 +1072,4 @@ internal class UUBluetoothGatt(private val bluetoothDevice: BluetoothDevice): Cl
         //}
     }
 }
+*/

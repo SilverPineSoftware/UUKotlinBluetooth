@@ -247,7 +247,7 @@ class L2CapClientViewModel: L2CapBaseViewModel()
     private fun onDisconnectGatt()
     {
         appendOutput("Disconnecting GATT Layer")
-        peripheral.disconnect(10000) //null)
+        peripheral.disconnect(null) //10000) //null)
         updateMenu()
     }
 

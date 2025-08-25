@@ -208,7 +208,7 @@ open class UUBluetoothDevicePeripheralSession(
     private fun disconnect()
     {
         disconnectTimeMeasurement.start()
-        peripheral.disconnect(timeout = configuration.disconnectTimeout)
+        peripheral.disconnect(null) //timeout = configuration.disconnectTimeout)
     }
 
     private fun handleConnected()

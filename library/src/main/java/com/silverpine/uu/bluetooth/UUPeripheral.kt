@@ -48,7 +48,7 @@ class UUPeripheral(
     }*/
 
     init {
-        debugLog("init", "Creating peripheral for ${advertisement.address} - ${advertisement.localName} - ${advertisement.device?.name}")
+        debugLog("init", "Creating peripheral for ${advertisement.address} - ${advertisement.localName}")
     }
 
     private val bluetoothDevice: BluetoothDevice = advertisement.device!!
@@ -73,7 +73,7 @@ class UUPeripheral(
     var rssi: Int = advertisement.rssi
     var firstDiscoveryTime: Long = 0L
     var identifier: String = advertisement.address
-    var name: String = bluetoothDevice.name ?: ""
+    var name: String = advertisement.peripheralName
     var services: List<BluetoothGattService>? = null
     var mtuSize: Int = DEFAULT_MTU
     var txPhy: Int? = null

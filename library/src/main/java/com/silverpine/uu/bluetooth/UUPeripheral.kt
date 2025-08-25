@@ -387,11 +387,9 @@ class UUPeripheral(
         val callback: UUErrorBlock =
         { error ->
 
-            val chr = bluetoothGatt?.uuLookupCharacteristic(characteristic)
-
             debugLog(
                 "setNotifyState",
-                "Set characteristic notify complete: $bluetoothDevice, error: $error}, original.isNotifying: ${characteristic.uuIsNotifying()} isNotifying ${chr?.uuIsNotifying()}")
+                "Set characteristic notify complete: $bluetoothDevice, error: $error}")
             bluetoothGattCallback.clearSetCharacteristicNotificationCallback(identifier)
             UUTimer.cancelActiveTimer(timerId)
             completion.safeNotify(error)
@@ -455,10 +453,30 @@ class UUPeripheral(
             write(data, descriptor, timeoutLeft)
             { error ->
 
-                val chr2 = gatt.uuLookupCharacteristic(characteristic)
-                debugLog("setNotifyState", "original char.isNotifying: ${characteristic.uuIsNotifying()}, updated char.isNotifying: ${chr.uuIsNotifying()}, re-updated char.isNotifying: ${chr2?.uuIsNotifying()}")
                 bluetoothGattCallback.notifyCharacteristicSetNotifyCallback(identifier, error)
             }
+        }
+    }
+
+    fun isNotifying(
+        characteristic: BluetoothGattCharacteristic,
+        timeout: Long,
+        completion: UUObjectErrorBlock<Boolean>)
+    {
+        val descriptorUuid = UUBluetoothConstants.Descriptors.CLIENT_CHARACTERISTIC_CONFIGURATION_UUID
+        val descriptor = characteristic.getDescriptor(descriptorUuid)
+
+        if (descriptor == null)
+        {
+            debugLog("isNotifying", "descriptor is null!")
+            bluetoothGattCallback.notifyCharacteristicSetNotifyCallback(identifier, UUBluetoothError.missingRequiredCharacteristic(characteristic.uuid))
+            return
+        }
+
+        read(descriptor, timeout)
+        { result, error ->
+            val isNotifying = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE.contentEquals(result)
+            completion(isNotifying, error)
         }
     }
 

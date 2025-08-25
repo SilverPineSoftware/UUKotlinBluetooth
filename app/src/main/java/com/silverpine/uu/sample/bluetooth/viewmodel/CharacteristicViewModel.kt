@@ -12,11 +12,9 @@ import com.silverpine.uu.bluetooth.uuCanReadData
 import com.silverpine.uu.bluetooth.uuCanToggleNotify
 import com.silverpine.uu.bluetooth.uuCanWriteData
 import com.silverpine.uu.bluetooth.uuCanWriteWithoutResponse
-import com.silverpine.uu.bluetooth.uuIsNotifying
 import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.core.uuToHexData
-import com.silverpine.uu.logging.UULog
 import com.silverpine.uu.sample.bluetooth.R
 import com.silverpine.uu.sample.bluetooth.ui.Strings
 import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModel
@@ -107,44 +105,60 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, var model: B
         }
     }
 
+    fun readIsNotifying(completion: (Boolean)->Unit)
+    {
+        peripheral.isNotifying(model, 10000)
+        { result, error ->
+            completion(result == true)
+        }
+    }
+
     fun toggleNotify()
     {
-        val isNotifying = model.uuIsNotifying()
+        //val isNotifying = model.uuIsNotifying()
+        readIsNotifying()
+        { isNotifying ->
+            peripheral.setNotifyValue(
+                !isNotifying,
+                model,
+                30000,
+                { data -> //UULog.debug(javaClass, "setNotify.characteristicChanged",
+                    //  "Characteristic changed, characteristic: " + characteristic.uuid +
+                    //        ", data: " + UUString.byteToHex(characteristic.value) +
+                    //      ", error: " + error)
 
-        peripheral.setNotifyValue(
-            !isNotifying,
-            model,
-            30000,
-            { data -> //UULog.debug(javaClass, "setNotify.characteristicChanged",
-                //  "Characteristic changed, characteristic: " + characteristic.uuid +
-                //        ", data: " + UUString.byteToHex(characteristic.value) +
-                //      ", error: " + error)
+                    this.characteristicData = data
+                    //this.model = characteristic
 
-                this.characteristicData = data
-                //this.model = characteristic
-
-                uuDispatchMain()
-                {
-                    refreshData()
-                    refreshNotifyLabel()
+                    uuDispatchMain()
+                    {
+                        refreshData()
+                        refreshNotifyLabel()
+                    }
                 }
+            ) { error -> //UULog.debug(javaClass, "setNotify.onComplete",
+                //  ("Set Notify complete, characteristic: " + characteristic.uuid +
+                //        ", error: " + error))
+                //UUListView.reloadRow(listView, position)
+
+//                readIsNotifying()
+//                { updatedIsNotifying ->
+//
+//                    UULog.d(
+//                        javaClass, "toggle.notify",
+//                        "original char.isNotifying: $isNotifying, updated char.isNotifying: $updatedIsNotifying"
+//                    )
+
+                    //this.model = characteristic
+
+                    uuDispatchMain()
+                    {
+                        refreshData()
+                        refreshNotifyLabel()
+                    }
+                //}
             }
-        ) { error -> //UULog.debug(javaClass, "setNotify.onComplete",
-            //  ("Set Notify complete, characteristic: " + characteristic.uuid +
-            //        ", error: " + error))
-            //UUListView.reloadRow(listView, position)
 
-            UULog.d(javaClass, "toggle.notify",
-                "original char.isNotifying: ${model.uuIsNotifying()}, updated char.isNotifying: ${model.uuIsNotifying()}")
-
-
-            //this.model = characteristic
-
-            uuDispatchMain()
-            {
-                refreshData()
-                refreshNotifyLabel()
-            }
         }
     }
 
@@ -188,13 +202,20 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, var model: B
 
     private fun refreshNotifyLabel()
     {
-        if (model.uuIsNotifying())
-        {
-            _isNotifying.value = Strings.load(R.string.yes)
-        }
-        else
-        {
-            _isNotifying.value = Strings.load(R.string.no)
+        readIsNotifying()
+        { isNotifying ->
+
+            uuDispatchMain()
+            {
+                if (isNotifying)
+                {
+                    _isNotifying.value = Strings.load(R.string.yes)
+                }
+                else
+                {
+                    _isNotifying.value = Strings.load(R.string.no)
+                }
+            }
         }
     }
 

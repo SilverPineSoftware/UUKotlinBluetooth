@@ -1,9 +1,7 @@
 package com.silverpine.uu.bluetooth
 
 import android.bluetooth.BluetoothGattCharacteristic
-import android.bluetooth.BluetoothGattDescriptor
 import com.silverpine.uu.core.uuIsBitSet
-import java.util.Arrays
 import java.util.UUID
 
 interface UUBluetoothGattCharacteristic
@@ -109,8 +107,12 @@ fun BluetoothGattCharacteristic.uuHasExtendedProperties(): Boolean
  *
  * @return true or false
  */
-fun BluetoothGattCharacteristic.uuIsNotifying(): Boolean
+/*fun BluetoothGattCharacteristic.uuIsNotifying(): Boolean
 {
+    val descriptor = getDescriptor(UUBluetoothConstants.Descriptors.CLIENT_CHARACTERISTIC_CONFIGURATION_UUID)
+    return descriptor.uuIsNotifying()
+
+    /*
     val descriptor = getDescriptor(UUBluetoothConstants.Descriptors.CLIENT_CHARACTERISTIC_CONFIGURATION_UUID)
     if (descriptor != null)
     {
@@ -121,15 +123,15 @@ fun BluetoothGattCharacteristic.uuIsNotifying(): Boolean
         }
     }
 
-    return false
-}
+    return false*/
+}*/
 
 /**
  * Returns a flag indicating if a characteristic is configured for indications
  *
  * @return true or false
  */
-fun BluetoothGattCharacteristic.uuIsIndicating(): Boolean
+/*fun BluetoothGattCharacteristic.uuIsIndicating(): Boolean
 {
     val descriptor = getDescriptor(UUBluetoothConstants.Descriptors.CLIENT_CHARACTERISTIC_CONFIGURATION_UUID)
 
@@ -143,4 +145,4 @@ fun BluetoothGattCharacteristic.uuIsIndicating(): Boolean
     }
 
     return false
-}
+}*/

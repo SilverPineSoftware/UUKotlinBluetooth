@@ -32,30 +32,30 @@ typealias UUPeripheralDisconnectedBlock = ((UUError?)->Unit)
 
 @SuppressLint("MissingPermission")
 class UUPeripheral(
-    val advertisement: UUAdvertisement): Closeable
+    val advertisement: UUAdvertisement
+): Closeable
 {
-    /*companion object
+    companion object
     {
-        private val gattHashMap = ConcurrentHashMap<String, BluetoothGatt>()
+        var deviceCache: UUBluetoothDeviceCache = UUInMemoryBluetoothDeviceCache
+        val gattCache: UUBluetoothGattCache = UUInMemoryBluetoothGattCache
+    }
 
-        fun get(device: BluetoothDevice): BluetoothGatt
-        {
-            return gattHashMap.computeIfAbsent(device.address)
-            {
-                BluetoothGatt(device)
-            }
-        }
-    }*/
-
-    init {
+    init
+    {
         debugLog("init", "Creating peripheral for ${advertisement.address} - ${advertisement.localName}")
     }
 
-    private val bluetoothDevice: BluetoothDevice = advertisement.device!!
+    //private val bluetoothDevice: BluetoothDevice = advertisement.device!!
 
     internal val rootTimerId: String = advertisement.address
 
-    private var bluetoothGatt: BluetoothGatt? = null
+    private val bluetoothGatt: BluetoothGatt?
+        get()
+        {
+            return gattCache[identifier]
+        }
+
     private val bluetoothGattCallback: UUBluetoothGattCallback = UUBluetoothGattCallback()
 
     private var disconnectError: UUError? = null
@@ -73,7 +73,7 @@ class UUPeripheral(
     var rssi: Int = advertisement.rssi
     var firstDiscoveryTime: Long = 0L
     var identifier: String = advertisement.address
-    var name: String = advertisement.peripheralName
+    var name: String = deviceCache[identifier]?.name ?: ""
     var services: List<BluetoothGattService>? = null
     var mtuSize: Int = DEFAULT_MTU
     var txPhy: Int? = null
@@ -87,6 +87,14 @@ class UUPeripheral(
 
     fun refreshConnectionState()
     {
+        val bluetoothDevice = deviceCache[identifier]
+        if (bluetoothDevice == null)
+        {
+            debugLog("connect", "WARNING -- Bluetooth Device not found $identifier")
+            peripheralState = UUPeripheralConnectionState.Undetermined
+            return
+        }
+
         val bluetoothManager = UUBluetooth.requireApplicationContext().getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         var state = bluetoothManager.getConnectionState(bluetoothDevice, BluetoothProfile.GATT)
         debugLog("getConnectionState", "Actual connection state is: $state (${UUPeripheralConnectionState.fromProfileConnectionState(state)})")
@@ -116,14 +124,22 @@ class UUPeripheral(
     {
         if (bluetoothGatt != null)
         {
-            debugLog("connect", "WARNING -- Bluetooth Gatt is already connected to ${bluetoothGatt?.device?.address}")
+            debugLog("connect", "WARNING -- Bluetooth Gatt is already connected to $identifier")
             disconnected.safeNotify(UUBluetoothError.alreadyConnectedError())
+            return
+        }
+
+        val bluetoothDevice = deviceCache[identifier]
+        if (bluetoothDevice == null)
+        {
+            debugLog("connect", "ERROR -- Bluetooth Device not found $identifier")
+            disconnected.safeNotify(UUBluetoothError.preconditionFailedError("Bluetooth device is null!"))
             return
         }
 
         if (isConnectWatchdogActive)
         {
-            debugLog("connect", "WARNING -- Bluetooth Gatt making connection attempt to ${bluetoothGatt?.device?.address}")
+            debugLog("connect", "WARNING -- Bluetooth Gatt making connection attempt to $identifier")
             disconnected.safeNotify(UUBluetoothError.alreadyConnectedError())
             return
         }
@@ -197,12 +213,14 @@ class UUPeripheral(
 
             val context = UUBluetooth.requireApplicationContext()
 
-            bluetoothGatt = bluetoothDevice.connectGatt(
+            val gatt = bluetoothDevice.connectGatt(
                 context,
                 connectGattAutoFlag,
                 bluetoothGattCallback,
                 BluetoothDevice.TRANSPORT_LE
             )
+
+            gattCache[identifier] = gatt
         }
     }
 
@@ -245,11 +263,6 @@ class UUPeripheral(
             //
             // wait for delegate or timeout
         }
-    }
-
-    fun isNotifying(uuid: UUID): Boolean
-    {
-        return false
     }
 
     fun setNotifyValue(
@@ -805,7 +818,8 @@ class UUPeripheral(
     override fun close()
     {
         bluetoothGatt?.uuSafeClose()
-        bluetoothGatt = null
+        //bluetoothGatt = null
+        gattCache[identifier] = null
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -955,7 +969,8 @@ class UUPeripheral(
         cleanupAfterDisconnect()
 
         bluetoothGatt?.uuSafeClose()
-        bluetoothGatt = null
+        //bluetoothGatt = null
+        gattCache[identifier] = null
 
         callback.safeNotify(error)
         disconnectedCallback = null

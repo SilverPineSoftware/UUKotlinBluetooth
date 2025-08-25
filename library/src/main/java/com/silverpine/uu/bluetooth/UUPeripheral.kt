@@ -41,12 +41,12 @@ class UUPeripheral(
         val gattCache: UUBluetoothGattCache = UUInMemoryBluetoothGattCache
     }
 
+    /*
     init
     {
         debugLog("init", "Creating peripheral for ${advertisement.address} - ${advertisement.localName}")
     }
-
-    //private val bluetoothDevice: BluetoothDevice = advertisement.device!!
+    */
 
     internal val rootTimerId: String = advertisement.address
 
@@ -82,8 +82,6 @@ class UUPeripheral(
 
     val timeSinceLastUpdate: Long
         get() = System.currentTimeMillis() - advertisement.timestamp
-
-    //private var _peripheralState: UUPeripheralConnectionState = UUPeripheralConnectionState.Undetermined
 
     fun refreshConnectionState()
     {
@@ -969,7 +967,6 @@ class UUPeripheral(
         cleanupAfterDisconnect()
 
         bluetoothGatt?.uuSafeClose()
-        //bluetoothGatt = null
         gattCache[identifier] = null
 
         callback.safeNotify(error)

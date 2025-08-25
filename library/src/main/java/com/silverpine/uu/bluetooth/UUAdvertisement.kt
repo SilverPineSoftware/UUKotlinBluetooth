@@ -1,7 +1,6 @@
 package com.silverpine.uu.bluetooth
 
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothDevice
 import android.bluetooth.le.ScanResult
 import android.os.Build
 import android.util.SparseArray
@@ -11,7 +10,6 @@ class UUAdvertisement(
     val address: String = "",
     val rssi: Int = 0,
     val localName: String = "",
-    val peripheralName: String = "",
     val isConnectable: Boolean = false,
     val manufacturingData: SparseArray<ByteArray>? = null,
     val transmitPower: Int = 0,
@@ -28,7 +26,6 @@ class UUAdvertisement(
         address = scanResult.device.address ?: "",
         rssi = scanResult.rssi,
         localName = scanResult.scanRecord?.deviceName ?: "",
-        peripheralName = scanResult.device.name ?: "",
         isConnectable = scanResult.isConnectable,
         manufacturingData = scanResult.scanRecord?.manufacturerSpecificData,
         transmitPower = scanResult.txPower,
@@ -39,12 +36,6 @@ class UUAdvertisement(
         serviceData = scanResult.scanRecord?.serviceData?.mapKeys { (parcelUuid, _) -> parcelUuid.uuid },
         solicitedServices = scanResult.uuSolicitedServices()
     )
-    {
-        this.device = scanResult.device
-    }
-
-
-    var device: BluetoothDevice? = null
 }
 
 internal fun ScanResult.uuSolicitedServices(): List<UUID>?

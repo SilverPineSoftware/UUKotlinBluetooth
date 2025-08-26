@@ -21,9 +21,12 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     testImplementation "org.jetbrains.kotlin:kotlin-test:${uu_kotlin_version}"
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0"
-    testImplementation 'org.mockito:mockito-core:5.12.0'
+    testImplementation 'org.mockito:mockito-core:5.19.0'
     testImplementation 'org.mockito:mockito-inline:5.2.0'
+    testImplementation "org.jetbrains.kotlin:kotlin-test-junit:${uu_kotlin_version}"
+    testImplementation 'org.mockito.kotlin:mockito-kotlin:5.2.1'
     testImplementation 'io.mockk:mockk:1.13.12'
+
     testImplementation "com.silverpine.uu:uu-core-ktx:${uu_core_version}"
     testImplementation "com.silverpine.uu:uu-test-ktx:${uu_test_version}"
 

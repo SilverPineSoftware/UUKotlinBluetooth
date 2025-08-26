@@ -926,8 +926,8 @@ class UUPeripheral(
 
     fun startDisconnectWatchdogTimer(timerId: String, timeout: Long)
     {
-        UUTimer.startTimer(timerId, timeout, null)
-        { _, _ ->
+        startTimer(timerId, timeout)
+        {
             disconnect(UUBluetoothError.timeoutError())
         }
     }

@@ -1,18 +1,35 @@
 package com.silverpine.uu.bluetooth
 
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattCallback
+import android.content.Context
 import com.silverpine.uu.core.UUError
+import com.silverpine.uu.core.UUTimer
+import com.silverpine.uu.logging.UULog
+import org.junit.Before
 import org.junit.Test
+import org.mockito.Mockito
+import org.mockito.Mockito.`when`
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalAtomicApi::class)
 class UUPeripheralTests
 {
+    @Before
+    fun setupTests()
+    {
+        UUTimer.workerThread = UnitTestTimerThread()
+        UUTimer.listActiveTimers().forEach { it.cancel() }
+    }
+
     @Test
     fun connect_alreadyConnected_returnsAlreadyConnectedError()
     {
@@ -81,12 +98,6 @@ class UUPeripheralTests
     }
 
     @Test
-    fun testMocks()
-    {
-        val t = mockTimer("foo")
-    }
-
-    @Test
     fun connect_watchdogActive_returnsAlreadyConnectedError()
     {
         val address = "AA:00:AA:00:AA:00"
@@ -95,10 +106,11 @@ class UUPeripheralTests
             rssi = -55,
             timestamp = System.currentTimeMillis()
         )
+
         val peripheral = UUPeripheral(advertisement)
 
         // Must have a device in the cache to bypass the "device not found" branch
-        val device = mockDevice(address = address)
+        val device = mockDevice(address)
 
         UUPeripheral.deviceCache[address] = device
 
@@ -108,16 +120,12 @@ class UUPeripheralTests
 
         mockNextBluetoothError(UUBluetoothErrorCode.AlreadyConnected)
 
-        // Pretend a connect watchdog timer is already active
-        /*Mockito.mockStatic(UUTimer::class.java).use { st ->
-            st.`when`<UUTimer?> { UUTimer.findActiveTimer(Mockito.anyString()) }
-                .thenReturn(mock(UUTimer::class.java))
-
-
-        }*/
-
         val timerId = "${address}__Connect"
-        mockTimer(timerId)
+        //mockTimer(timerId)
+        UUTimer.startTimer(timerId, 100000, null)
+        { _, _ ->
+
+        }
 
         peripheral.connect(
             timeout = 5_000,
@@ -131,5 +139,83 @@ class UUPeripheralTests
 
         // cleanup
         UUPeripheral.deviceCache[address] = null
+    }
+
+    @Test
+    fun connect_success_invokesConnected_and_setsGatt_andClearsWatchdog()
+    {
+        UULog.init(UnitTestLogger())
+
+        val address = "AA:00:AA:00:AA:00"
+        val advertisement = UUAdvertisement(
+            address = address,
+            rssi = -55,
+            timestamp = System.currentTimeMillis()
+        )
+
+        val peripheral = UUPeripheral(advertisement)
+
+        // Provide a device via the cache
+        val device = mockDevice(address)
+
+        UUPeripheral.deviceCache = object : UUBluetoothDeviceCache {
+            override fun get(identifier: String): BluetoothDevice? = if (identifier == address) device else null
+            override fun set(identifier: String, device: BluetoothDevice?) { /* not needed */ }
+        }
+
+        mockUUDispatch()
+        mockNextBluetoothError(UUBluetoothErrorCode.Success)
+
+        // Capture the BluetoothGattCallback passed into connectGatt, and return a mock GATT
+        val gatt = mockGatt()
+
+        val connectLatch = CountDownLatch(1)
+
+        val capturedCallback = AtomicReference<BluetoothGattCallback?>(null)
+        `when`(
+            device.connectGatt(
+                Mockito.any(Context::class.java),
+                Mockito.anyBoolean(),
+                Mockito.any(BluetoothGattCallback::class.java),
+                Mockito.anyInt()
+            )
+        ).thenAnswer { invocation ->
+            capturedCallback.store(invocation.getArgument(2))
+            connectLatch.countDown()
+            gatt
+        }
+
+        val connectedLatch = CountDownLatch(1)
+        val disconnectedCalled = AtomicReference(false)
+        val disconnectedError = AtomicReference<UUError?>(null)
+
+        mockUUBluetoothContext()
+
+        // Act
+        peripheral.connect(
+            timeout = 5_000,
+            connected = {
+                connectedLatch.countDown()
+                        },
+            disconnected = {
+                err ->
+                disconnectedError.store(err)
+                disconnectedCalled.store(true)
+            }
+        )
+
+        assertTrue(connectLatch.await(1, TimeUnit.SECONDS))
+
+        val cb = capturedCallback.load()
+        assertNotNull(cb, "BluetoothGattCallback was not captured")
+        cb.onConnectionStateChange(gatt, BluetoothGatt.GATT_SUCCESS, BluetoothGatt.STATE_CONNECTED)
+
+        // Assert
+        assertTrue(connectedLatch.await(1, TimeUnit.SECONDS), "connected callback did not fire")
+        assertFalse(disconnectedCalled.load(), "disconnected callback should not be called")
+
+        // gatt should be cached for this peripheral
+        val cachedGatt = UUPeripheral.gattCache[address]
+        assertTrue(cachedGatt === gatt, "gatt was not cached for the device")
     }
 }

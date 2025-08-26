@@ -2176,19 +2176,3 @@ class UUBluetoothGattCallbackTests
 
 
 }
-
-class UnitTestLogger: UULogger
-{
-    var logLines: ArrayList<String> = arrayListOf()
-
-    override fun writeToLog(
-        level: Int,
-        callingClass: Class<*>,
-        method: String,
-        message: String,
-        exception: Throwable?
-    )
-    {
-        logLines.add("level: $level, callingClass: ${callingClass.javaClass.name}, method: $method, message: $message, exception: $exception")
-    }
-}

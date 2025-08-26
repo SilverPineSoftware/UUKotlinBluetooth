@@ -4,15 +4,19 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
+import android.content.Context
 import com.silverpine.uu.core.UUError
-import com.silverpine.uu.core.UUTimer
+import com.silverpine.uu.core.uuDispatch
+import com.silverpine.uu.core.uuDispatchMain
 import io.mockk.every
 import io.mockk.mockkObject
+import io.mockk.mockkStatic
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import java.util.UUID
 
-fun mockNextBluetoothError(code: UUBluetoothErrorCode): UUError
+fun mockNextBluetoothError(
+    code: UUBluetoothErrorCode): UUError
 {
     val err = mock(UUError::class.java)
     `when`(err.code).thenReturn(code.rawValue)
@@ -20,25 +24,59 @@ fun mockNextBluetoothError(code: UUBluetoothErrorCode): UUError
 
     mockkObject(UUBluetoothError)
 
-    every {
-        UUBluetoothError.makeError(code, any())
-    } returns err
+    // 1) Cover both makeError forms (with explicit null and with any exception)
+    every { UUBluetoothError.makeError(code, any()) } returns err
+    every { UUBluetoothError.makeError(code, null) } returns err
+    // Optional: catch-all if different codes are passed
+    every { UUBluetoothError.makeError(any(), any()) } returns err
+
+    // 2) Cover the higher-level factories commonly used in your code
+    every { UUBluetoothError.connectionFailedError() } returns err
+    every { UUBluetoothError.gattStatusError(any(), any()) } returns err
+    every { UUBluetoothError.alreadyConnectedError() } returns err
+    every { UUBluetoothError.preconditionFailedError(any()) } returns err
+    // add more here if your code uses others (e.g., timeoutError, preconditionFailedErrorNoMessage, etc.)
+
 
     return err
 }
 
-fun mockTimer(timerId: String): UUTimer
+fun mockUUDispatch()
 {
-    val obj = mock(UUTimer::class.java)
-    //`when`(obj.timerId).thenReturn(timerId)
+    mockkStatic("com.silverpine.uu.core.UUDispatchKt")
 
-    mockkObject(UUTimer)
+    every { uuDispatchMain(any()) } answers {
+        val block = firstArg<() -> Unit>()
+        block()  // run inline
+    }
+
+    every { uuDispatchMain(any(), any()) } answers {
+        val block = firstArg<() -> Unit>()
+        block()  // run inline
+    }
+
+    every { uuDispatch(any()) } answers {
+        val block = firstArg<() -> Unit>()
+        block()  // run inline
+    }
+
+    every { uuDispatch(any(), any()) } answers {
+        val block = firstArg<() -> Unit>()
+        block()  // run inline
+    }
+}
+
+fun mockUUBluetoothContext(): Context
+{
+    val ctx = mock(Context::class.java)
+
+    mockkObject(UUBluetooth)
 
     every {
-        UUTimer.findActiveTimer(timerId)
-    } returns obj
+        UUBluetooth.requireApplicationContext()
+    } returns ctx
 
-    return obj
+    return ctx
 }
 
 fun mockGatt(): BluetoothGatt

@@ -1,6 +1,5 @@
 package com.silverpine.uu.bluetooth
 
-import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
@@ -1512,12 +1511,12 @@ class UUBluetoothGattCallbackTests
             gotErr.store(e); latch.countDown()
         }
 
-        val err = mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
+        mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
 
         cb.onDescriptorRead(null, d, 8)
 
         assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
-        assertTrue(gotErr.load() === err, "should receive mocked error instance")
+        assertEquals(UUBluetoothErrorCode.OperationFailed.rawValue, gotErr.load()?.code)
     }
 
     @Test
@@ -1603,12 +1602,12 @@ class UUBluetoothGattCallbackTests
             gotErr.store(e); latch.countDown()
         }
 
-        val err = mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
+        mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
 
         cb.onDescriptorRead(mockGatt(), d, 42, value)
 
         assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
-        assertTrue(gotErr.load() === err, "should receive mocked error instance")
+        assertEquals(UUBluetoothErrorCode.OperationFailed.rawValue, gotErr.load()?.code)
     }
 
     @Test
@@ -1654,12 +1653,12 @@ class UUBluetoothGattCallbackTests
             gotErr.store(e); latch.countDown()
         }
 
-        val err = mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
+        mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
 
         cb.onDescriptorWrite(null, d, 6)
 
         assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
-        assertTrue(gotErr.load() === err, "should receive mocked error instance")
+        assertEquals(UUBluetoothErrorCode.OperationFailed.rawValue, gotErr.load()?.code)
     }
 
     @Test
@@ -1722,13 +1721,13 @@ class UUBluetoothGattCallbackTests
         }
 
         // Arrange the next Bluetooth error produced by the code path
-        val err = mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
+        mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
 
         // Non-zero status → should deliver the mocked error
         cb.onReliableWriteCompleted(null, 133)
 
         assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
-        assertTrue(gotErr.load() === err, "should receive mocked UUError instance")
+        assertEquals(UUBluetoothErrorCode.OperationFailed.rawValue, gotErr.load()?.code)
 
         // cleared after first invocation
         val second = CountDownLatch(1)
@@ -1797,13 +1796,13 @@ class UUBluetoothGattCallbackTests
             got.store(v); gotErr.store(e); latch.countDown()
         }
 
-        val err = mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
+        mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
 
         cb.onReadRemoteRssi(null, /*rssi=*/-60, /*status=*/133)
 
         assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
         assertEquals(-60, got.load(), "rssi mismatch")
-        assertTrue(gotErr.load() === err, "should receive mocked error instance")
+        assertEquals(UUBluetoothErrorCode.OperationFailed.rawValue, gotErr.load()?.code)
 
         val second = CountDownLatch(1)
         cb.onReadRemoteRssi(null, -59, 133)
@@ -1847,13 +1846,13 @@ class UUBluetoothGattCallbackTests
             got.store(v); gotErr.store(e); latch.countDown()
         }
 
-        val err = mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
+        mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
 
         cb.onMtuChanged(null, /*mtu=*/185, /*status=*/22)
 
         assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
         assertEquals(185, got.load(), "mtu mismatch")
-        assertTrue(gotErr.load() === err, "should receive mocked error instance")
+        assertEquals(UUBluetoothErrorCode.OperationFailed.rawValue, gotErr.load()?.code)
 
         val second = CountDownLatch(1)
         cb.onMtuChanged(null, 128, 22)
@@ -1993,13 +1992,13 @@ class UUBluetoothGattCallbackTests
             got.store(p); gotErr.store(e); latch.countDown()
         }
 
-        val err = mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
+        mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
 
         cb.onPhyRead(null, /*tx=*/1, /*rx=*/2, /*status=*/7)
 
         assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
         assertEquals(Pair(1, 2), got.load(), "phy pair mismatch")
-        assertTrue(gotErr.load() === err, "should receive mocked error instance")
+        assertEquals(UUBluetoothErrorCode.OperationFailed.rawValue, gotErr.load()?.code)
 
         val second = CountDownLatch(1)
         cb.onPhyRead(null, 3, 3, 7)
@@ -2043,13 +2042,13 @@ class UUBluetoothGattCallbackTests
             got.store(p); gotErr.store(e); latch.countDown()
         }
 
-        val err = mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
+        mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
 
         cb.onPhyUpdate(null, /*tx=*/1, /*rx=*/3, /*status=*/9)
 
         assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
         assertEquals(Pair(1, 3), got.load(), "phy pair mismatch")
-        assertTrue(gotErr.load() === err, "should receive mocked error instance")
+        assertEquals(UUBluetoothErrorCode.OperationFailed.rawValue, gotErr.load()?.code)
 
         val second = CountDownLatch(1)
         cb.onPhyUpdate(null, 1, 3, 9)
@@ -2176,43 +2175,6 @@ class UUBluetoothGattCallbackTests
     }
 
 
-}
-
-
-fun mockNextBluetoothError(code: UUBluetoothErrorCode): UUError
-{
-    val err = mock(UUError::class.java)
-    mockkObject(UUBluetoothError)
-
-    every {
-        UUBluetoothError.makeError(code, any())
-    } returns err
-
-    return err
-}
-
-fun mockGatt(): BluetoothGatt
-{
-    return mock(BluetoothGatt::class.java)
-}
-
-@Suppress("Deprecation")
-fun mockCharacteristic(uuid: UUID = UUID.randomUUID(), data: ByteArray? = byteArrayOf(0x00)): BluetoothGattCharacteristic
-{
-    val ch = mock(BluetoothGattCharacteristic::class.java)
-    `when`(ch.uuid).thenReturn(uuid)
-    `when`(ch.value).thenReturn(data)
-    return ch
-}
-
-@Suppress("Deprecation")
-fun mockDescriptor(uuid: UUID = UUID.randomUUID(), data: ByteArray? = byteArrayOf(0x00), characteristic: BluetoothGattCharacteristic = mockCharacteristic()): BluetoothGattDescriptor
-{
-    val d = mock(BluetoothGattDescriptor::class.java)
-    `when`(d.uuid).thenReturn(uuid)
-    `when`(d.value).thenReturn(data)
-    `when`(d.characteristic).thenReturn(characteristic)
-    return d
 }
 
 class UnitTestLogger: UULogger

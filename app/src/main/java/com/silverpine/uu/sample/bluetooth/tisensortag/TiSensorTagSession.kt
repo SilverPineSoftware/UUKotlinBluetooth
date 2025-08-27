@@ -1,11 +1,6 @@
 package com.silverpine.uu.sample.bluetooth.tisensortag
 
-//import com.silverpine.uu.corebluetooth.UUCoreBluetoothPeripheralSession
-//import com.silverpine.uu.corebluetooth.UUPeripheralSession
-//import com.silverpine.uu.corebluetooth.UUPeripheralSessionObjectErrorCallback
-//import com.silverpine.uu.corebluetooth.UUPeripheralSessionCallback
 import android.util.Log
-import com.silverpine.uu.bluetooth.UUBluetoothDevicePeripheralSession
 import com.silverpine.uu.bluetooth.UUPeripheral
 import com.silverpine.uu.bluetooth.UUPeripheralSession
 import com.silverpine.uu.bluetooth.UUPeripheralSessionObjectErrorCallback
@@ -168,10 +163,10 @@ object TiSensorTag {
 /**
  * Session interface for TI SensorTag
  */
-interface TiSensorTagSession : UUPeripheralSession
+/*interface TiSensorTagSession : UUPeripheralSession
 {
     fun readTemperature(completion: UUPeripheralSessionObjectErrorCallback<UByte>)
-}
+}*/
 
 /**
  * Async extension function to read temperature
@@ -188,7 +183,7 @@ interface TiSensorTagSession : UUPeripheralSession
 /**
  * CoreBluetooth-based session implementation
  */
-class TiSensorTagCoreBluetoothSession(peripheral: UUPeripheral) : UUBluetoothDevicePeripheralSession(peripheral), TiSensorTagSession
+class TiSensorTagSession(peripheral: UUPeripheral) : UUPeripheralSession(peripheral) //, TiSensorTagSession
 {
     override fun finishSessionStart(completion: () -> Unit)
     {
@@ -210,7 +205,7 @@ class TiSensorTagCoreBluetoothSession(peripheral: UUPeripheral) : UUBluetoothDev
         }
     }
 
-    override fun readTemperature(completion: UUPeripheralSessionObjectErrorCallback<UByte>)
+    fun readTemperature(completion: UUPeripheralSessionObjectErrorCallback<UByte>)
     {
         readUByte(TiSensorTag.Temperature.data, completion)
     }

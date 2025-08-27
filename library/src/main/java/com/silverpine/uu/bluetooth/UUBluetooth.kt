@@ -70,10 +70,10 @@ object UUBluetooth
             return provider.scanner
         }
 
-    fun createSession(peripheral: UUPeripheral): UUPeripheralSession
+    /*fun createSession(peripheral: UUPeripheral): UUPeripheralSession
     {
         return provider.createSession(peripheral)
-    }
+    }*/
 
 
 

@@ -3,7 +3,10 @@ package com.silverpine.uu.bluetooth
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
+import com.silverpine.uu.bluetooth.extensions.uuCommonName
+import com.silverpine.uu.bluetooth.internal.safeNotify
 import com.silverpine.uu.core.UUError
+import com.silverpine.uu.core.UUTimedMetric
 import com.silverpine.uu.core.uuReadUInt16
 import com.silverpine.uu.core.uuReadUInt32
 import com.silverpine.uu.core.uuReadUInt64
@@ -16,30 +19,17 @@ import com.silverpine.uu.core.uuWriteUInt16
 import com.silverpine.uu.core.uuWriteUInt32
 import com.silverpine.uu.core.uuWriteUInt64
 import com.silverpine.uu.core.uuWriteUInt8
+import com.silverpine.uu.logging.UULog
 import java.nio.ByteOrder
 import java.nio.charset.Charset
 import java.util.UUID
-
-//typealias UUPeripheralSessionStartedCallback = ((UUPeripheralSession) -> Unit)
-//typealias UUPeripheralSessionEndedCallback = ((UUPeripheralSession, UUError?) -> Unit)
-//typealias UUByteArrayCallback = ((ByteArray?) -> Unit)
-//typealias UUStringCallback = ((String?) -> Unit)
-//typealias UUVoidCallback = ()->Unit
-//typealias UUSessionErrorHandler = ((UUError) -> Boolean)
-//typealias UUUByteCallback = ((UByte?) -> Unit)
-//typealias UUUShortCallback = ((UShort?) -> Unit)
-//typealias UUUIntCallback = ((UInt?) -> Unit)
-//typealias UUULongCallback = ((ULong?) -> Unit)
-//typealias UUByteCallback = ((Byte?) -> Unit)
-//typealias UUShortCallback = ((Short?) -> Unit)
-//typealias UUIntCallback = ((Int?) -> Unit)
-//typealias UULongCallback = ((Long?) -> Unit)
+import java.util.concurrent.ConcurrentHashMap
 
 typealias UUPeripheralSessionStartedCallback = ((UUPeripheralSession) -> Unit)
-//typealias UUPeripheralSessionEndedCallback = ((UUPeripheralSession, UUError?) -> Unit)
 typealias UUPeripheralSessionObjectErrorCallback<T> = ((UUPeripheralSession, T?, UUError?) -> Unit)
 typealias UUPeripheralSessionErrorCallback = ((UUPeripheralSession, UUError?) -> Unit)
 
+/*
 /**
  * Defines a session for interacting with a single UUPeripheral.
  * Implementers should provide a constructor accepting a UUPeripheral.
@@ -121,6 +111,347 @@ interface UUPeripheralSession
     fun stopListeningForDataChanges(
         characteristic: UUID,
         completion: UUPeripheralSessionErrorCallback)
+}
+*/
+
+
+
+open class UUPeripheralSession(val peripheral: UUPeripheral)
+{
+    var configuration: UUPeripheralSessionConfiguration = UUPeripheralSessionConfiguration()
+    var discoveredServices: ArrayList<BluetoothGattService> = arrayListOf()
+        protected set
+
+    var discoveredCharacteristics: ConcurrentHashMap<UUID, List<BluetoothGattCharacteristic>> =
+        ConcurrentHashMap()
+        protected set
+
+    var discoveredDescriptors: ConcurrentHashMap<UUID, List<BluetoothGattDescriptor>> =
+        ConcurrentHashMap()
+        protected set
+
+    var sessionEndError: UUError? = null
+        protected set
+
+    var started: UUPeripheralSessionStartedCallback? = null
+    var ended: UUPeripheralSessionErrorCallback? = null
+
+    private val connectTimeMeasurement = UUTimedMetric("connectTime")
+    private val disconnectTimeMeasurement = UUTimedMetric("disconnectTime")
+    private val serviceDiscoveryTimeMeasurement = UUTimedMetric("serviceDiscoveryTime")
+    private val characteristicDiscoveryTimeMeasurement = UUTimedMetric("characteristicDiscoveryTime")
+    private val descriptorDiscoveryTimeMeasurement = UUTimedMetric("descriptorDiscoveryTime")
+
+    fun start()
+    {
+        connect()
+    }
+
+    fun end(error: UUError?)
+    {
+        UULog.d(javaClass, "end", "Session ending with error: $error")
+
+        sessionEndError = error
+        disconnect()
+    }
+
+    /*
+    override fun startTimer(name: String, timeout: Long, block: () -> Unit)
+    {
+
+    }
+
+    override fun cancelTimer(name: String)
+    {
+
+    }*/
+
+    fun read(
+        characteristic: UUID,
+        completion: UUPeripheralSessionObjectErrorCallback<ByteArray>)
+    {
+        val char = findDiscoveredCharacteristic(characteristic) ?: run()
+        {
+            val err = UUBluetoothError.missingRequiredCharacteristic(characteristic)
+            completion.safeNotify(this, null, err)
+            return
+        }
+
+        peripheral.read(
+            characteristic = char,
+            timeout = configuration.readTimeout,
+            completion =
+                { data, error ->
+                    completion.safeNotify(this, data, error)
+                })
+    }
+
+    fun write(
+        data: ByteArray,
+        characteristic: UUID,
+        withResponse: Boolean,
+        completion: UUPeripheralSessionErrorCallback)
+    {
+        val char = findDiscoveredCharacteristic(characteristic) ?: run()
+        {
+            val err = UUBluetoothError.missingRequiredCharacteristic(characteristic)
+            completion.safeNotify(this, err)
+            return
+        }
+
+        if (withResponse)
+        {
+            peripheral.write(
+                data = data,
+                characteristic = char,
+                timeout = configuration.writeTimeout,
+                completion =
+                    { error: UUError? ->
+                        completion.safeNotify(this, error)
+                    })
+        }
+        else
+        {
+            peripheral.writeWithoutResponse(
+                data = data,
+                characteristic = char,
+                completion =
+                    { error: UUError? ->
+                        completion.safeNotify(this, error)
+                    })
+        }
+    }
+
+    fun startListeningForDataChanges(
+        characteristic: UUID,
+        dataChanged: UUPeripheralSessionObjectErrorCallback<ByteArray>,
+        completion: UUPeripheralSessionErrorCallback)
+    {
+        val char = findDiscoveredCharacteristic(characteristic) ?: run()
+        {
+            val err = UUBluetoothError.missingRequiredCharacteristic(characteristic)
+            completion.safeNotify(this, err)
+            return
+        }
+
+        peripheral.setNotifyValue(
+            enabled = true,
+            characteristic = char,
+            timeout = configuration.readTimeout,
+            notifyHandler =
+                { updatedData ->
+
+                    //TODO: Update char in discovered map?
+
+                    dataChanged.safeNotify(this, updatedData, null)
+                },
+            completion =
+                { error ->
+                    completion.safeNotify(this, error)
+                }
+        )
+    }
+
+    fun stopListeningForDataChanges(
+        characteristic: UUID,
+        completion: UUPeripheralSessionErrorCallback)
+    {
+        val char = findDiscoveredCharacteristic(characteristic) ?: run()
+        {
+            val err = UUBluetoothError.missingRequiredCharacteristic(characteristic)
+            completion(this, err)
+            return
+        }
+
+        peripheral.setNotifyValue(
+            enabled = true,
+            characteristic = char,
+            timeout = configuration.readTimeout,
+            notifyHandler = null,
+            completion =
+                { error ->
+                    completion(this, error)
+                }
+        )
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Connection & Disconnection
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    private fun connect()
+    {
+        connectTimeMeasurement.start()
+
+        peripheral.connect(
+            timeout = configuration.connectTimeout,
+            connected = this::handleConnected,
+            disconnected = this::handleDisconnection)
+    }
+
+    private fun handleSessionStarted()
+    {
+        finishSessionStart()
+        {
+            started?.safeNotify(this)
+        }
+    }
+
+    private fun disconnect()
+    {
+        disconnectTimeMeasurement.start()
+        peripheral.disconnect(null) //timeout = configuration.disconnectTimeout)
+    }
+
+    private fun handleConnected()
+    {
+        connectTimeMeasurement.end()
+        startServiceDiscovery()
+    }
+
+    private fun handleDisconnection(disconnectError: UUError?)
+    {
+        disconnectTimeMeasurement.end()
+
+        // Only set error if not already set.  In the case where end(error) forcefully ends the session, preserve that error.
+        if (sessionEndError != null)
+        {
+            sessionEndError = disconnectError
+        }
+
+        ended?.safeNotify(this, sessionEndError)
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Service Discovery
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    private fun startServiceDiscovery()
+    {
+        serviceDiscoveryTimeMeasurement.start()
+
+        discoveredServices.clear()
+
+        peripheral.discoverServices(timeout = configuration.serviceDiscoveryTimeout)
+        { services, error ->
+
+            serviceDiscoveryTimeMeasurement.end()
+
+            error?.let()
+            { err ->
+                end(err)
+                return@discoverServices
+            }
+
+            if (services == null)
+            {
+                val err = UUBluetoothError.makeError(UUBluetoothErrorCode.NoServicesDiscovered)
+                end(err)
+                return@discoverServices
+            }
+
+            discoveredServices.addAll(services)
+            logDiscoveredServices()
+            startCharacteristicDiscovery()
+        }
+    }
+
+    private fun logDiscoveredServices()
+    {
+        UULog.d(javaClass, "discoverServices", "Discovered ${discoveredServices.size} services.")
+        discoveredServices.forEach()
+        { service ->
+            //let serviceDescription = UUServiceRepresentation(from: service)
+            //UULog.debug(tag: LOG_TAG, message: "Service: \(serviceDescription.uuToJsonString())")
+            UULog.d(javaClass, "discoverServices", "Service: ${service.uuid}, ${service.uuid.uuCommonName}")
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Characteristic Discovery
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    private fun startCharacteristicDiscovery()
+    {
+        characteristicDiscoveryTimeMeasurement.start()
+        discoveredCharacteristics.clear()
+
+        discoveredServices.forEach()
+        { service ->
+            discoveredCharacteristics[service.uuid] = service.characteristics
+        }
+
+        characteristicDiscoveryTimeMeasurement.end()
+        logDiscoveredCharacteristics()
+
+        startDescriptorDiscovery()
+    }
+
+    private fun logDiscoveredCharacteristics()
+    {
+        discoveredCharacteristics.forEach()
+        { service, characteristics ->
+            UULog.d(javaClass, "discoverCharacteristics", "Discovered ${characteristics.size} characteristics on service $service")
+
+            characteristics.forEach()
+            { characteristic ->
+                //let characteristicDescription = UUCharacteristicRepresentation(from: characteristic)
+                //UULog.debug(tag: LOG_TAG, message: "Characteristic: \(characteristicDescription.uuToJsonString())")
+
+                UULog.d(javaClass, "discoverCharacteristics", "Characteristic: ${characteristic.uuid}, ${characteristic.uuid.uuCommonName}")
+            }
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Descriptor Discovery
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    private fun startDescriptorDiscovery()
+    {
+        descriptorDiscoveryTimeMeasurement.start()
+        discoveredDescriptors.clear()
+
+        discoveredCharacteristics.values.flatten().forEach()
+        { characteristic ->
+            discoveredDescriptors[characteristic.uuid] = characteristic.descriptors
+        }
+
+        descriptorDiscoveryTimeMeasurement.end()
+        logDiscoveredDescriptors()
+
+        handleSessionStarted()
+    }
+
+    private fun logDiscoveredDescriptors()
+    {
+        discoveredDescriptors.forEach()
+        { characteristic, descriptors ->
+            UULog.d(javaClass, "discoverDescriptors", "Discovered ${descriptors.size} descriptors on characteristic $characteristic")
+
+            descriptors.forEach()
+            { descriptor ->
+                //let descriptorDescription = UUDescriptorRepresentation(from: descriptor)
+                //UULog.debug(tag: LOG_TAG, message: "Descriptor: \(descriptorDescription.uuToJsonString())")
+
+                UULog.d(javaClass, "discoverDescriptors", "Descriptor: ${descriptor.uuid}, ${descriptor.uuid.uuCommonName}")
+            }
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Additional Private Methods
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    private fun findDiscoveredCharacteristic(uuid: UUID): BluetoothGattCharacteristic?
+    {
+        return discoveredCharacteristics.values.flatten().firstOrNull { it.uuid == uuid }
+    }
+
+    open fun finishSessionStart(completion: ()->Unit)
+    {
+        completion()
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

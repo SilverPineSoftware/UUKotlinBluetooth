@@ -1,5 +1,5 @@
 package com.silverpine.uu.bluetooth
-
+/*
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
@@ -360,4 +360,4 @@ open class UUBluetoothDevicePeripheralSession(
     {
         completion()
     }
-}
+}*/

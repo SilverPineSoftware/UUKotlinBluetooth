@@ -6,12 +6,12 @@ import com.silverpine.uu.bluetooth.UUBluetoothSniffer
 import com.silverpine.uu.bluetooth.UUPeripheral
 import com.silverpine.uu.bluetooth.UUPeripheralScanner
 import com.silverpine.uu.bluetooth.UUPeripheralScannerConfig
+import com.silverpine.uu.core.UUTimer
 import com.silverpine.uu.core.uuDispatch
 import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.logging.UULog
 import com.silverpine.uu.sample.bluetooth.R
 import com.silverpine.uu.sample.bluetooth.operations.ReadDeviceInfoOperation
-import com.silverpine.uu.sample.bluetooth.tisensortag.TiSensorTagCoreBluetoothSession
 import com.silverpine.uu.sample.bluetooth.tisensortag.TiSensorTagSession
 import com.silverpine.uu.sample.bluetooth.ui.PeripheralDetailActivity
 import com.silverpine.uu.sample.bluetooth.ui.l2cap.L2CapClientActivity
@@ -212,7 +212,7 @@ class HomeViewModel: RecyclerViewModel()
             val latch = CountDownLatch(1)
             val endLatch = CountDownLatch(1)
 
-            sensorTagSession = TiSensorTagCoreBluetoothSession(peripheral)
+            sensorTagSession = TiSensorTagSession(peripheral)
             sensorTagSession?.started =
             { s ->
                 UULog.d(javaClass, "openSensorTagSession", "Session started")
@@ -230,8 +230,8 @@ class HomeViewModel: RecyclerViewModel()
 
             latch.await(30, TimeUnit.SECONDS)
 
-            sensorTagSession?.startTimer("end session", 10000)
-            {
+            UUTimer.startTimer("end session", 10000, null)
+            { _, _ ->
                 sensorTagSession?.end(null)
             }
 

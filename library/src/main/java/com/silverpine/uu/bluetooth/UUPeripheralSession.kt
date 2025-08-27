@@ -142,12 +142,12 @@ open class UUPeripheralSession(val peripheral: UUPeripheral)
     private val characteristicDiscoveryTimeMeasurement = UUTimedMetric("characteristicDiscoveryTime")
     private val descriptorDiscoveryTimeMeasurement = UUTimedMetric("descriptorDiscoveryTime")
 
-    fun start()
+    open fun start()
     {
         connect()
     }
 
-    fun end(error: UUError?)
+    open fun end(error: UUError?)
     {
         UULog.d(javaClass, "end", "Session ending with error: $error")
 
@@ -155,16 +155,15 @@ open class UUPeripheralSession(val peripheral: UUPeripheral)
         disconnect()
     }
 
-    /*
-    override fun startTimer(name: String, timeout: Long, block: () -> Unit)
+    fun startTimer(name: String, timeout: Long, block: () -> Unit)
     {
-
+        peripheral.startTimer(name, timeout, block)
     }
 
-    override fun cancelTimer(name: String)
+    fun cancelTimer(name: String)
     {
-
-    }*/
+        peripheral.cancelTimer(name)
+    }
 
     fun read(
         characteristic: UUID,

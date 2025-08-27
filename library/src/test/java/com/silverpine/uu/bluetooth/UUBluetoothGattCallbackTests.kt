@@ -1511,7 +1511,8 @@ class UUBluetoothGattCallbackTests
             gotErr.store(e); latch.countDown()
         }
 
-        mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
+        //mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
+        mockBluetoothError()
 
         cb.onDescriptorRead(null, d, 8)
 
@@ -1602,7 +1603,8 @@ class UUBluetoothGattCallbackTests
             gotErr.store(e); latch.countDown()
         }
 
-        mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
+        //mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
+        mockBluetoothError()
 
         cb.onDescriptorRead(mockGatt(), d, 42, value)
 
@@ -1653,7 +1655,8 @@ class UUBluetoothGattCallbackTests
             gotErr.store(e); latch.countDown()
         }
 
-        mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
+        //mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
+        mockBluetoothError()
 
         cb.onDescriptorWrite(null, d, 6)
 
@@ -1721,7 +1724,8 @@ class UUBluetoothGattCallbackTests
         }
 
         // Arrange the next Bluetooth error produced by the code path
-        mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
+        //mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
+        mockBluetoothError()
 
         // Non-zero status → should deliver the mocked error
         cb.onReliableWriteCompleted(null, 133)
@@ -1796,7 +1800,8 @@ class UUBluetoothGattCallbackTests
             got.store(v); gotErr.store(e); latch.countDown()
         }
 
-        mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
+        //mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
+        mockBluetoothError()
 
         cb.onReadRemoteRssi(null, /*rssi=*/-60, /*status=*/133)
 
@@ -1846,7 +1851,8 @@ class UUBluetoothGattCallbackTests
             got.store(v); gotErr.store(e); latch.countDown()
         }
 
-        mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
+        //mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
+        mockBluetoothError()
 
         cb.onMtuChanged(null, /*mtu=*/185, /*status=*/22)
 
@@ -1992,7 +1998,8 @@ class UUBluetoothGattCallbackTests
             got.store(p); gotErr.store(e); latch.countDown()
         }
 
-        mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
+        //mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
+        mockBluetoothError()
 
         cb.onPhyRead(null, /*tx=*/1, /*rx=*/2, /*status=*/7)
 
@@ -2042,7 +2049,8 @@ class UUBluetoothGattCallbackTests
             got.store(p); gotErr.store(e); latch.countDown()
         }
 
-        mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
+        //mockNextBluetoothError(UUBluetoothErrorCode.OperationFailed)
+        mockBluetoothError()
 
         cb.onPhyUpdate(null, /*tx=*/1, /*rx=*/3, /*status=*/9)
 

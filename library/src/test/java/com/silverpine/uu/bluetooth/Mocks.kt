@@ -15,30 +15,45 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import java.util.UUID
 
-fun mockNextBluetoothError(
-    code: UUBluetoothErrorCode): UUError
+fun mockError(domain: String, code: Int): UUError
 {
     val err = mock(UUError::class.java)
-    `when`(err.code).thenReturn(code.rawValue)
-    `when`(err.domain).thenReturn("UUBluetoothError")
+    `when`(err.domain).thenReturn(domain)
+    `when`(err.code).thenReturn(code)
+    return err
+}
+
+fun mockBluetoothError() //: UUError
+{
+//    val err = mock(UUError::class.java)
+//    `when`(err.code).thenReturn(code.rawValue)
+//    `when`(err.domain).thenReturn("UUBluetoothError")
 
     mockkObject(UUBluetoothError)
 
     // 1) Cover both makeError forms (with explicit null and with any exception)
-    every { UUBluetoothError.makeError(code, any()) } returns err
+    //every { UUBluetoothError.makeError(code, any()) } returns err
+
+    every { UUBluetoothError.makeError(any(), any()) } answers {
+        mockError("UUBluetoothError", firstArg<UUBluetoothErrorCode>().rawValue)
+    }
+
+    /*
     every { UUBluetoothError.makeError(code, null) } returns err
     // Optional: catch-all if different codes are passed
     every { UUBluetoothError.makeError(any(), any()) } returns err
+    */
 
     // 2) Cover the higher-level factories commonly used in your code
-    every { UUBluetoothError.connectionFailedError() } returns err
+    /*every { UUBluetoothError.connectionFailedError() } returns err
     every { UUBluetoothError.gattStatusError(any(), any()) } returns err
     every { UUBluetoothError.alreadyConnectedError() } returns err
     every { UUBluetoothError.preconditionFailedError(any()) } returns err
+    */
     // add more here if your code uses others (e.g., timeoutError, preconditionFailedErrorNoMessage, etc.)
 
 
-    return err
+    //return err
 }
 
 fun mockUUDispatch()

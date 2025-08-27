@@ -18,6 +18,7 @@ import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalAtomicApi::class)
@@ -26,8 +27,14 @@ class UUPeripheralTests
     @Before
     fun setupTests()
     {
+        UULog.init(UnitTestLogger())
+
         UUTimer.workerThread = UnitTestTimerThread()
         UUTimer.listActiveTimers().forEach { it.cancel() }
+
+        mockBluetoothError()
+        mockUUBluetoothContext()
+        mockUUDispatch()
     }
 
     @Test
@@ -49,8 +56,6 @@ class UUPeripheralTests
         val connectedCalled = AtomicReference(false)
         val gotError = AtomicReference<UUError?>(null)
         val latch = CountDownLatch(1)
-
-        mockNextBluetoothError(UUBluetoothErrorCode.AlreadyConnected)
 
         peripheral.connect(
             timeout = 5_000,
@@ -84,8 +89,6 @@ class UUPeripheralTests
         val gotError = AtomicReference<UUError?>(null)
         val latch = CountDownLatch(1)
 
-        mockNextBluetoothError(UUBluetoothErrorCode.PreconditionFailed)
-
         peripheral.connect(
             timeout = 5_000,
             connected = { connectedCalled.store(true) },
@@ -118,10 +121,7 @@ class UUPeripheralTests
         val gotError = AtomicReference<UUError?>(null)
         val latch = CountDownLatch(1)
 
-        mockNextBluetoothError(UUBluetoothErrorCode.AlreadyConnected)
-
         val timerId = "${address}__Connect"
-        //mockTimer(timerId)
         UUTimer.startTimer(timerId, 100000, null)
         { _, _ ->
 
@@ -144,8 +144,6 @@ class UUPeripheralTests
     @Test
     fun connect_success_invokesConnected_and_setsGatt_andClearsWatchdog()
     {
-        UULog.init(UnitTestLogger())
-
         val address = "AA:00:AA:00:AA:00"
         val advertisement = UUAdvertisement(
             address = address,
@@ -162,9 +160,6 @@ class UUPeripheralTests
             override fun get(identifier: String): BluetoothDevice? = if (identifier == address) device else null
             override fun set(identifier: String, device: BluetoothDevice?) { /* not needed */ }
         }
-
-        mockUUDispatch()
-        mockNextBluetoothError(UUBluetoothErrorCode.Success)
 
         // Capture the BluetoothGattCallback passed into connectGatt, and return a mock GATT
         val gatt = mockGatt()
@@ -188,8 +183,6 @@ class UUPeripheralTests
         val connectedLatch = CountDownLatch(1)
         val disconnectedCalled = AtomicReference(false)
         val disconnectedError = AtomicReference<UUError?>(null)
-
-        mockUUBluetoothContext()
 
         // Act
         peripheral.connect(
@@ -217,5 +210,112 @@ class UUPeripheralTests
         // gatt should be cached for this peripheral
         val cachedGatt = UUPeripheral.gattCache[address]
         assertTrue(cachedGatt === gatt, "gatt was not cached for the device")
+
+        UUPeripheral.gattCache[address] = null
+    }
+
+    @Test
+    fun connect_error_invokesConnected_and_setsGatt_andClearsWatchdog()
+    {
+        UULog.init(UnitTestLogger())
+
+        val address = "AA:00:AA:00:AA:00"
+        val advertisement = UUAdvertisement(
+            address = address,
+            rssi = -55,
+            timestamp = System.currentTimeMillis()
+        )
+
+        val peripheral = UUPeripheral(advertisement)
+
+        // Provide a device via the cache
+        val device = mockDevice(address)
+
+        UUPeripheral.deviceCache = object : UUBluetoothDeviceCache {
+            override fun get(identifier: String): BluetoothDevice? = if (identifier == address) device else null
+            override fun set(identifier: String, device: BluetoothDevice?) { /* not needed */ }
+        }
+
+        // Capture the BluetoothGattCallback passed into connectGatt, and return a mock GATT
+        val gatt = mockGatt()
+
+        val connectLatch = CountDownLatch(1)
+
+        val capturedCallback = AtomicReference<BluetoothGattCallback?>(null)
+        `when`(
+            device.connectGatt(
+                Mockito.any(Context::class.java),
+                Mockito.anyBoolean(),
+                Mockito.any(BluetoothGattCallback::class.java),
+                Mockito.anyInt()
+            )
+        ).thenAnswer { invocation ->
+            capturedCallback.store(invocation.getArgument(2))
+            connectLatch.countDown()
+            gatt
+        }
+
+        val disconnectedLatch = CountDownLatch(1)
+        val connectedCalled = AtomicReference(false)
+        val disconnectedError = AtomicReference<UUError?>(null)
+
+        // Act
+        peripheral.connect(
+            timeout = 5_000,
+            connected = {
+                connectedCalled.store(true)
+            },
+            disconnected = {
+                    err ->
+                disconnectedError.store(err)
+                disconnectedLatch.countDown()
+            }
+        )
+
+        assertTrue(connectLatch.await(1, TimeUnit.SECONDS))
+
+        val cb = capturedCallback.load()
+        assertNotNull(cb, "BluetoothGattCallback was not captured")
+        cb.onConnectionStateChange(gatt, BluetoothGatt.GATT_FAILURE, BluetoothGatt.STATE_DISCONNECTED)
+
+        // Assert
+        assertTrue(disconnectedLatch.await(1, TimeUnit.SECONDS), "disconnected callback did not fire")
+        assertFalse(connectedCalled.load(), "connected callback should not be called")
+
+        // gatt should be cached for this peripheral
+        val cachedGatt = UUPeripheral.gattCache[address]
+        assertNull(cachedGatt, "gatt should not be cached after connection failure")
+
+        val err = disconnectedError.load()
+        assertNotNull(err, "Expected an error")
+        assertEquals(err.code, UUBluetoothErrorCode.ConnectionFailed.rawValue)
     }
 }
+
+/*
+class UnitTestDeviceCache: UUBluetoothDeviceCache
+{
+    var devices = ConcurrentHashMap<String, BluetoothDevice>()
+
+    override fun get(identifier: String): BluetoothDevice?
+    {
+        return devices[identifier]
+    }
+
+    override fun set(identifier: String, obj: BluetoothDevice?)
+    {
+        if (obj != null)
+        {
+            devices[identifier] = obj
+        }
+        else
+        {
+            devices.remove(identifier)
+        }
+    }
+
+    fun clear()
+    {
+        devices.clear()
+    }
+}*/

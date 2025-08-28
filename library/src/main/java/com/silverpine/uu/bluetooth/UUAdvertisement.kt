@@ -3,9 +3,13 @@ package com.silverpine.uu.bluetooth
 import android.annotation.SuppressLint
 import android.bluetooth.le.ScanResult
 import android.os.Build
+import android.os.Parcelable
 import android.util.SparseArray
+import androidx.core.util.size
+import kotlinx.parcelize.Parcelize
 import java.util.UUID
 
+@Parcelize
 class UUAdvertisement(
     val address: String = "",
     val rssi: Int = 0,
@@ -19,7 +23,7 @@ class UUAdvertisement(
     val services: List<UUID>? = null,
     val serviceData: Map<UUID,ByteArray>? = null,
     val solicitedServices: List<UUID>? = null
-)
+) : Parcelable
 {
     @SuppressLint("MissingPermission")
     constructor(scanResult: ScanResult): this(
@@ -36,6 +40,98 @@ class UUAdvertisement(
         serviceData = scanResult.scanRecord?.serviceData?.mapKeys { (parcelUuid, _) -> parcelUuid.uuid },
         solicitedServices = scanResult.uuSolicitedServices()
     )
+
+    override fun equals(other: Any?): Boolean
+    {
+        if (this === other) return true
+
+        if (other !is UUAdvertisement) return false
+
+        if (address != other.address) return false
+        if (rssi != other.rssi) return false
+        if (localName != other.localName) return false
+        if (isConnectable != other.isConnectable) return false
+        if (transmitPower != other.transmitPower) return false
+        if (primaryPhy != other.primaryPhy) return false
+        if (secondaryPhy != other.secondaryPhy) return false
+        if (timestamp != other.timestamp) return false
+
+        if (services != other.services) return false
+        if (solicitedServices != other.solicitedServices) return false
+
+        // Compare manufacturingData
+        if (manufacturingData != null || other.manufacturingData != null)
+        {
+            if (manufacturingData == null || other.manufacturingData == null) return false
+
+            if (manufacturingData.size != other.manufacturingData.size) return false
+
+            for (i in 0 until manufacturingData.size)
+            {
+                val key = manufacturingData.keyAt(i)
+                val v1 = manufacturingData.valueAt(i)
+                val v2 = other.manufacturingData.get(key)
+                if (v2 == null || !v1.contentEquals(v2)) return false
+            }
+        }
+
+        // Compare serviceData
+        if (serviceData != null || other.serviceData != null)
+        {
+            if (serviceData == null || other.serviceData == null) return false
+            if (serviceData.size != other.serviceData.size) return false
+
+            for ((k, v1) in serviceData)
+            {
+                val v2 = other.serviceData[k] ?: return false
+                if (!v1.contentEquals(v2)) return false
+            }
+        }
+
+        return true
+    }
+
+    override fun hashCode(): Int
+    {
+        var result = address.hashCode()
+        result = 31 * result + rssi
+        result = 31 * result + localName.hashCode()
+        result = 31 * result + isConnectable.hashCode()
+        result = 31 * result + transmitPower
+        result = 31 * result + primaryPhy
+        result = 31 * result + secondaryPhy
+        result = 31 * result + timestamp.hashCode()
+        result = 31 * result + (services?.hashCode() ?: 0)
+        result = 31 * result + (solicitedServices?.hashCode() ?: 0)
+
+        // manufacturingData hash
+        result = 31 * result + (manufacturingData?.let()
+        {
+            var h = 1
+            for (i in 0 until it.size)
+            {
+                val key = it.keyAt(i)
+                val value = it.valueAt(i)
+                h = 31 * h + key
+                h = 31 * h + (value?.contentHashCode() ?: 0)
+            }
+            h
+        } ?: 0)
+
+        // serviceData hash
+        result = 31 * result + (serviceData?.let()
+        {
+            var h = 1
+            for ((k, v) in it)
+            {
+                h = 31 * h + k.hashCode()
+                h = 31 * h + v.contentHashCode()
+            }
+            h
+        } ?: 0)
+
+        return result
+    }
 }
 
 internal fun ScanResult.uuSolicitedServices(): List<UUID>?

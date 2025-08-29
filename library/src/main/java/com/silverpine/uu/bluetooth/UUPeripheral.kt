@@ -12,6 +12,7 @@ import android.bluetooth.BluetoothSocket
 import android.bluetooth.BluetoothStatusCodes
 import android.content.Context
 import android.os.Build
+import android.os.Bundle
 import com.silverpine.uu.bluetooth.UUBluetooth.connectionStateToString
 import com.silverpine.uu.bluetooth.UUBluetooth.gattStatusToString
 import com.silverpine.uu.bluetooth.UUBluetoothConstants.DEFAULT_MTU
@@ -82,6 +83,8 @@ class UUPeripheral(
 
     val timeSinceLastUpdate: Long
         get() = System.currentTimeMillis() - advertisement.timestamp
+
+    var userInfo: Bundle? = null
 
     fun refreshConnectionState()
     {

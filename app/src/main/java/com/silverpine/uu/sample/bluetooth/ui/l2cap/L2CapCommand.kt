@@ -55,19 +55,19 @@ class L2CapCommand(val id: Id, val data: ByteArray)
     {
         var buffer = ByteArray(HEADER_SIZE + data.size)
         var index = 0
-        index += buffer.uuWriteUInt8(index, 0x55) // U
-        index += buffer.uuWriteUInt8(index, 0x55) // U
-        index += buffer.uuWriteUInt8(index, 0x42) // B
-        index += buffer.uuWriteUInt8(index, 0x6C) // l
-        index += buffer.uuWriteUInt8(index, 0x75) // u
-        index += buffer.uuWriteUInt8(index, 0x65) // e
-        index += buffer.uuWriteUInt8(index, 0x74) // t
-        index += buffer.uuWriteUInt8(index, 0x6F) // o
-        index += buffer.uuWriteUInt8(index, 0x6F) // o
-        index += buffer.uuWriteUInt8(index, 0x74) // t
-        index += buffer.uuWriteUInt8(index, 0x68) // h
-        index += buffer.uuWriteUInt8(index, id.value)
-        index += buffer.uuWriteUInt32(ByteOrder.LITTLE_ENDIAN, index, data.size.toLong())
+        index += buffer.uuWriteUInt8(index, 0x55.toUByte()).getOrDefault(0) // U
+        index += buffer.uuWriteUInt8(index, 0x55.toUByte()).getOrDefault(0) // U
+        index += buffer.uuWriteUInt8(index, 0x42.toUByte()).getOrDefault(0) // B
+        index += buffer.uuWriteUInt8(index, 0x6C.toUByte()).getOrDefault(0) // l
+        index += buffer.uuWriteUInt8(index, 0x75.toUByte()).getOrDefault(0) // u
+        index += buffer.uuWriteUInt8(index, 0x65.toUByte()).getOrDefault(0) // e
+        index += buffer.uuWriteUInt8(index, 0x74.toUByte()).getOrDefault(0) // t
+        index += buffer.uuWriteUInt8(index, 0x6F.toUByte()).getOrDefault(0) // o
+        index += buffer.uuWriteUInt8(index, 0x6F.toUByte()).getOrDefault(0) // o
+        index += buffer.uuWriteUInt8(index, 0x74.toUByte()).getOrDefault(0) // t
+        index += buffer.uuWriteUInt8(index, 0x68.toUByte()).getOrDefault(0) // h
+        index += buffer.uuWriteUInt8(index, id.value.toUByte()).getOrDefault(0)
+        index += buffer.uuWriteUInt32(ByteOrder.LITTLE_ENDIAN, index, data.size.toUInt()).getOrDefault(0)
         buffer.uuWriteData(index, data)
         return buffer
     }
@@ -83,13 +83,13 @@ class L2CapCommand(val id: Id, val data: ByteArray)
                 var index = 0
                 val header = data.uuSubData(0, 11)
                 index += (header?.size ?: 0)
-                val headerText = header?.uuUtf8()
+                val headerText = header?.uuUtf8()?.getOrNull()
                 if (headerText != "UUBluetooth")
                 {
                     return null
                 }
 
-                val commandByte = data.uuReadUInt8(index)
+                val commandByte = data.uuReadUInt8(index).getOrElse { return null }.toInt()
                 index += Byte.SIZE_BYTES
                 val commandId = Id.fromUInt8(commandByte)
                 if (commandId == null)
@@ -97,7 +97,7 @@ class L2CapCommand(val id: Id, val data: ByteArray)
                     return null
                 }
 
-                val commandLength = data.uuReadUInt32(ByteOrder.LITTLE_ENDIAN, index).toInt()
+                val commandLength = data.uuReadUInt32(ByteOrder.LITTLE_ENDIAN, index).getOrElse { return null }.toInt()
                 index += UInt.SIZE_BYTES
                 val cmd = L2CapCommand(commandId, ByteArray(commandLength))
 

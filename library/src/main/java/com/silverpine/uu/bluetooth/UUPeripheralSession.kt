@@ -7,6 +7,10 @@ import com.silverpine.uu.bluetooth.extensions.uuCommonName
 import com.silverpine.uu.bluetooth.internal.safeNotify
 import com.silverpine.uu.core.UUError
 import com.silverpine.uu.core.UUTimedMetric
+import com.silverpine.uu.core.uuReadInt16
+import com.silverpine.uu.core.uuReadInt32
+import com.silverpine.uu.core.uuReadInt64
+import com.silverpine.uu.core.uuReadInt8
 import com.silverpine.uu.core.uuReadUInt16
 import com.silverpine.uu.core.uuReadUInt32
 import com.silverpine.uu.core.uuReadUInt64
@@ -491,7 +495,7 @@ fun UUPeripheralSession.readUByte(
     read(characteristic)
     { p, data, err ->
 
-        val result = data?.uuReadUInt8(0)?.toUByte()
+        val result = data?.uuReadUInt8(0)?.getOrNull()
         completion(p, result, null)
     }
 }
@@ -504,7 +508,7 @@ fun UUPeripheralSession.readUShort(
     read(characteristic)
     { p, data, err ->
 
-        val result = data?.uuReadUInt16(byteOrder, 0)?.toUShort()
+        val result = data?.uuReadUInt16(byteOrder, 0)?.getOrNull()
         completion(p, result, null)
     }
 }
@@ -517,7 +521,7 @@ fun UUPeripheralSession.readUInt(
     read(characteristic)
     { p, data, err ->
 
-        val result = data?.uuReadUInt32(byteOrder, 0)?.toUInt()
+        val result = data?.uuReadUInt32(byteOrder, 0)?.getOrNull()
         completion(p, result, null)
     }
 }
@@ -530,7 +534,7 @@ fun UUPeripheralSession.readULong(
     read(characteristic)
     { p, data, err ->
 
-        val result = data?.uuReadUInt64(byteOrder, 0)?.toULong()
+        val result = data?.uuReadUInt64(byteOrder, 0)?.getOrNull()
         completion(p, result, null)
     }
 }
@@ -542,7 +546,7 @@ fun UUPeripheralSession.readByte(
     read(characteristic)
     { p, data, err ->
 
-        val result = data?.uuReadUInt8(0)?.toByte()
+        val result = data?.uuReadInt8(0)?.getOrNull()
         completion(p, result, null)
     }
 }
@@ -555,7 +559,7 @@ fun UUPeripheralSession.readShort(
     read(characteristic)
     { p, data, err ->
 
-        val result = data?.uuReadUInt16(byteOrder, 0)?.toShort()
+        val result = data?.uuReadInt16(byteOrder, 0)?.getOrNull()
         completion(p, result, null)
     }
 }
@@ -568,7 +572,7 @@ fun UUPeripheralSession.readInt(
     read(characteristic)
     { p, data, err ->
 
-        val result = data?.uuReadUInt32(byteOrder, 0)?.toInt()
+        val result = data?.uuReadInt32(byteOrder, 0)?.getOrNull()
         completion(p, result, null)
     }
 }
@@ -581,7 +585,7 @@ fun UUPeripheralSession.readLong(
     read(characteristic)
     { p, data, err ->
 
-        val result = data?.uuReadUInt64(byteOrder, 0)?.toLong()
+        val result = data?.uuReadInt64(byteOrder, 0)?.getOrNull()
         completion(p, result, null)
     }
 }
@@ -620,7 +624,7 @@ fun UUPeripheralSession.writeUByte(
     completion: UUPeripheralSessionErrorCallback)
 {
     val buffer = ByteArray(UByte.SIZE_BYTES)
-    buffer.uuWriteUInt8(0, data.toInt())
+    buffer.uuWriteUInt8(0, data)
     write(buffer, characteristic, withResponse, completion)
 }
 
@@ -632,7 +636,7 @@ fun UUPeripheralSession.writeUShort(
     completion: UUPeripheralSessionErrorCallback)
 {
     val buffer = ByteArray(UShort.SIZE_BYTES)
-    buffer.uuWriteUInt16(byteOrder, 0, data.toInt())
+    buffer.uuWriteUInt16(byteOrder, 0, data)
     write(buffer, characteristic, withResponse, completion)
 }
 
@@ -644,7 +648,7 @@ fun UUPeripheralSession.writeUInt(
     completion: UUPeripheralSessionErrorCallback)
 {
     val buffer = ByteArray(UInt.SIZE_BYTES)
-    buffer.uuWriteUInt32(byteOrder, 0, data.toLong())
+    buffer.uuWriteUInt32(byteOrder, 0, data)
     write(buffer, characteristic, withResponse, completion)
 }
 
@@ -656,7 +660,7 @@ fun UUPeripheralSession.writeULong(
     completion: UUPeripheralSessionErrorCallback)
 {
     val buffer = ByteArray(ULong.SIZE_BYTES)
-    buffer.uuWriteUInt64(byteOrder, 0, data.toLong())
+    buffer.uuWriteUInt64(byteOrder, 0, data)
     write(buffer, characteristic, withResponse, completion)
 }
 

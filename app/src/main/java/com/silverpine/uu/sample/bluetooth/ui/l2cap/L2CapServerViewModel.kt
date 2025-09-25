@@ -187,7 +187,8 @@ class L2CapServerViewModel: L2CapBaseViewModel()
                                 advertiser.registerCharacteristicReadDelegate(L2CapConstants.UU_L2CAP_CHANNEL_ENCRYPTED_CHARACTERISTIC_UUID)
                                 {
                                     val buffer = ByteArray(1)
-                                    buffer.uuWriteUInt8(0, if (secure) { 1 } else { 0 })
+                                    val byte = if (secure) { 1 } else { 0 }
+                                    buffer.uuWriteUInt8(0, byte.toUByte())
                                     buffer
                                 }
 

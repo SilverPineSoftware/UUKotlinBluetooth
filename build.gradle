@@ -16,7 +16,7 @@ buildscript {
     ext.uu_build_common = "${uu_build_common_url}/${uu_build_common_version}"
 
     ext.uu_test_version = '0.0.9.33-develop-SNAPSHOT'
-    ext.uu_core_version = '0.0.18.109-develop-SNAPSHOT'
+    ext.uu_core_version = '0.0.18.115-develop-SNAPSHOT'
     ext.uu_ux_version = '0.0.14.110-develop-SNAPSHOT'
 }
 

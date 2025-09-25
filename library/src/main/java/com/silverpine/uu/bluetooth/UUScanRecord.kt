@@ -59,14 +59,14 @@ class UUScanRecord(private val scanResult: ScanResult)
         var index = 0
         while (index < bytes.size)
         {
-            val length = bytes.uuReadUInt8(index)
+            val length = bytes.uuReadUInt8(index).getOrElse { return }.toInt()
             index += Byte.SIZE_BYTES
             if (length == 0)
             {
                 break
             }
 
-            val dataType = bytes.uuReadUInt8(index)
+            val dataType = bytes.uuReadUInt8(index).getOrElse { return }
             index += Byte.SIZE_BYTES
 
             UULog.d(javaClass, "parseScanRecord", "DataType: $dataType")

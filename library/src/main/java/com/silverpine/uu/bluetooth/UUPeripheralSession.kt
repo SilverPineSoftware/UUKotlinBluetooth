@@ -15,6 +15,7 @@ import com.silverpine.uu.core.uuReadUInt16
 import com.silverpine.uu.core.uuReadUInt32
 import com.silverpine.uu.core.uuReadUInt64
 import com.silverpine.uu.core.uuReadUInt8
+import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.core.uuWriteInt16
 import com.silverpine.uu.core.uuWriteInt32
 import com.silverpine.uu.core.uuWriteInt64
@@ -201,6 +202,8 @@ open class UUPeripheralSession(val peripheral: UUPeripheral)
             completion.safeNotify(this, err)
             return
         }
+
+        UULog.d(javaClass, "write", "TX (${data.size}) [${data.uuToHex()}] to $characteristic, withResponse: $withResponse")
 
         if (withResponse)
         {

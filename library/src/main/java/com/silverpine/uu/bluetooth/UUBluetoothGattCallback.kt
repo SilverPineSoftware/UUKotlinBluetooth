@@ -289,7 +289,7 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
         characteristic: BluetoothGattCharacteristic?,
         status: Int)
     {
-        UULog.d(javaClass, "onDescriptorRead", "characteristic: ${characteristic?.uuid}, data: ${characteristic?.value?.uuToHex()} status: $status")
+        UULog.d(javaClass, "onCharacteristicWrite", "characteristic: ${characteristic?.uuid}, data: ${characteristic?.value?.uuToHex()} status: $status")
 
         val chr = characteristic ?: return
         notifyCharacteristicWrite(chr.uuHashLookup(), UUBluetoothError.gattStatusError("onCharacteristicWrite", status))

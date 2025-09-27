@@ -307,6 +307,20 @@ open class UUPeripheralSession(val peripheral: UUPeripheral)
         peripheral.requestConnectionPriority(priority, completion)
     }
 
+    fun requestMtuSize(mtuSize: Int, timeout: Long, completion: UUObjectErrorBlock<Int>)
+    {
+        peripheral.requestMtu(mtuSize, timeout, completion)
+    }
+
+    fun updatePhy(txPhy: Int,
+                  rxPhy: Int,
+                  phyOptions: Int,
+                  timeout: Long,
+                  completion: UUObjectErrorBlock<Pair<Int, Int>>)
+    {
+        peripheral.updatePhy(txPhy, rxPhy, phyOptions, timeout, completion)
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Connection & Disconnection
     ////////////////////////////////////////////////////////////////////////////////////////////////

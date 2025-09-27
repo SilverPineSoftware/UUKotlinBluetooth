@@ -205,6 +205,26 @@ open class UUPeripheralSession(val peripheral: UUPeripheral)
 
         UULog.d(javaClass, "write", "TX (${data.size}) [${data.uuToHex()}] to $characteristic, withResponse: $withResponse")
 
+        val writeType = if (withResponse)
+        {
+            BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
+        }
+        else
+        {
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        }
+
+        peripheral.write(
+            data = data,
+            characteristic = char,
+            timeout = configuration.writeTimeout,
+            writeType = writeType,
+            completion =
+            { error: UUError? ->
+                completion.safeNotify(this, error)
+            })
+
+        /*
         if (withResponse)
         {
             peripheral.write(
@@ -225,7 +245,7 @@ open class UUPeripheralSession(val peripheral: UUPeripheral)
                     { error: UUError? ->
                         completion.safeNotify(this, error)
                     })
-        }
+        }*/
     }
 
     fun startListeningForDataChanges(

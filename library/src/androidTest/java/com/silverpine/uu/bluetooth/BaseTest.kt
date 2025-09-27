@@ -5,10 +5,15 @@ import android.os.Build
 import android.util.Log
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.platform.app.InstrumentationRegistry
+import com.silverpine.uu.test.UUTestPermissions
 import com.silverpine.uu.test.ui.uuAppendOutputLine
 import com.silverpine.uu.test.ui.uuRequestPermissions
 import com.silverpine.uu.test.ui.uuSetTestName
 import org.junit.Rule
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import kotlin.concurrent.atomics.AtomicReference
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
 open class BaseTest
 {
@@ -39,80 +44,44 @@ open class BaseTest
         Log.d(javaClass.name, text)
     }
 
-    private fun requestBluetoothPermissions() //(scenarioRule: ActivityScenarioRule<*>)
+    protected fun testWait(seconds: Long)
     {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
-        {
-            //requestBluetoothPermissionsPost31(scenarioRule)
-
-            val result = activityScenarioRule.uuRequestPermissions(
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.BLUETOOTH_SCAN,
-                    Manifest.permission.BLUETOOTH_CONNECT
-                )
-            )
-        }
-        else
-        {
-            //requestBluetoothPermissionsPre31(scenarioRule)
-
-            val result = activityScenarioRule.uuRequestPermissions(
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                )
-            )
-        }
+        Thread.sleep(seconds * 1000)
     }
 
-    /*
-    companion object
+    private fun requestBluetoothPermissions()
     {
-        suspend fun requestBluetoothPermissions(scenarioRule: ActivityScenarioRule<*>)
-        {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+        UUTestPermissions.grantBlePermissions()
+    }
+
+    @OptIn(ExperimentalAtomicApi::class)
+    protected fun scanOnceForPeripheral(filter: (UUPeripheral)-> Boolean): UUPeripheral?
+    {
+        val latch = CountDownLatch(1)
+        val result = AtomicReference<UUPeripheral?>(null)
+
+        val scanner = UUBluetooth.scanner
+
+        scanner.listChanged =
+        { scanner, peripherals ->
+
+            val found = peripherals.firstOrNull { filter(it) == true }
+            if (found != null)
             {
-                requestBluetoothPermissionsPost31(scenarioRule)
-            }
-            else
-            {
-                requestBluetoothPermissionsPre31(scenarioRule)
+                result.store(found)
+                scanner.stop()
             }
         }
 
-        private suspend fun requestBluetoothPermissionsPre31(scenarioRule: ActivityScenarioRule<*>)
-        {
-            val job = Job()
-
-            scenarioRule.scenario.onActivity()
-            { activity ->
-                UUPermissions.requestPermissions(
-                    activity,
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    1234)
-                { _: String?, _: Boolean -> job.complete() }
-            }
-
-            job.join()
+        scanner.ended =
+        { scanner, error ->
+            latch.countDown()
         }
 
-        private suspend fun requestBluetoothPermissionsPost31(scenarioRule: ActivityScenarioRule<*>)
-        {
-            val job = Job()
+        scanner.start()
 
-            scenarioRule.scenario.onActivity { activity ->
-                UUPermissions.requestMultiplePermissions(
-                    activity,
-                    arrayOf(
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.BLUETOOTH_SCAN,
-                        Manifest.permission.BLUETOOTH_CONNECT
-                    ),
-                    1234
-                ) { job.complete() }
-            }
+        latch.await(30, TimeUnit.SECONDS)
 
-            job.join()
-        }
-    }*/
+        return result.load()
+    }
 }

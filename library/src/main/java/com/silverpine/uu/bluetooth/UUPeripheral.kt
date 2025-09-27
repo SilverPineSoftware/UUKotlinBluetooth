@@ -491,6 +491,7 @@ class UUPeripheral(
         data: ByteArray,
         characteristic: BluetoothGattCharacteristic,
         timeout: Long,
+        writeType: Int,
         completion: UUErrorBlock)
     {
         val identifier = characteristic.uuHashLookup()
@@ -532,7 +533,7 @@ class UUPeripheral(
         {
             debugLog("write:characteristic", "characteristic: ${characteristic.uuid}, tx: ${data.uuToHex()}")
 
-            val err = gatt.uuWrite(data, chr, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
+            val err = gatt.uuWrite(data, chr, writeType) //BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
             if (err != null)
             {
                 bluetoothGattCallback.notifyCharacteristicWrite(identifier, err)
@@ -543,6 +544,7 @@ class UUPeripheral(
         }
     }
 
+    /*
     fun writeWithoutResponse(
         data: ByteArray,
         characteristic: BluetoothGattCharacteristic,
@@ -581,7 +583,7 @@ class UUPeripheral(
             // Notify completion always.  There is no timeout or callback
             completion.safeNotify(err)
         }
-    }
+    }*/
 
     fun write(
         data: ByteArray,
@@ -805,7 +807,7 @@ class UUPeripheral(
 
         uuDispatchMain()
         {
-            debugLog("updatePhy", "Requesting Phy update, txPhy: $txPhy, rxPhy: $rxPhy, phyOptions: $phyOptions'")
+            debugLog("updatePhy", "Requesting Phy update, txPhy: $txPhy, rxPhy: $rxPhy, phyOptions: $phyOptions")
             gatt.setPreferredPhy(txPhy, rxPhy, phyOptions)
             debugLog("updatePhy", "setPreferredPhy called")
 

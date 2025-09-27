@@ -814,20 +814,24 @@ class UUPeripheral(
         }
     }
 
-    fun requestConnectionPriority(priority: Int): Boolean
+    fun requestConnectionPriority(priority: Int, completion: UUObjectErrorBlock<Boolean>)
     {
         val gatt = bluetoothGatt
 
         if (gatt == null)
         {
-            debugLog("updatePhy", "bluetoothGatt is null!")
-            return false
+            debugLog("requestConnectionPriority", "bluetoothGatt is null!")
+            completion(null, UUBluetoothError.notConnectedError())
+            return
         }
 
-        debugLog("requestConnectionPriority", "Requesting connection priority: $priority")
-        val result = gatt.requestConnectionPriority(priority)
-        debugLog("requestHighPriority", "requestConnectionPriority returned $result")
-        return result
+        uuDispatchMain()
+        {
+            debugLog("requestConnectionPriority", "Requesting connection priority: $priority")
+            val result = gatt.requestConnectionPriority(priority)
+            debugLog("requestHighPriority", "requestConnectionPriority returned $result")
+            completion(result, null)
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

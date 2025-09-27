@@ -302,9 +302,9 @@ open class UUPeripheralSession(val peripheral: UUPeripheral)
         )
     }
 
-    fun requestConnectionPriority(priority: Int): Boolean
+    fun requestConnectionPriority(priority: Int, completion: UUObjectErrorBlock<Boolean>)
     {
-        return peripheral.requestConnectionPriority(priority)
+        peripheral.requestConnectionPriority(priority, completion)
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -332,13 +332,22 @@ open class UUPeripheralSession(val peripheral: UUPeripheral)
     private fun disconnect()
     {
         disconnectTimeMeasurement.start()
-        peripheral.disconnect(null) //timeout = configuration.disconnectTimeout)
+        peripheral.disconnect(null)
     }
 
     private fun handleConnected()
     {
         connectTimeMeasurement.end()
-        startServiceDiscovery()
+
+        setupConnection()
+        {
+            startServiceDiscovery()
+        }
+    }
+
+    open fun setupConnection(completion: () -> Unit)
+    {
+        completion()
     }
 
     private fun handleDisconnection(disconnectError: UUError?)

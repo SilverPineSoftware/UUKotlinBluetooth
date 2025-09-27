@@ -12,7 +12,6 @@ import android.bluetooth.BluetoothSocket
 import android.bluetooth.BluetoothStatusCodes
 import android.content.Context
 import android.os.Build
-import android.os.Bundle
 import android.os.Parcelable
 import com.silverpine.uu.bluetooth.UUBluetooth.connectionStateToString
 import com.silverpine.uu.bluetooth.UUBluetooth.gattStatusToString
@@ -813,6 +812,22 @@ class UUPeripheral(
 
             // wait for delegate or timeout
         }
+    }
+
+    fun requestConnectionPriority(priority: Int): Boolean
+    {
+        val gatt = bluetoothGatt
+
+        if (gatt == null)
+        {
+            debugLog("updatePhy", "bluetoothGatt is null!")
+            return false
+        }
+
+        debugLog("requestConnectionPriority", "Requesting connection priority: $priority")
+        val result = gatt.requestConnectionPriority(priority)
+        debugLog("requestHighPriority", "requestConnectionPriority returned $result")
+        return result
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

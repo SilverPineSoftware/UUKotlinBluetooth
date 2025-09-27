@@ -3,6 +3,7 @@ package com.silverpine.uu.bluetooth
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
+import android.renderscript.RenderScript
 import com.silverpine.uu.bluetooth.extensions.uuCommonName
 import com.silverpine.uu.bluetooth.internal.safeNotify
 import com.silverpine.uu.core.UUError
@@ -299,6 +300,11 @@ open class UUPeripheralSession(val peripheral: UUPeripheral)
                     completion(this, error)
                 }
         )
+    }
+
+    fun requestConnectionPriority(priority: Int): Boolean
+    {
+        return peripheral.requestConnectionPriority(priority)
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

@@ -21,7 +21,7 @@ class BleScannerTest: BaseTest()
     {
         UULog.init(UUConsoleLogger())
 
-        val timeout = 20 * UUDate.Constants.millisInOneSecond
+        val timeout = 20 * UUDate.Constants.MILLIS_IN_ONE_SECOND
 
         startTest("BLE Scanner Test")
 

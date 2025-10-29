@@ -169,7 +169,7 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, var model: B
 
             val tx = hex.uuToHexData()
 
-            peripheral.write(tx!!, model, 10000)
+            peripheral.write(tx!!, model, 10000, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
             { e ->
 
                 uuDispatchMain()
@@ -189,7 +189,7 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, var model: B
 
             Log.d("DEBUG", "Writing WWOR $hex")
 
-            peripheral.writeWithoutResponse(tx!!, model)
+            peripheral.write(tx!!, model, 10000, BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE)
             { e ->
 
                 uuDispatchMain()

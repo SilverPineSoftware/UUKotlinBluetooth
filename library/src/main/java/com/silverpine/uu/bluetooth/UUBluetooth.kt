@@ -100,9 +100,9 @@ object UUBluetooth
      */
     object Defaults
     {
-        var connectTimeout: Long = 10 * UUDate.Constants.millisInOneSecond
-        var disconnectTimeout: Long = 10 * UUDate.Constants.millisInOneSecond
-        var operationTimeout: Long = 10 * UUDate.Constants.millisInOneSecond
+        var connectTimeout: Long = 10 * UUDate.Constants.MILLIS_IN_ONE_SECOND
+        var disconnectTimeout: Long = 10 * UUDate.Constants.MILLIS_IN_ONE_SECOND
+        var operationTimeout: Long = 10 * UUDate.Constants.MILLIS_IN_ONE_SECOND
     }
 
     /**

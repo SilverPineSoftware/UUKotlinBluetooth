@@ -3,10 +3,10 @@ package com.silverpine.uu.bluetooth
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
-import android.renderscript.RenderScript
 import com.silverpine.uu.bluetooth.extensions.uuCommonName
 import com.silverpine.uu.bluetooth.internal.safeNotify
 import com.silverpine.uu.core.UUError
+import com.silverpine.uu.core.UUObjectErrorBlock
 import com.silverpine.uu.core.UUTimedMetric
 import com.silverpine.uu.core.uuReadInt16
 import com.silverpine.uu.core.uuReadInt32

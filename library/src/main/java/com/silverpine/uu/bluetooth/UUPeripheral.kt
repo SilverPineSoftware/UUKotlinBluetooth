@@ -19,10 +19,7 @@ import com.silverpine.uu.bluetooth.UUBluetoothConstants.DEFAULT_MTU
 import com.silverpine.uu.bluetooth.internal.safeNotify
 import com.silverpine.uu.bluetooth.internal.uuHashLookup
 import com.silverpine.uu.bluetooth.internal.uuToLowercaseString
-import com.silverpine.uu.core.UUError
-import com.silverpine.uu.core.UUTimer
-import com.silverpine.uu.core.uuDispatchMain
-import com.silverpine.uu.core.uuToHex
+import com.silverpine.uu.core.*
 import com.silverpine.uu.logging.UULog
 import java.io.Closeable
 import java.util.Locale
@@ -532,7 +529,7 @@ class UUPeripheral(
         {
             debugLog("write:characteristic", "characteristic: ${characteristic.uuid}, tx: ${data.uuToHex()}")
 
-            val err = gatt.uuWrite(data, chr, writeType) //BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
+            val err = gatt.uuWrite(data, chr, writeType)
             if (err != null)
             {
                 bluetoothGattCallback.notifyCharacteristicWrite(identifier, err)
@@ -542,47 +539,6 @@ class UUPeripheral(
             // wait for delegate or timeout
         }
     }
-
-    /*
-    fun writeWithoutResponse(
-        data: ByteArray,
-        characteristic: BluetoothGattCharacteristic,
-        completion: UUErrorBlock)
-    {
-        val identifier = characteristic.uuHashLookup()
-
-        val gatt = bluetoothGatt
-
-        if (gatt == null)
-        {
-            debugLog("writeWithoutResponse", "bluetoothGatt is null!")
-            completion.safeNotify(UUBluetoothError.notConnectedError())
-            return
-        }
-
-        val chr = gatt.uuLookupCharacteristic(characteristic)
-
-        if (chr == null)
-        {
-            debugLog("writeWithoutResponse", "characteristic is null!")
-            completion.safeNotify(UUBluetoothError.missingRequiredCharacteristic(characteristic.uuid))
-            return
-        }
-
-        uuDispatchMain()
-        {
-            debugLog("writeWithoutResponse", "characteristic: ${characteristic.uuid}, tx: ${data.uuToHex()}")
-
-            val err = gatt.uuWrite(data, chr, BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE)
-            if (err != null)
-            {
-                bluetoothGattCallback.notifyCharacteristicWrite(identifier, err)
-            }
-
-            // Notify completion always.  There is no timeout or callback
-            completion.safeNotify(err)
-        }
-    }*/
 
     fun write(
         data: ByteArray,

@@ -7,6 +7,12 @@ import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
 import com.silverpine.uu.bluetooth.internal.uuHashLookup
 import com.silverpine.uu.core.UUError
+import com.silverpine.uu.core.UUErrorBlock
+import com.silverpine.uu.core.UUListErrorBlock
+import com.silverpine.uu.core.UUObjectBlock
+import com.silverpine.uu.core.UUObjectErrorBlock
+import com.silverpine.uu.core.UUVoidBlock
+import com.silverpine.uu.core.dispatch
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.logging.UULog
 

@@ -42,7 +42,7 @@ data class UUPeripheralScannerConfig(
 )
 
 internal val UUPeripheralScannerConfig.callbackThrottleMillis: Long
-    get() = callbackThrottle.times(UUDate.Constants.millisInOneSecond).toLong()
+    get() = callbackThrottle.times(UUDate.Constants.MILLIS_IN_ONE_SECOND).toLong()
 
 internal fun UUPeripheralScannerConfig.buildUuidFilters(): List<ScanFilter>?
 {

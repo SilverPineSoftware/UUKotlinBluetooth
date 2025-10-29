@@ -1,5 +1,6 @@
 package com.silverpine.uu.bluetooth
 
+import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
@@ -393,34 +394,43 @@ object UUBluetooth
         return applicationContext!!
     }
 
-    val isBluetoothLeSupported: Boolean
-        get() = try
+    val isBluetoothLeSupported: Result<Boolean>
+        get() = runCatching()
         {
-            requireApplicationContext().packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)
-        }
-        catch (ex: Exception)
-        {
-            false
+            return Result.success(requireApplicationContext().packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE))
         }
 
-    fun getBluetoothState(context: Context): Int?
-    {
-        try
+    val requiredPermissions: Array<String>
+        get()
         {
-            val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-            val adapter = bluetoothManager.adapter
-            if (adapter != null)
+            return buildList()
             {
-                return adapter.state
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+                {
+                    add(Manifest.permission.BLUETOOTH_SCAN)
+                    add(Manifest.permission.BLUETOOTH_CONNECT)
+                }
+                else
+                {
+                    add(Manifest.permission.ACCESS_FINE_LOCATION)
+                }
+            }.toTypedArray()
+        }
+
+    val currentState: Result<UUBluetoothState>
+        get() = runCatching()
+        {
+            val bluetoothManager = requireApplicationContext().getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+            val adapter = bluetoothManager.adapter
+            return if (adapter != null)
+            {
+                Result.success(UUBluetoothState.fromBluetoothState(adapter.state))
+            }
+            else
+            {
+                Result.success(UUBluetoothState.UNKNOWN)
             }
         }
-        catch (ex: Exception)
-        {
-            // Eat it
-        }
-
-        return null
-    }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // L2Cap Support

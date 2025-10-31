@@ -19,7 +19,14 @@ import com.silverpine.uu.bluetooth.UUBluetoothConstants.DEFAULT_MTU
 import com.silverpine.uu.bluetooth.internal.safeNotify
 import com.silverpine.uu.bluetooth.internal.uuHashLookup
 import com.silverpine.uu.bluetooth.internal.uuToLowercaseString
-import com.silverpine.uu.core.*
+import com.silverpine.uu.core.UUError
+import com.silverpine.uu.core.UUErrorBlock
+import com.silverpine.uu.core.UUListErrorBlock
+import com.silverpine.uu.core.UUObjectBlock
+import com.silverpine.uu.core.UUObjectErrorBlock
+import com.silverpine.uu.core.UUTimer
+import com.silverpine.uu.core.uuDispatchMain
+import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.logging.UULog
 import java.io.Closeable
 import java.util.Locale
@@ -29,9 +36,7 @@ typealias UUPeripheralConnectedBlock = (()->Unit)
 typealias UUPeripheralDisconnectedBlock = ((UUError?)->Unit)
 
 @SuppressLint("MissingPermission")
-class UUPeripheral(
-    val advertisement: UUAdvertisement
-): Closeable
+class UUPeripheral(): Closeable
 {
     companion object
     {
@@ -39,14 +44,42 @@ class UUPeripheral(
         val gattCache: UUBluetoothGattCache = UUInMemoryBluetoothGattCache
     }
 
-    /*
-    init
-    {
-        debugLog("init", "Creating peripheral for ${advertisement.address} - ${advertisement.localName}")
-    }
-    */
+    var advertisement: UUAdvertisement = UUAdvertisement()
+        set(value)
+        {
+            field = value
+            this.rssi = advertisement.rssi
+            this.identifier = advertisement.address
+            this.name = deviceCache[identifier]?.name ?: ""
+            this.rssi = advertisement.rssi
+        }
 
-    internal val rootTimerId: String = advertisement.address
+    var rssi: Int = 0
+        set(value)
+        {
+            field = value
+            signalStrength = UUPeripheralSignalStrength.from(value)
+        }
+
+    var firstDiscoveryTime: Long = System.currentTimeMillis()
+    var identifier: String = ""
+    var name: String = ""
+    var services: List<BluetoothGattService>? = null
+    var mtuSize: Int = DEFAULT_MTU
+    var txPhy: Int? = null
+    var rxPhy: Int? = null
+    var peripheralState: UUPeripheralConnectionState = UUPeripheralConnectionState.UNDETERMINED
+    var signalStrength: UUPeripheralSignalStrength = UUPeripheralSignalStrength.VERY_POOR
+
+    val timeSinceLastUpdate: Long
+        get() = System.currentTimeMillis() - advertisement.timestamp
+
+    var userInfo: Parcelable? = null
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Private members
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    private val rootTimerId: String = advertisement.address
 
     private val bluetoothGatt: BluetoothGatt?
         get()
@@ -68,20 +101,6 @@ class UUPeripheral(
 
     private var disconnectedCallback: UUPeripheralDisconnectedBlock? = null
 
-    var rssi: Int = advertisement.rssi
-    var firstDiscoveryTime: Long = 0L
-    var identifier: String = advertisement.address
-    var name: String = deviceCache[identifier]?.name ?: ""
-    var services: List<BluetoothGattService>? = null
-    var mtuSize: Int = DEFAULT_MTU
-    var txPhy: Int? = null
-    var rxPhy: Int? = null
-    var peripheralState: UUPeripheralConnectionState = UUPeripheralConnectionState.UNDETERMINED
-
-    val timeSinceLastUpdate: Long
-        get() = System.currentTimeMillis() - advertisement.timestamp
-
-    var userInfo: Parcelable? = null
 
     fun refreshConnectionState()
     {

@@ -189,11 +189,11 @@ class UUBlePeripheralScanner(context: Context) : UUPeripheralScanner
 
         synchronized(nearbyPeripheralMap)
         {
-            val existing = nearbyPeripheralMap[advertisement.address] ?: UUPeripheral(advertisement)
+            val peripheral = nearbyPeripheralMap[advertisement.address] ?: UUPeripheral()
+            peripheral.advertisement = advertisement
+            peripheral.refreshConnectionState()
 
-            //existing.update(advertisement)
-
-            nearbyPeripheralMap[advertisement.address] = existing
+            nearbyPeripheralMap[advertisement.address] = peripheral
             nearbyPeripherals.value = nearbyPeripheralMap.values.filter { shouldDiscoverPeripheral(it) }
         }
     }

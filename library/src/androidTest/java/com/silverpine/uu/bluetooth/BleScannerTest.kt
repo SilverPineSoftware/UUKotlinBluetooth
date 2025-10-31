@@ -1,6 +1,7 @@
 package com.silverpine.uu.bluetooth
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.silverpine.uu.core.UUDate
 import com.silverpine.uu.core.UUTimer
 import com.silverpine.uu.logging.UUConsoleLogger
@@ -20,13 +21,14 @@ class BleScannerTest: BaseTest()
     fun runScannerTest() = runBlocking()
     {
         UULog.init(UUConsoleLogger())
+        UUBluetooth.init(InstrumentationRegistry.getInstrumentation().targetContext)
 
         val timeout = 20 * UUDate.Constants.MILLIS_IN_ONE_SECOND
 
         startTest("BLE Scanner Test")
 
         val job = Job()
-        val scanner = UUBlePeripheralScanner(context)
+        val scanner = UUBlePeripheralScanner()
 
         appendOutputLine("Starting scanner, timeout: ${timeout / 1000.0f}")
 

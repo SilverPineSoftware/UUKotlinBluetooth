@@ -1,13 +1,10 @@
 package com.silverpine.uu.bluetooth
 
-import android.Manifest
-import android.os.Build
 import android.util.Log
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.platform.app.InstrumentationRegistry
 import com.silverpine.uu.test.UUTestPermissions
 import com.silverpine.uu.test.ui.uuAppendOutputLine
-import com.silverpine.uu.test.ui.uuRequestPermissions
 import com.silverpine.uu.test.ui.uuSetTestName
 import org.junit.Rule
 import java.util.concurrent.CountDownLatch

@@ -1,8 +1,10 @@
 package com.silverpine.uu.bluetooth
 
+import com.silverpine.uu.core.UUError
+
 typealias UUPeripheralListChangedCallback = (UUPeripheralScanner, List<UUPeripheral>) -> Unit
 typealias UUPeripheralScannerStartedCallback = (UUPeripheralScanner) -> Unit
-typealias UUPeripheralScannerStoppedCallback = (UUPeripheralScanner, Error?) -> Unit
+typealias UUPeripheralScannerStoppedCallback = (UUPeripheralScanner, UUError?) -> Unit
 
 interface UUPeripheralScanner
 {
@@ -19,23 +21,3 @@ interface UUPeripheralScanner
 
     fun getPeripheral(identifier: String): UUPeripheral?
 }
-
-
-
-
-
-
-
-
-//
-//
-//internal object UUBluetoothObjects
-//{
-//    val defaultScanner: UUPeripheralScanner by lazy { UUBlePeripheralScanner(requireApplicationContext()) }
-//}
-//
-//val UUBluetooth.defaultScanner: UUPeripheralScanner
-//    get()
-//    {
-//        return UUBluetoothObjects.defaultScanner
-//    }

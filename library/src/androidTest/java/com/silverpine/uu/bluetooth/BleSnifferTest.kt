@@ -2,6 +2,7 @@ package com.silverpine.uu.bluetooth
 
 import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.silverpine.uu.core.UUDate
 import com.silverpine.uu.core.UUTimer
 import com.silverpine.uu.core.uuFormatAsExtendedFileName
@@ -25,7 +26,8 @@ class BleSnifferTest: BaseTest()
     fun runBleSniffer() = runBlocking()
     {
         UULog.init(UUConsoleLogger())
-
+        UUBluetooth.init(InstrumentationRegistry.getInstrumentation().targetContext)
+        
         val timeout = 20 * UUDate.Constants.MILLIS_IN_ONE_SECOND
 
         startTest("BLE Sniffer Test")

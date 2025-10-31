@@ -55,7 +55,12 @@ enum class UUBluetoothErrorCode(val rawValue: Int)
     /**
      * A service discovery operation did not discover any services
      */
-    NoServicesDiscovered(9);
+    NoServicesDiscovered(9),
+
+    /**
+     * The calling application does not have the permissions required to perform the operation
+     */
+    INSUFFICIENT_PERMISSIONS(10);
 
     /**
      *

@@ -7,6 +7,7 @@ import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.content.Context
+import com.silverpine.uu.core.UUError
 import com.silverpine.uu.logging.UULog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -22,16 +23,13 @@ import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
 @SuppressLint("MissingPermission")
-class UUBlePeripheralScanner(context: Context) : UUPeripheralScanner
+class UUBlePeripheralScanner : UUPeripheralScanner
 {
     val deviceCache: UUBluetoothDeviceCache = UUInMemoryBluetoothDeviceCache
 
     private val nearbyPeripheralMap: MutableMap<String, UUPeripheral> = mutableMapOf()
-    //private var scanSettings = UUBluetoothScanSettings()
-    //private var nearbyPeripheralCallback: (List<UUPeripheral>) -> Unit = {}
     private val nearbyPeripherals = MutableStateFlow<List<UUPeripheral>>(emptyList())
     private val scope = CoroutineScope(Dispatchers.IO)
-
 
     private var nearbyPeripheralSubscription: Job? = null
 
@@ -59,7 +57,7 @@ class UUBlePeripheralScanner(context: Context) : UUPeripheralScanner
 
     init
     {
-        val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        val bluetoothManager = UUBluetooth.requireApplicationContext().getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothAdapter = bluetoothManager.adapter
         bluetoothLeScanner = bluetoothAdapter.bluetoothLeScanner
     }
@@ -75,6 +73,13 @@ class UUBlePeripheralScanner(context: Context) : UUPeripheralScanner
     @OptIn(FlowPreview::class)
     override fun start()
     {
+        val error = UUBluetooth.checkPermissions()
+        if (error != null)
+        {
+            notifyScanEnded(error)
+            return
+        }
+
         // cancel any existing subscription
         nearbyPeripheralSubscription?.cancel()
 
@@ -154,7 +159,7 @@ class UUBlePeripheralScanner(context: Context) : UUPeripheralScanner
         started(this)
     }
 
-    private fun notifyScanEnded(error: Error?)
+    private fun notifyScanEnded(error: UUError?)
     {
         ended(this, error)
     }

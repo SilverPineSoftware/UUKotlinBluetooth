@@ -1,15 +1,13 @@
 package com.silverpine.uu.bluetooth
 
-import android.content.Context
-
-class UUDefaultProvider(applicationContext: Context): UUBluetoothProvider
+class UUDefaultProvider: UUBluetoothProvider
 {
-    override fun initialize()
-    {
-        // Do something to prompt for BLE permissions
-    }
+//    override fun initialize()
+//    {
+//        // Do something to prompt for BLE permissions
+//    }
 
-    override var scanner: UUPeripheralScanner = UUBlePeripheralScanner(applicationContext)
+    override var scanner: UUPeripheralScanner = UUBlePeripheralScanner()
 
     /*override fun createSession(peripheral: UUPeripheral): UUPeripheralSession
     {

@@ -14,7 +14,9 @@ import android.os.Build
 import android.os.ParcelUuid
 import androidx.annotation.RequiresApi
 import androidx.annotation.RequiresPermission
+import androidx.core.content.ContextCompat
 import com.silverpine.uu.core.UUDate
+import com.silverpine.uu.core.UUError
 import com.silverpine.uu.core.uuIsBitSet
 import com.silverpine.uu.core.uuToHexData
 import java.util.Locale
@@ -58,17 +60,51 @@ object UUBluetooth
 {
     //private var provider: UUBluetoothProvider lazy by { UUDefaultProvider() }
 
-    private lateinit var provider: UUBluetoothProvider// by lazy { UUDefaultProvider() }
+    //private lateinit var provider: UUBluetoothProvider// by lazy { UUDefaultProvider() }
+
+    private var provider: UUBluetoothProvider? = null
+
+    /*
+    private var provider: UUBluetoothProvider
+        get()
+        {
+            var p = _provider
+            if (p == null)
+            {
+                p = UUDefaultProvider()
+                _provider = p
+            }
+
+            return p
+        }
+
+        set(value)
+        {
+            _provider = value
+        }*/
+
 
     fun setProvider(provider: UUBluetoothProvider)
     {
         this.provider = provider
     }
 
+    private fun getProvider(): UUBluetoothProvider
+    {
+        var p = provider
+        if (p == null)
+        {
+            p = UUDefaultProvider()
+            provider = p
+        }
+
+        return p
+    }
+
     val scanner: UUPeripheralScanner
         get()
         {
-            return provider.scanner
+            return getProvider().scanner
         }
 
     /*fun createSession(peripheral: UUPeripheral): UUPeripheralSession
@@ -375,23 +411,23 @@ object UUBluetooth
      * classes or methods.  Pass an applicationContext only.
      *
      * @param applicationContext application context
-     * @param provider provider
      */
-    fun init(applicationContext: Context, provider: UUBluetoothProvider = UUDefaultProvider(applicationContext))
+    fun init(applicationContext: Context) //, provider: UUBluetoothProvider = UUDefaultProvider())
     {
         UUBluetooth.applicationContext = applicationContext
 
-        setProvider(provider)
+        //setProvider(provider)
     }
 
     fun requireApplicationContext(): Context
     {
-        if (applicationContext == null)
+        val ctx = applicationContext
+        if (ctx == null)
         {
             throw RuntimeException("applicationContext is null. Must call UUBluetooth.init(Context) on app startup.")
         }
 
-        return applicationContext!!
+        return ctx
     }
 
     val isBluetoothLeSupported: Result<Boolean>
@@ -416,6 +452,87 @@ object UUBluetooth
                 }
             }.toTypedArray()
         }
+
+    /**
+     * Checks both manifest and runtime permissions for Bluetooth operations.
+     * This is a convenience method that first verifies permissions are declared in the manifest,
+     * then checks if they are granted at runtime.
+     *
+     * @return null if all required permissions are declared in the manifest and granted at runtime,
+     * or a UUError with INSUFFICIENT_PERMISSIONS error code if any required permissions are missing
+     * from the manifest or not granted at runtime. Returns null if unable to check permissions.
+     */
+    fun checkPermissions(): UUError?
+    {
+        return checkManifestPermissions() ?: checkRuntimePermissions()
+    }
+
+    /**
+     * Checks if the required Bluetooth permissions are granted at runtime by the user.
+     * This validates that permissions declared in the manifest have been granted by the user.
+     * For Android 6.0+ (API 23+), dangerous permissions require explicit user approval.
+     *
+     * @return null if all required permissions are granted at runtime, or a UUError with
+     * INSUFFICIENT_PERMISSIONS error code if any required permissions are not granted.
+     * Returns null if unable to check runtime permissions.
+     */
+    fun checkRuntimePermissions(): UUError?
+    {
+        val ctx = requireApplicationContext()
+
+        return runCatching()
+        {
+            val anyNeeded = requiredPermissions.any()
+            { permission ->
+                ContextCompat.checkSelfPermission(ctx, permission) != PackageManager.PERMISSION_GRANTED
+            }
+
+            return if (anyNeeded)
+            {
+                UUBluetoothError.makeError(UUBluetoothErrorCode.INSUFFICIENT_PERMISSIONS)
+            }
+            else
+            {
+                null
+            }
+        }.getOrNull()
+    }
+
+    /**
+     * Checks if the required Bluetooth permissions are declared in the calling application's AndroidManifest.xml.
+     * This validates that the app has properly declared the necessary permissions in its manifest,
+     * which is required for Bluetooth operations to work correctly.
+     *
+     * @return null if all required permissions are declared in the manifest, or a UUError with
+     * INSUFFICIENT_PERMISSIONS error code if any required permissions are missing from the manifest.
+     * Returns null if unable to check the manifest (e.g., package info unavailable).
+     */
+    fun checkManifestPermissions(): UUError?
+    {
+        return runCatching()
+        {
+            val context = requireApplicationContext()
+            val packageManager = context.packageManager
+            val packageName = context.packageName
+            val packageInfo = packageManager.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS)
+
+            val declaredPermissions = packageInfo.requestedPermissions?.toSet() ?: emptySet()
+            val missingPermissions = requiredPermissions.filter { permission ->
+                !declaredPermissions.contains(permission)
+            }
+
+            if (missingPermissions.isNotEmpty())
+            {
+                val err = UUBluetoothError.makeError(UUBluetoothErrorCode.INSUFFICIENT_PERMISSIONS)
+                err.errorDescription = "Required Bluetooth permissions are missing from AndroidManifest.xml: ${missingPermissions.joinToString(", ")}"
+                err
+            }
+            else
+            {
+                null
+            }
+        }.getOrNull()
+    }
 
     val currentState: Result<UUBluetoothState>
         get() = runCatching()

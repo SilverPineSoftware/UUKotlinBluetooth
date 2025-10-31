@@ -14,7 +14,7 @@ interface UUBluetoothProvider
 interface UUBluetoothProvider
 {
     /// Sets up the Bluetooth stack, including the central manager and related services.
-    fun initialize()
+    //fun initialize()
 
     /// The central manager responsible for discovering and connecting to BLE peripherals.
     // var centralManager: UUCentralManager { get }

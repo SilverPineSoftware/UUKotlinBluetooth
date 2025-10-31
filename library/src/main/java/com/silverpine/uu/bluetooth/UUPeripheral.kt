@@ -44,6 +44,11 @@ class UUPeripheral(): Closeable
         val gattCache: UUBluetoothGattCache = UUInMemoryBluetoothGattCache
     }
 
+    constructor(advertisement: UUAdvertisement): this()
+    {
+        this.advertisement = advertisement
+    }
+
     var advertisement: UUAdvertisement = UUAdvertisement()
         set(value)
         {
@@ -72,20 +77,18 @@ class UUPeripheral(): Closeable
     var signalStrength: UUPeripheralSignalStrength = UUPeripheralSignalStrength.VERY_POOR
 
     val timeSinceLastUpdate: Long
-        get() = System.currentTimeMillis() - advertisement.timestamp
+        get() = (System.currentTimeMillis() - advertisement.timestamp)
 
     var userInfo: Parcelable? = null
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Private members
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    private val rootTimerId: String = advertisement.address
+    private val rootTimerId: String
+        get() = advertisement.address
 
     private val bluetoothGatt: BluetoothGatt?
-        get()
-        {
-            return gattCache[identifier]
-        }
+        get() = gattCache[identifier]
 
     private val bluetoothGattCallback: UUBluetoothGattCallback = UUBluetoothGattCallback()
 

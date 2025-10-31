@@ -3,7 +3,6 @@ package com.silverpine.uu.sample.bluetooth.ui
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattService
 import android.content.Intent
-import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -75,7 +74,7 @@ class PeripheralDetailActivity : UURecyclerActivity(layoutResourceId = R.layout.
 
     override fun populateMenu(menuHandler: UUMenuHandler)
     {
-        if (peripheral.peripheralState == UUPeripheralConnectionState.Connected)
+        if (peripheral.peripheralState == UUPeripheralConnectionState.CONNECTED)
         {
             menuHandler.add(R.string.disconnect, this::handleDisconnect)
             menuHandler.add(R.string.discover_services, this::handleDiscoverServices)

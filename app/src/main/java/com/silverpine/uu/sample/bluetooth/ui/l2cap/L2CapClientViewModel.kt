@@ -215,7 +215,7 @@ class L2CapClientViewModel: L2CapBaseViewModel()
             list.add(UUMenuItem(R.string.connect_l2cap, this::onConnect))
         }
 
-        if (peripheral.peripheralState != UUPeripheralConnectionState.Connected)
+        if (peripheral.peripheralState != UUPeripheralConnectionState.CONNECTED)
         {
             list.add(UUMenuItem(R.string.connect_gatt, this::onConnectGatt))
         }

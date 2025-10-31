@@ -76,7 +76,7 @@ class UUPeripheral(
     var mtuSize: Int = DEFAULT_MTU
     var txPhy: Int? = null
     var rxPhy: Int? = null
-    var peripheralState: UUPeripheralConnectionState = UUPeripheralConnectionState.Undetermined
+    var peripheralState: UUPeripheralConnectionState = UUPeripheralConnectionState.UNDETERMINED
 
     val timeSinceLastUpdate: Long
         get() = System.currentTimeMillis() - advertisement.timestamp
@@ -89,7 +89,7 @@ class UUPeripheral(
         if (bluetoothDevice == null)
         {
             debugLog("connect", "WARNING -- Bluetooth Device not found $identifier")
-            peripheralState = UUPeripheralConnectionState.Undetermined
+            peripheralState = UUPeripheralConnectionState.UNDETERMINED
             return
         }
 

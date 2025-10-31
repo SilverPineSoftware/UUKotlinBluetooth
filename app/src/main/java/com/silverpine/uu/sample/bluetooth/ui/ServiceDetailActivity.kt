@@ -61,7 +61,7 @@ class ServiceDetailActivity: UURecyclerActivity(layoutResourceId = R.layout.recy
 
     override fun populateMenu(menuHandler: UUMenuHandler)
     {
-        if (peripheral.peripheralState == UUPeripheralConnectionState.Connected)
+        if (peripheral.peripheralState == UUPeripheralConnectionState.CONNECTED)
         {
             menuHandler.add(R.string.disconnect, this::handleDisconnect)
             menuHandler.add(R.string.read_all, this::handleReadAll)

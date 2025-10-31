@@ -1,7 +1,7 @@
 package com.silverpine.uu.bluetooth
 
 import com.silverpine.uu.test.UUParcelableBaseTest
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 class UUAdvertisementParcelableTest: UUParcelableBaseTest<UUAdvertisement>()
 {

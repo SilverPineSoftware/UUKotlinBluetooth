@@ -7,24 +7,24 @@ import android.content.Context
 import com.silverpine.uu.core.UUError
 import com.silverpine.uu.core.UUTimer
 import com.silverpine.uu.logging.UULog
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 @OptIn(ExperimentalAtomicApi::class)
 class UUPeripheralTests
 {
-    @Before
+    @BeforeEach
     fun setupTests()
     {
         UULog.init(UnitTestLogger())
@@ -201,7 +201,7 @@ class UUPeripheralTests
 
         val cb = capturedCallback.load()
         assertNotNull(cb, "BluetoothGattCallback was not captured")
-        cb.onConnectionStateChange(gatt, BluetoothGatt.GATT_SUCCESS, BluetoothGatt.STATE_CONNECTED)
+        cb!!.onConnectionStateChange(gatt, BluetoothGatt.GATT_SUCCESS, BluetoothGatt.STATE_CONNECTED)
 
         // Assert
         assertTrue(connectedLatch.await(1, TimeUnit.SECONDS), "connected callback did not fire")
@@ -276,7 +276,7 @@ class UUPeripheralTests
 
         val cb = capturedCallback.load()
         assertNotNull(cb, "BluetoothGattCallback was not captured")
-        cb.onConnectionStateChange(gatt, BluetoothGatt.GATT_FAILURE, BluetoothGatt.STATE_DISCONNECTED)
+        cb!!.onConnectionStateChange(gatt, BluetoothGatt.GATT_FAILURE, BluetoothGatt.STATE_DISCONNECTED)
 
         // Assert
         assertTrue(disconnectedLatch.await(1, TimeUnit.SECONDS), "disconnected callback did not fire")
@@ -288,7 +288,7 @@ class UUPeripheralTests
 
         val err = disconnectedError.load()
         assertNotNull(err, "Expected an error")
-        assertEquals(err.code, UUBluetoothErrorCode.ConnectionFailed.rawValue)
+        assertEquals(err!!.code, UUBluetoothErrorCode.ConnectionFailed.rawValue)
     }
 }
 

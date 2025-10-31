@@ -42,15 +42,7 @@ enum class UUPeripheralConnectionState
          */
         fun fromString(string: String?): UUPeripheralConnectionState
         {
-            for (s in entries)
-            {
-                if (s.toString().equals(string, ignoreCase = true))
-                {
-                    return s
-                }
-            }
-
-            return DISCONNECTED
+            return entries.firstOrNull { it.name.equals(string, ignoreCase = true) } ?: DISCONNECTED
         }
 
         /**

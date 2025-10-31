@@ -7,14 +7,16 @@ import com.silverpine.uu.bluetooth.internal.uuHashLookup
 import com.silverpine.uu.bluetooth.internal.uuToLowercaseString
 import com.silverpine.uu.core.UUError
 import com.silverpine.uu.logging.UULog
-import com.silverpine.uu.logging.UULogger
 import com.silverpine.uu.test.uuRandomBytes
 import io.mockk.every
 import io.mockk.mockkObject
-import junit.framework.TestCase.assertNull
-import junit.framework.TestCase.fail
-import org.junit.Assert.assertArrayEquals
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertArrayEquals
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.fail
+import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import java.util.UUID
@@ -24,9 +26,6 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 
 @Suppress("Deprecation")
 @OptIn(ExperimentalAtomicApi::class)
@@ -177,7 +176,8 @@ class UUBluetoothGattCallbackTests
     }
 
     @Test
-    fun multipleIds_areIndependent_andEachPopsSeparately() {
+    fun multipleIds_areIndependent_andEachPopsSeparately()
+    {
         val cb = UUBluetoothGattCallback()
         val idA = "char-A"
         val idB = "char-B"
@@ -236,7 +236,7 @@ class UUBluetoothGattCallbackTests
         cb.registerReadDescriptorCallback(id)
         { bytes, error ->
             called.set(true)
-            assertNull("No error expected", error)
+            assertNull(error)
             valueOk.set(bytes?.contentEquals(byteArrayOf(0x55, 0x66)) == true)
             latch.countDown()
         }
@@ -397,13 +397,13 @@ class UUBluetoothGattCallbackTests
             {
                 1 ->
                     {
-                    assertArrayEquals("first payload mismatch", byteArrayOf(0x01), bytes)
+                    assertArrayEquals(byteArrayOf(0x01), bytes, "first payload mismatch")
                     first.countDown()
                 }
 
                 2 ->
                     {
-                    assertArrayEquals("second payload mismatch", byteArrayOf(0x02), bytes)
+                    assertArrayEquals(byteArrayOf(0x02), bytes, "second payload mismatch")
                     second.countDown()
                 }
             }
@@ -447,13 +447,13 @@ class UUBluetoothGattCallbackTests
             {
                 1 ->
                 {
-                    assertArrayEquals("first payload mismatch", byteArrayOf(0x01), bytes)
+                    assertArrayEquals(byteArrayOf(0x01), bytes, "first payload mismatch")
                     first.countDown()
                 }
 
                 2 ->
                 {
-                    assertArrayEquals("second payload mismatch", byteArrayOf(0x02), bytes)
+                    assertArrayEquals(byteArrayOf(0x02), bytes, "second payload mismatch")
                     second.countDown()
                 }
             }
@@ -1237,7 +1237,7 @@ class UUBluetoothGattCallbackTests
         cb.onCharacteristicRead(null, ch, 0)
 
         assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
-        assertArrayEquals("payload mismatch", byteArrayOf(0x01, 0x02), got.load())
+        assertArrayEquals(byteArrayOf(0x01, 0x02), got.load(), "payload mismatch", )
         assertEquals(null, gotErr.load(), "error should be null")
 
         // one-shot pop
@@ -1347,7 +1347,7 @@ class UUBluetoothGattCallbackTests
         cb.onCharacteristicRead(mockGatt(), ch, value, 0)
 
         assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
-        assertArrayEquals("payload mismatch", value, got.load())
+        assertArrayEquals(value, got.load(), "payload mismatch")
         assertEquals(null, gotErr.load(), "error should be null")
     }
 
@@ -1490,7 +1490,7 @@ class UUBluetoothGattCallbackTests
         cb.onDescriptorRead(null, d, 0)
 
         assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
-        assertArrayEquals("payload mismatch", bytes, got.load())
+        assertArrayEquals(bytes, got.load(), "payload mismatch")
         assertEquals(null, gotErr.load(), "error should be null")
     }
 
@@ -1581,7 +1581,7 @@ class UUBluetoothGattCallbackTests
         cb.onDescriptorRead(mockGatt(), d, 0, value)
 
         assertTrue(latch.await(1, TimeUnit.SECONDS), "callback did not fire")
-        assertArrayEquals("payload mismatch", value, got.load())
+        assertArrayEquals(value, got.load(), "payload mismatch")
         assertEquals(null, gotErr.load(), "error should be null")
     }
 

@@ -16,3 +16,18 @@ val UUID.uuIsBluetoothShortCode: Boolean
         val regex = Regex("^0000[0-9A-Fa-f]{4}-0000-1000-8000-00805F9B34FB$")
         return regex.matches(this.toString().uppercase())
     }
+
+
+/**
+ * if this is a valid Bluetooth 16-bit short code, returns the four characters of short code
+ */
+val UUID.uuBluetoothShortCode: String?
+    get()
+    {
+        if (!uuIsBluetoothShortCode)
+        {
+            return null
+        }
+
+        return runCatching { toString().uppercase().substring(4, 8) }.getOrNull()
+    }

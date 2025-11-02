@@ -1,7 +1,12 @@
 package com.silverpine.uu.bluetooth
 
 import com.silverpine.uu.bluetooth.extensions.uuIsBluetoothShortCode
+import com.silverpine.uu.bluetooth.extensions.uuBluetoothShortCode
+import com.silverpine.uu.bluetooth.uuShortCodeToUuid
+import com.silverpine.uu.bluetooth.uuUuidFromString
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -114,6 +119,98 @@ class UUIDExtensionTests
             assertTrue(uuShortCodeToUuid("FFFF").uuIsBluetoothShortCode) // Maximum
             assertTrue(uuShortCodeToUuid("0001").uuIsBluetoothShortCode) // Minimum + 1
             assertTrue(uuShortCodeToUuid("FFFE").uuIsBluetoothShortCode) // Maximum - 1
+        }
+    }
+
+    @Nested
+    inner class UUBluetoothShortCodeTests
+    {
+        @Test
+        fun uuBluetoothShortCode_validShortCodes_returnsCorrectCode()
+        {
+            // Test with valid short codes
+            assertEquals("0000", uuShortCodeToUuid("0000").uuBluetoothShortCode)
+            assertEquals("0001", uuShortCodeToUuid("0001").uuBluetoothShortCode)
+            assertEquals("FFFF", uuShortCodeToUuid("FFFF").uuBluetoothShortCode)
+            assertEquals("FFE0", uuShortCodeToUuid("FFE0").uuBluetoothShortCode)
+            assertEquals("1800", uuShortCodeToUuid("1800").uuBluetoothShortCode)
+            assertEquals("2A37", uuShortCodeToUuid("2A37").uuBluetoothShortCode)
+            assertEquals("ABCD", uuShortCodeToUuid("ABCD").uuBluetoothShortCode)
+            assertEquals("1234", uuShortCodeToUuid("1234").uuBluetoothShortCode)
+        }
+
+        @Test
+        fun uuBluetoothShortCode_caseInsensitiveInput_returnsUppercase()
+        {
+            // Test that lowercase input is converted to uppercase
+            assertEquals("FF00", uuShortCodeToUuid("ff00").uuBluetoothShortCode)
+            assertEquals("FF00", uuShortCodeToUuid("FF00").uuBluetoothShortCode)
+            assertEquals("FF00", uuShortCodeToUuid("Ff00").uuBluetoothShortCode)
+            assertEquals("FF00", uuShortCodeToUuid("fF00").uuBluetoothShortCode)
+            assertEquals("ABCD", uuShortCodeToUuid("abcd").uuBluetoothShortCode)
+            assertEquals("ABCD", uuShortCodeToUuid("AbCd").uuBluetoothShortCode)
+        }
+
+        @Test
+        fun uuBluetoothShortCode_explicitValidFormats_returnsCorrectCode()
+        {
+            // Test explicit UUID strings
+            assertEquals("0000", uuUuidFromString("00000000-0000-1000-8000-00805F9B34FB").uuBluetoothShortCode)
+            assertEquals("FFFF", uuUuidFromString("0000FFFF-0000-1000-8000-00805F9B34FB").uuBluetoothShortCode)
+            assertEquals("ABCD", uuUuidFromString("0000ABCD-0000-1000-8000-00805F9B34FB").uuBluetoothShortCode)
+            assertEquals("ABCD", uuUuidFromString("0000abcd-0000-1000-8000-00805F9B34FB").uuBluetoothShortCode)
+            assertEquals("1234", uuUuidFromString("00001234-0000-1000-8000-00805F9B34FB").uuBluetoothShortCode)
+        }
+
+        @Test
+        fun uuBluetoothShortCode_invalidUuid_returnsNull()
+        {
+            // Test that invalid UUIDs return null
+            assertNull(uuUuidFromString("10000000-0000-1000-8000-00805F9B34FB").uuBluetoothShortCode)
+            assertNull(uuUuidFromString("FFFF0000-0000-1000-8000-00805F9B34FB").uuBluetoothShortCode)
+            assertNull(UUID.randomUUID().uuBluetoothShortCode)
+            assertNull(uuUuidFromString("F000FFC0-0451-4000-B000-000000000000").uuBluetoothShortCode)
+            assertNull(uuUuidFromString("12345678-1234-1234-1234-123456789012").uuBluetoothShortCode)
+        }
+
+        @Test
+        fun uuBluetoothShortCode_standardBluetoothServices_returnsCorrectCode()
+        {
+            // Test with real Bluetooth service UUIDs
+            assertEquals("1800", uuShortCodeToUuid("1800").uuBluetoothShortCode) // Generic Access
+            assertEquals("1801", uuShortCodeToUuid("1801").uuBluetoothShortCode) // Generic Attribute
+            assertEquals("180D", uuShortCodeToUuid("180D").uuBluetoothShortCode) // Heart Rate
+            assertEquals("180F", uuShortCodeToUuid("180F").uuBluetoothShortCode) // Battery Service
+            assertEquals("1811", uuShortCodeToUuid("1811").uuBluetoothShortCode) // Alert Notification Service
+            assertEquals("2A37", uuShortCodeToUuid("2A37").uuBluetoothShortCode) // Heart Rate Measurement
+        }
+
+        @Test
+        fun uuBluetoothShortCode_boundaryValues_returnsCorrectCode()
+        {
+            // Test boundary values
+            assertEquals("0000", uuShortCodeToUuid("0000").uuBluetoothShortCode) // Minimum
+            assertEquals("FFFF", uuShortCodeToUuid("FFFF").uuBluetoothShortCode) // Maximum
+            assertEquals("0001", uuShortCodeToUuid("0001").uuBluetoothShortCode) // Minimum + 1
+            assertEquals("FFFE", uuShortCodeToUuid("FFFE").uuBluetoothShortCode) // Maximum - 1
+        }
+
+        @Test
+        fun uuBluetoothShortCode_wrongPrefix_returnsNull()
+        {
+            // Test UUIDs that don't start with 0000
+            assertNull(uuUuidFromString("10000000-0000-1000-8000-00805F9B34FB").uuBluetoothShortCode)
+            assertNull(uuUuidFromString("FFFF0000-0000-1000-8000-00805F9B34FB").uuBluetoothShortCode)
+        }
+
+        @Test
+        fun uuBluetoothShortCode_wrongPattern_returnsNull()
+        {
+            // Test UUIDs with wrong middle sections or suffix
+            assertNull(uuUuidFromString("00000000-0001-1000-8000-00805F9B34FB").uuBluetoothShortCode)
+            assertNull(uuUuidFromString("00000000-0000-2000-8000-00805F9B34FB").uuBluetoothShortCode)
+            assertNull(uuUuidFromString("00000000-0000-1000-9000-00805F9B34FB").uuBluetoothShortCode)
+            assertNull(uuUuidFromString("00000000-0000-1000-8000-00805F9B34FC").uuBluetoothShortCode)
         }
     }
 }

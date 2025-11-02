@@ -2,14 +2,12 @@ package com.silverpine.uu.sample.bluetooth.viewmodel
 
 import android.os.ParcelUuid
 import android.text.TextUtils
-import android.util.SparseArray
 import android.view.View
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.silverpine.uu.bluetooth.UUPeripheral
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModel
-import androidx.core.util.size
 
 class UUPeripheralViewModel(val model: UUPeripheral): UUAdapterItemViewModel()
 {
@@ -40,21 +38,21 @@ class UUPeripheralViewModel(val model: UUPeripheral): UUAdapterItemViewModel()
 
         model.advertisement.manufacturingData?.let()
         {
-            _manufacturingData.value = formatSparseArray(it)
+            _manufacturingData.value = formatManufacturingData(it)
         } ?: run()
         {
             _manufacturingData.value = ""
         }
     }
 
-    fun formatSparseArray(sparseArray: SparseArray<ByteArray>): String
+    fun formatManufacturingData(mfgData: Map<Int,ByteArray>): String
     {
         val builder = StringBuilder()
 
-        for (i in 0 until sparseArray.size)
+        for (entry in mfgData)
         {
-            val key = sparseArray.keyAt(i)
-            val value = sparseArray.valueAt(i)
+            val key = entry.key
+            val value = entry.value
 
             val valueString = value.uuToHex()
             builder.append("$key: $valueString\n")

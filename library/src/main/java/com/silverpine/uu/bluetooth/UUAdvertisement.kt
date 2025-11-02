@@ -15,7 +15,7 @@ class UUAdvertisement(
     val rssi: Int = 0,
     val localName: String = "",
     val isConnectable: Boolean = false,
-    val manufacturingData: SparseArray<ByteArray>? = null,
+    val manufacturingData: Map<Int,ByteArray>? = null,
     val transmitPower: Int = 0,
     val primaryPhy: Int = 0,
     val secondaryPhy: Int = 0,
@@ -31,7 +31,7 @@ class UUAdvertisement(
         rssi = scanResult.rssi,
         localName = scanResult.scanRecord?.deviceName ?: "",
         isConnectable = scanResult.isConnectable,
-        manufacturingData = scanResult.scanRecord?.manufacturerSpecificData,
+        manufacturingData = scanResult.scanRecord?.manufacturerSpecificData?.uuToByteArrayMap(),
         transmitPower = scanResult.txPower,
         primaryPhy = scanResult.primaryPhy,
         secondaryPhy = scanResult.secondaryPhy,
@@ -66,10 +66,10 @@ class UUAdvertisement(
 
             if (manufacturingData.size != other.manufacturingData.size) return false
 
-            for (i in 0 until manufacturingData.size)
+            for (entry in manufacturingData)
             {
-                val key = manufacturingData.keyAt(i)
-                val v1 = manufacturingData.valueAt(i)
+                val key = entry.key
+                val v1 = entry.value
                 val v2 = other.manufacturingData.get(key)
                 if (v2 == null || !v1.contentEquals(v2)) return false
             }
@@ -108,12 +108,12 @@ class UUAdvertisement(
         result = 31 * result + (manufacturingData?.let()
         {
             var h = 1
-            for (i in 0 until it.size)
+            for (entry in manufacturingData)
             {
-                val key = it.keyAt(i)
-                val value = it.valueAt(i)
+                val key = entry.key
+                val value = entry.value
                 h = 31 * h + key
-                h = 31 * h + (value?.contentHashCode() ?: 0)
+                h = 31 * h + value.contentHashCode()
             }
             h
         } ?: 0)
@@ -144,4 +144,23 @@ internal fun ScanResult.uuSolicitedServices(): List<UUID>?
     {
         null
     }
+}
+
+/**
+ * Converts this [SparseArray] of [ByteArray] values into a [Map] of key-value pairs.
+ *
+ * @return a new [Map] containing all key-value pairs from this [SparseArray].
+ */
+internal fun SparseArray<ByteArray>.uuToByteArrayMap(): Map<Int, ByteArray>
+{
+    val result = mutableMapOf<Int, ByteArray>()
+
+    for (i in 0 until size)
+    {
+        val key = keyAt(i)
+        val value = valueAt(i)
+        result[key] = value
+    }
+
+    return result
 }

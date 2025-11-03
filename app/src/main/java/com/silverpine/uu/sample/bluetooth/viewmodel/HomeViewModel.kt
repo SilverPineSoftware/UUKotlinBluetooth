@@ -1,6 +1,7 @@
 package com.silverpine.uu.sample.bluetooth.viewmodel
 
 import android.os.Bundle
+import android.util.Log
 import com.silverpine.uu.bluetooth.UUBluetooth
 import com.silverpine.uu.bluetooth.UUBluetoothSniffer
 import com.silverpine.uu.bluetooth.UUPeripheral
@@ -138,6 +139,7 @@ class HomeViewModel: RecyclerViewModel()
     private fun onPeripheralTapped(peripheral: UUPeripheral)
     {
         val items: ArrayList<UUButton> = ArrayList()
+        items.add(UUButton("Connect") { connectToPeripheral(peripheral) })
         items.add(UUButton("View Services") { gotoPeripheralServices(peripheral) })
         items.add(UUButton("Read Info") { readDeviceInfo(peripheral) })
         items.add(UUButton("Start L2Cap Client") { gotoL2CapClient(peripheral) })
@@ -148,6 +150,24 @@ class HomeViewModel: RecyclerViewModel()
         dlg.items = items
 
         showAlertDialog(dlg)
+    }
+
+    private fun connectToPeripheral(peripheral: UUPeripheral)
+    {
+        peripheral.connect(60000,
+            {
+
+                Log.d("LOG", "Peripheral connected")
+                //uuShowToast("Connected")
+                //refreshUi()
+
+            },
+            { disconnectError ->
+
+                Log.d("LOG", "Peripheral disconnected")
+                //uuShowToast("Disconnected")
+                //refreshUi()
+            })
     }
 
     private fun gotoPeripheralServices(peripheral: UUPeripheral)

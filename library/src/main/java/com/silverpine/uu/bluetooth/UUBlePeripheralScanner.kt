@@ -196,7 +196,7 @@ class UUBlePeripheralScanner : UUPeripheralScanner
         {
             val peripheral = nearbyPeripheralMap[advertisement.address] ?: UUPeripheral()
             peripheral.advertisement = advertisement
-            peripheral.refreshConnectionState()
+            peripheral.refreshConnectionState(false)
 
             nearbyPeripheralMap[advertisement.address] = peripheral
             nearbyPeripherals.value = nearbyPeripheralMap.values.filter { shouldDiscoverPeripheral(it) }

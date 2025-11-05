@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+    <string name="uu_gatt_success" formatted="false">Success</string>
+    <string name="uu_gatt_read_not_permitted" formatted="false">ReadNotPermitted</string>
+    <string name="uu_gatt_success" formatted="false">Success</string>
+    <string name="uu_gatt_success" formatted="false">Success</string>
+
+
+    BluetoothGatt.GATT_SUCCESS -> "Success"
+    BluetoothGatt.GATT_READ_NOT_PERMITTED -> "ReadNotPermitted"
+    BluetoothGatt.GATT_WRITE_NOT_PERMITTED -> "WriteNotPermitted"
+    BluetoothGatt.GATT_INSUFFICIENT_AUTHENTICATION -> "InsufficientAuthentication"
+    BluetoothGatt.GATT_REQUEST_NOT_SUPPORTED -> "RequestNotSupported"
+    BluetoothGatt.GATT_INSUFFICIENT_ENCRYPTION -> "InsufficientEncryption"
+    BluetoothGatt.GATT_INVALID_OFFSET -> "InvalidOffset"
+    BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH -> "InvalidAttributeLength"
+    BluetoothGatt.GATT_CONNECTION_CONGESTED -> "ConnectionCongested"
+    BluetoothGatt.GATT_FAILURE -> "Failure"
+    UUBluetoothConstants.GATT_ERROR -> "GattError"
+    UUBluetoothConstants.GATT_DISCONNECTED_BY_PERIPHERAL -> "DisconnectedByPeripheral"
+    else -> String.format(Locale.US, "Unknown-%d", gattStatus)
+
+
+    BluetoothProfile.STATE_CONNECTED -> "Connected"
+    BluetoothProfile.STATE_CONNECTING -> "Connecting"
+    BluetoothProfile.STATE_DISCONNECTING -> "Disconnecting"
+    BluetoothProfile.STATE_DISCONNECTED -> "Disconnected"
+    else -> String.format(Locale.US, "Unknown-%d", connectionState)
+
+    BluetoothDevice.DEVICE_TYPE_UNKNOWN -> "Unknown"
+    BluetoothDevice.DEVICE_TYPE_CLASSIC -> "Classic"
+    BluetoothDevice.DEVICE_TYPE_LE -> "LE"
+    BluetoothDevice.DEVICE_TYPE_DUAL -> "Dual"
+    else -> String.format(Locale.US, "Unknown-%d", deviceType)
+
+    BluetoothDevice.BOND_NONE -> "None"
+    BluetoothDevice.BOND_BONDED -> "Bonded"
+    BluetoothDevice.BOND_BONDING -> "Bonding"
+    else -> String.format(Locale.US, "Unknown-%d", bondState)
+
+
+    BluetoothAdapter.STATE_OFF -> "Off"
+    BluetoothAdapter.STATE_ON -> "On"
+    BluetoothAdapter.STATE_TURNING_ON -> "TurningOn"
+    BluetoothAdapter.STATE_TURNING_OFF -> "TurningOff"
+    else -> String.format(Locale.US, "Unknown-%d", powerState)
+
+
+    if (properties.uuIsBitSet(BluetoothGattCharacteristic.PROPERTY_BROADCAST))
+    {
+    parts.add("Broadcast")
+    }
+
+    if (properties.uuIsBitSet(BluetoothGattCharacteristic.PROPERTY_READ))
+    {
+    parts.add("Read")
+    }
+
+    if (properties.uuIsBitSet(BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE))
+    {
+    parts.add("WriteWithoutResponse")
+    }
+
+    if (properties.uuIsBitSet(BluetoothGattCharacteristic.PROPERTY_WRITE))
+    {
+    parts.add("Write")
+    }
+
+    if (properties.uuIsBitSet(BluetoothGattCharacteristic.PROPERTY_NOTIFY))
+    {
+    parts.add("Notify")
+    }
+
+    if (properties.uuIsBitSet(BluetoothGattCharacteristic.PROPERTY_INDICATE))
+    {
+    parts.add("Indicate")
+    }
+
+    if (properties.uuIsBitSet(BluetoothGattCharacteristic.PROPERTY_SIGNED_WRITE))
+    {
+    parts.add("SignedWrite")
+    }
+
+    if (properties.uuIsBitSet(BluetoothGattCharacteristic.PROPERTY_EXTENDED_PROPS))
+    {
+    parts.add("ExtendedProperties")
+    }
+
+
+
+
+    if (permissions.uuIsBitSet(BluetoothGattCharacteristic.PERMISSION_READ))
+    {
+    parts.add("Read")
+    }
+
+    if (permissions.uuIsBitSet(BluetoothGattCharacteristic.PERMISSION_READ_ENCRYPTED))
+    {
+    parts.add("ReadEncrypted")
+    }
+
+    if (permissions.uuIsBitSet(BluetoothGattCharacteristic.PERMISSION_READ_ENCRYPTED_MITM))
+    {
+    parts.add("ReadEncryptedMITM")
+    }
+
+    if (permissions.uuIsBitSet(BluetoothGattCharacteristic.PERMISSION_WRITE))
+    {
+    parts.add("Write")
+    }
+
+    if (permissions.uuIsBitSet(BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED))
+    {
+    parts.add("WriteEncrypted")
+    }
+
+    if (permissions.uuIsBitSet(BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED_MITM))
+    {
+    parts.add("WriteEncryptedMITM")
+    }
+
+    if (permissions.uuIsBitSet(BluetoothGattCharacteristic.PERMISSION_WRITE_SIGNED))
+    {
+    parts.add("WriteSigned")
+    }
+
+    if (permissions.uuIsBitSet(BluetoothGattCharacteristic.PERMISSION_WRITE_SIGNED_MITM))
+    {
+    parts.add("WriteSignedMITM")
+    }
+-->
+</resources>

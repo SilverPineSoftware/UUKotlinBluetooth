@@ -32,6 +32,8 @@ class HomeActivity: BaseActivity()
 
         UUPermissions.init(this)
 
+        setTitle(R.string.full_app_name)
+
         viewModel = ViewModelProvider(this)[HomeViewModel::class.java]
         val binding = ActivityHomeBinding.inflate(layoutInflater)
         setupViewModel(viewModel, binding)

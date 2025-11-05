@@ -1,6 +1,5 @@
 package com.silverpine.uu.bluetooth.extensions
 
-import android.os.ParcelUuid
 import com.silverpine.uu.bluetooth.uuIsValidShortCode
 import com.silverpine.uu.bluetooth.uuShortCodeToUuid
 import java.util.UUID
@@ -18,16 +17,9 @@ val String.uuToBluetoothShortCodeUuid: UUID?
         }
     }.getOrNull()
 
-val String.uuToParcelUuid: ParcelUuid?
+val String.uuToUuid: UUID?
     get() = runCatching()
     {
         val shortCodeUuid = uuToBluetoothShortCodeUuid
-        return if (shortCodeUuid != null)
-        {
-            ParcelUuid(shortCodeUuid)
-        }
-        else
-        {
-            ParcelUuid.fromString(this)
-        }
+        return shortCodeUuid ?: UUID.fromString(this)
     }.getOrNull()

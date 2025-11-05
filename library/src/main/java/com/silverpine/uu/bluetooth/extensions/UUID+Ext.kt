@@ -1,5 +1,6 @@
 package com.silverpine.uu.bluetooth.extensions
 
+import android.os.ParcelUuid
 import com.silverpine.uu.bluetooth.UUBluetooth
 import java.util.UUID
 

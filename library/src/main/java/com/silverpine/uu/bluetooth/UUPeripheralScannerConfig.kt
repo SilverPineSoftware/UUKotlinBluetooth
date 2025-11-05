@@ -4,6 +4,7 @@ import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanSettings
 import android.os.ParcelUuid
 import com.silverpine.uu.core.UUDate
+import java.util.UUID
 
 /**
  * Contains BLE scanning settings.
@@ -21,7 +22,7 @@ data class UUPeripheralScannerConfig(
     /**
      * List of BLE service UUIDs to scan for.
      */
-    var serviceUUIDs: List<ParcelUuid>? = null,
+    var serviceUUIDs: List<UUID>? = null,
 
     /**
      * Optional filters (e.g. by RSSI or manufacturer data) that determine
@@ -44,10 +45,10 @@ data class UUPeripheralScannerConfig(
 internal val UUPeripheralScannerConfig.callbackThrottleMillis: Long
     get() = callbackThrottle.times(UUDate.Constants.MILLIS_IN_ONE_SECOND).toLong()
 
-internal fun UUPeripheralScannerConfig.buildUuidFilters(): List<ScanFilter>?
+internal fun UUPeripheralScannerConfig.buildUuidFilters(): List<ScanFilter>? = runCatching()
 {
-    return serviceUUIDs?.map { ScanFilter.Builder().setServiceUuid(it).build() }
-}
+    return serviceUUIDs?.map { ScanFilter.Builder().setServiceUuid(ParcelUuid(it)).build() }
+}.getOrNull()
 
 internal fun UUPeripheralScannerConfig.buildScanSettings(): ScanSettings
 {

@@ -1,9 +1,7 @@
 package com.silverpine.uu.bluetooth
 
-import com.silverpine.uu.bluetooth.extensions.uuIsBluetoothShortCode
 import com.silverpine.uu.bluetooth.extensions.uuBluetoothShortCode
-import com.silverpine.uu.bluetooth.uuShortCodeToUuid
-import com.silverpine.uu.bluetooth.uuUuidFromString
+import com.silverpine.uu.bluetooth.extensions.uuIsBluetoothShortCode
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull

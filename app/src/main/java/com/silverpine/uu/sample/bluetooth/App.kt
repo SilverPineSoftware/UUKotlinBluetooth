@@ -8,6 +8,7 @@ import com.silverpine.uu.core.UUResources
 import com.silverpine.uu.logging.UUConsoleLogger
 import com.silverpine.uu.logging.UULog
 import com.silverpine.uu.sample.bluetooth.ui.Strings
+import com.silverpine.uu.ux.permissions.UUPermissions
 import java.util.UUID
 
 class App: Application()

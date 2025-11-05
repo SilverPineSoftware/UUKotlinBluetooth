@@ -13,8 +13,9 @@ import com.silverpine.uu.sample.bluetooth.viewmodel.HomeViewModel
 import com.silverpine.uu.sample.bluetooth.viewmodel.UUPeripheralViewModel
 import com.silverpine.uu.ux.UUAlertDialog
 import com.silverpine.uu.ux.UUButton
-import com.silverpine.uu.ux.UUPermissions
 import com.silverpine.uu.ux.UUViewModelRecyclerAdapter
+import com.silverpine.uu.ux.permissions.UUPermissionProvider
+import com.silverpine.uu.ux.permissions.UUPermissions
 import com.silverpine.uu.ux.uuOpenSystemSettings
 import com.silverpine.uu.ux.uuShowAlertDialog
 import com.silverpine.uu.ux.viewmodel.UUAdapterItemViewModelMapping
@@ -23,10 +24,13 @@ class HomeActivity: BaseActivity()
 {
     private lateinit var viewModel: HomeViewModel
     private lateinit var adapter: UUViewModelRecyclerAdapter
+    private var permissionsProvider: UUPermissionProvider = UUPermissions
 
     override fun onCreate(savedInstanceState: Bundle?)
     {
         super.onCreate(savedInstanceState)
+
+        UUPermissions.init(this)
 
         viewModel = ViewModelProvider(this)[HomeViewModel::class.java]
         val binding = ActivityHomeBinding.inflate(layoutInflater)
@@ -72,41 +76,41 @@ class HomeActivity: BaseActivity()
     private val hasLocationPermission: Boolean
         get()
         {
-            return UUPermissions.hasPermission(applicationContext, LOCATION_PERMISSION)
+            return permissionsProvider.getPermissionStatus(LOCATION_PERMISSION).isGranted
         }
 
     private val canRequestLocationPermission: Boolean
         get()
         {
-            return UUPermissions.canRequestPermission(this, LOCATION_PERMISSION)
+            return permissionsProvider.getPermissionStatus(LOCATION_PERMISSION).canRequest
         }
 
     private val hasScanPermission: Boolean
         @RequiresApi(Build.VERSION_CODES.S)
         get()
         {
-            return UUPermissions.hasPermission(applicationContext, BLUETOOTH_SCAN_PERMISSION)
+            return permissionsProvider.getPermissionStatus(BLUETOOTH_SCAN_PERMISSION).isGranted
         }
 
     private val canRequestScanPermission: Boolean
         @RequiresApi(Build.VERSION_CODES.S)
         get()
         {
-            return UUPermissions.canRequestPermission(this, BLUETOOTH_SCAN_PERMISSION)
+            return permissionsProvider.getPermissionStatus(BLUETOOTH_SCAN_PERMISSION).canRequest
         }
 
     private val hasConnectPermission: Boolean
         @RequiresApi(Build.VERSION_CODES.S)
         get()
         {
-            return UUPermissions.hasPermission(applicationContext, BLUETOOTH_CONNECT_PERMISSION)
+            return permissionsProvider.getPermissionStatus(BLUETOOTH_CONNECT_PERMISSION).isGranted
         }
 
     private val canRequestConnectPermission: Boolean
         @RequiresApi(Build.VERSION_CODES.S)
         get()
         {
-            return UUPermissions.canRequestPermission(this, BLUETOOTH_CONNECT_PERMISSION)
+            return permissionsProvider.getPermissionStatus(BLUETOOTH_CONNECT_PERMISSION).canRequest
         }
 
     private fun refreshPermissions()
@@ -148,9 +152,10 @@ class HomeActivity: BaseActivity()
             {
                 if (canRequest)
                 {
-                    UUPermissions.requestPermissions(this, LOCATION_PERMISSION, 12276)
-                    { _, granted ->
-
+                    permissionsProvider.requestPermissions(arrayOf(LOCATION_PERMISSION))
+                    { result ->
+                        val granted =
+                            result.getOrDefault(LOCATION_PERMISSION, null)?.isGranted ?: false
                         refreshPermissionsPreSdk31(granted)
                     }
                 }
@@ -188,9 +193,8 @@ class HomeActivity: BaseActivity()
             {
                 if (canRequest)
                 {
-                    UUPermissions.requestMultiplePermissions(this, arrayOf(BLUETOOTH_SCAN_PERMISSION, BLUETOOTH_CONNECT_PERMISSION), 12276)
-                    { _ ->
-
+                    permissionsProvider.requestPermissions(arrayOf(BLUETOOTH_SCAN_PERMISSION, BLUETOOTH_CONNECT_PERMISSION))
+                    { result ->
                         refreshPermissionsPostSdk31()
                     }
                 }
@@ -202,16 +206,5 @@ class HomeActivity: BaseActivity()
 
             uuShowAlertDialog(dlg)
         }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    )
-    {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        UUPermissions.handleRequestPermissionsResult(this, requestCode,
-            permissions.asList().toTypedArray(), grantResults)
     }
 }

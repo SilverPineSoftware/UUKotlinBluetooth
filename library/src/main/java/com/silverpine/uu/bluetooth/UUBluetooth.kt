@@ -4,7 +4,6 @@ import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
-import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothServerSocket
@@ -17,7 +16,6 @@ import androidx.annotation.RequiresPermission
 import androidx.core.content.ContextCompat
 import com.silverpine.uu.core.UUDate
 import com.silverpine.uu.core.UUError
-import com.silverpine.uu.core.uuIsBitSet
 import com.silverpine.uu.core.uuToHexData
 import java.util.Locale
 import java.util.UUID
@@ -293,59 +291,6 @@ object UUBluetooth
     fun addBluetoothSpecName(uuid: UUID, name: String)
     {
         UUBluetoothConstants.BLUETOOTH_SPEC_NAMES[uuid] = name
-    }
-
-    /**
-     * Formats a string with human friendly permissions of BluetoothGattCharacteristics
-     *
-     * @param permissions permissions bitmask
-     * @return a string
-     */
-    fun characteristicPermissionsToString(permissions: Int): String
-    {
-        val parts = ArrayList<Any>()
-
-        if (permissions.uuIsBitSet(BluetoothGattCharacteristic.PERMISSION_READ))
-        {
-            parts.add("Read")
-        }
-
-        if (permissions.uuIsBitSet(BluetoothGattCharacteristic.PERMISSION_READ_ENCRYPTED))
-        {
-            parts.add("ReadEncrypted")
-        }
-
-        if (permissions.uuIsBitSet(BluetoothGattCharacteristic.PERMISSION_READ_ENCRYPTED_MITM))
-        {
-            parts.add("ReadEncryptedMITM")
-        }
-
-        if (permissions.uuIsBitSet(BluetoothGattCharacteristic.PERMISSION_WRITE))
-        {
-            parts.add("Write")
-        }
-
-        if (permissions.uuIsBitSet(BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED))
-        {
-            parts.add("WriteEncrypted")
-        }
-
-        if (permissions.uuIsBitSet(BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED_MITM))
-        {
-            parts.add("WriteEncryptedMITM")
-        }
-
-        if (permissions.uuIsBitSet(BluetoothGattCharacteristic.PERMISSION_WRITE_SIGNED))
-        {
-            parts.add("WriteSigned")
-        }
-
-        if (permissions.uuIsBitSet(BluetoothGattCharacteristic.PERMISSION_WRITE_SIGNED_MITM))
-        {
-            parts.add("WriteSignedMITM")
-        }
-
-        return parts.joinToString(", ")
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

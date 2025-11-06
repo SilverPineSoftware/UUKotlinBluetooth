@@ -28,6 +28,8 @@ import com.silverpine.uu.core.UUTimer
 import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.logging.UULog
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.io.Closeable
 import java.util.Locale
 import java.util.UUID
@@ -81,7 +83,11 @@ class UUPeripheral(): Closeable
             field = value
             debugLog("setPeripheralState", "PeripheralState changed from $old to $value")
             peripheralStateCache[identifier] = value
+            _peripheralStateFlow.value = value
         }
+
+    private val _peripheralStateFlow = MutableStateFlow(peripheralState)
+    val peripheralStateFlow = _peripheralStateFlow.asStateFlow()
 
     var signalStrength: UUPeripheralSignalStrength = UUPeripheralSignalStrength.VERY_POOR
 

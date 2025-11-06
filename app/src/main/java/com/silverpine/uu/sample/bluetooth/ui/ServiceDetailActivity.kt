@@ -9,7 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.silverpine.uu.bluetooth.UUBluetooth
 import com.silverpine.uu.bluetooth.UUPeripheral
 import com.silverpine.uu.bluetooth.UUPeripheralConnectionState
-import com.silverpine.uu.bluetooth.uuCanReadData
+import com.silverpine.uu.bluetooth.uuCanRead
 import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.sample.bluetooth.BR
 import com.silverpine.uu.sample.bluetooth.R
@@ -101,7 +101,7 @@ class ServiceDetailActivity: UURecyclerActivity(layoutResourceId = R.layout.recy
 
     private fun handleReadAll()
     {
-        val readableChars = service.characteristics.filter { it.uuCanReadData() }
+        val readableChars = service.characteristics.filter { it.properties.uuCanRead }
         readNextChar(ArrayList(readableChars))
     }
 

@@ -9,9 +9,9 @@ import androidx.lifecycle.MutableLiveData
 import com.silverpine.uu.bluetooth.UUBluetooth
 import com.silverpine.uu.bluetooth.UUPeripheral
 import com.silverpine.uu.bluetooth.extensions.uuCharacteristicPropertiesString
-import com.silverpine.uu.bluetooth.uuCanReadData
+import com.silverpine.uu.bluetooth.uuCanRead
 import com.silverpine.uu.bluetooth.uuCanToggleNotify
-import com.silverpine.uu.bluetooth.uuCanWriteData
+import com.silverpine.uu.bluetooth.uuCanWrite
 import com.silverpine.uu.bluetooth.uuCanWriteWithoutResponse
 import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.core.uuToHex
@@ -55,11 +55,11 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, var model: B
         _uuid.value = "${model.uuid}"
         _name.value = UUBluetooth.bluetoothSpecName(model.uuid)
         _properties.value = model.properties.uuCharacteristicPropertiesString
-        _dataEditable.value = model.uuCanWriteData() or model.uuCanWriteWithoutResponse()
-        _canToggleNotify.value = model.uuCanToggleNotify()
-        _canReadData.value = model.uuCanReadData()
-        _canWriteData.value = model.uuCanWriteData()
-        _canWWORWriteData.value = model.uuCanWriteWithoutResponse()
+        _dataEditable.value = model.properties.uuCanWrite or model.properties.uuCanWriteWithoutResponse
+        _canToggleNotify.value = model.properties.uuCanToggleNotify
+        _canReadData.value = model.properties.uuCanRead
+        _canWriteData.value = model.properties.uuCanWrite
+        _canWWORWriteData.value = model.properties.uuCanWriteWithoutResponse
 
         refreshNotifyLabel()
         refreshData()

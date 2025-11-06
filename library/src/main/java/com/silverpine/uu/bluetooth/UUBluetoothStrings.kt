@@ -1,9 +1,15 @@
+@file:Suppress("SpellCheckingInspection")
 package com.silverpine.uu.bluetooth
 
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothProfile
 import com.silverpine.uu.bluetooth.UUBluetoothStrings.CharacteristicPermissions.fromBitmask
 import com.silverpine.uu.bluetooth.UUBluetoothStrings.CharacteristicProperties.fromBitmask
 import com.silverpine.uu.core.uuIsBitSet
+import java.util.Locale
 
 /**
  * Utility object for Bluetooth-related string constants and formatting functions.
@@ -221,6 +227,268 @@ object UUBluetoothStrings
             }
 
             return parts.joinToString(", ")
+        }
+    }
+
+    /**
+     * Connection state string constants and conversion utilities.
+     */
+    object ConnectionStates
+    {
+        /**
+         * String representation for the CONNECTED state.
+         */
+        const val STATE_CONNECTED = "Connected"
+
+        /**
+         * String representation for the CONNECTING state.
+         */
+        const val STATE_CONNECTING = "Connecting"
+
+        /**
+         * String representation for the DISCONNECTING state.
+         */
+        const val STATE_DISCONNECTING = "Disconnecting"
+
+        /**
+         * String representation for the DISCONNECTED state.
+         */
+        const val STATE_DISCONNECTED = "Disconnected"
+
+        /**
+         * Converts a BluetoothProfile connection state integer to its string representation.
+         *
+         * @param connectionState a BluetoothProfile.STATE_* constant
+         * @return the string representation of the connection state, or "Unknown-{value}" if not recognized
+         */
+        fun from(connectionState: Int): String
+        {
+            return when (connectionState)
+            {
+                BluetoothProfile.STATE_CONNECTED -> STATE_CONNECTED
+                BluetoothProfile.STATE_CONNECTING -> STATE_CONNECTING
+                BluetoothProfile.STATE_DISCONNECTING -> STATE_DISCONNECTING
+                BluetoothProfile.STATE_DISCONNECTED -> STATE_DISCONNECTED
+                else -> String.format(Locale.US, "Unknown-%d", connectionState)
+            }
+        }
+    }
+
+    /**
+     * Device type string constants and conversion utilities.
+     */
+    object DeviceTypes
+    {
+        /**
+         * String representation for the UNKNOWN device type.
+         */
+        const val DEVICE_TYPE_UNKNOWN = "Unknown"
+
+        /**
+         * String representation for the CLASSIC device type.
+         */
+        const val DEVICE_TYPE_CLASSIC = "Classic"
+
+        /**
+         * String representation for the LE device type.
+         */
+        const val DEVICE_TYPE_LE = "LE"
+
+        /**
+         * String representation for the DUAL device type.
+         */
+        const val DEVICE_TYPE_DUAL = "Dual"
+
+        /**
+         * Converts a BluetoothDevice device type integer to its string representation.
+         *
+         * @param deviceType a BluetoothDevice.DEVICE_TYPE_* constant
+         * @return the string representation of the device type, or "Unknown-{value}" if not recognized
+         */
+        fun from(deviceType: Int): String
+        {
+            return when (deviceType)
+            {
+                BluetoothDevice.DEVICE_TYPE_UNKNOWN -> DEVICE_TYPE_UNKNOWN
+                BluetoothDevice.DEVICE_TYPE_CLASSIC -> DEVICE_TYPE_CLASSIC
+                BluetoothDevice.DEVICE_TYPE_LE -> DEVICE_TYPE_LE
+                BluetoothDevice.DEVICE_TYPE_DUAL -> DEVICE_TYPE_DUAL
+                else -> String.format(Locale.US, "Unknown-%d", deviceType)
+            }
+        }
+    }
+
+    /**
+     * Bond state string constants and conversion utilities.
+     */
+    object BondStates
+    {
+        /**
+         * String representation for the NONE bond state.
+         */
+        const val BOND_NONE = "None"
+
+        /**
+         * String representation for the BONDED bond state.
+         */
+        const val BOND_BONDED = "Bonded"
+
+        /**
+         * String representation for the BONDING bond state.
+         */
+        const val BOND_BONDING = "Bonding"
+
+        /**
+         * Converts a BluetoothDevice bond state integer to its string representation.
+         *
+         * @param bondState a BluetoothDevice.BOND_* constant
+         * @return the string representation of the bond state, or "Unknown-{value}" if not recognized
+         */
+        fun from(bondState: Int): String
+        {
+            return when (bondState)
+            {
+                BluetoothDevice.BOND_NONE -> BOND_NONE
+                BluetoothDevice.BOND_BONDED -> BOND_BONDED
+                BluetoothDevice.BOND_BONDING -> BOND_BONDING
+                else -> String.format(Locale.US, "Unknown-%d", bondState)
+            }
+        }
+    }
+
+    /**
+     * Power state string constants and conversion utilities.
+     */
+    object PowerStates
+    {
+        /**
+         * String representation for the OFF power state.
+         */
+        const val STATE_OFF = "Off"
+
+        /**
+         * String representation for the ON power state.
+         */
+        const val STATE_ON = "On"
+
+        /**
+         * String representation for the TURNING_ON power state.
+         */
+        const val STATE_TURNING_ON = "TurningOn"
+
+        /**
+         * String representation for the TURNING_OFF power state.
+         */
+        const val STATE_TURNING_OFF = "TurningOff"
+
+        /**
+         * Converts a BluetoothAdapter power state integer to its string representation.
+         *
+         * @param powerState a BluetoothAdapter.STATE_* constant
+         * @return the string representation of the power state, or "Unknown-{value}" if not recognized
+         */
+        fun from(powerState: Int): String
+        {
+            return when (powerState)
+            {
+                BluetoothAdapter.STATE_OFF -> STATE_OFF
+                BluetoothAdapter.STATE_ON -> STATE_ON
+                BluetoothAdapter.STATE_TURNING_ON -> STATE_TURNING_ON
+                BluetoothAdapter.STATE_TURNING_OFF -> STATE_TURNING_OFF
+                else -> String.format(Locale.US, "Unknown-%d", powerState)
+            }
+        }
+    }
+
+    /**
+     * GATT status string constants and conversion utilities.
+     */
+    object GattStatuses
+    {
+        /**
+         * String representation for the SUCCESS status.
+         */
+        const val GATT_SUCCESS = "Success"
+
+        /**
+         * String representation for the READ_NOT_PERMITTED status.
+         */
+        const val GATT_READ_NOT_PERMITTED = "ReadNotPermitted"
+
+        /**
+         * String representation for the WRITE_NOT_PERMITTED status.
+         */
+        const val GATT_WRITE_NOT_PERMITTED = "WriteNotPermitted"
+
+        /**
+         * String representation for the INSUFFICIENT_AUTHENTICATION status.
+         */
+        const val GATT_INSUFFICIENT_AUTHENTICATION = "InsufficientAuthentication"
+
+        /**
+         * String representation for the REQUEST_NOT_SUPPORTED status.
+         */
+        const val GATT_REQUEST_NOT_SUPPORTED = "RequestNotSupported"
+
+        /**
+         * String representation for the INSUFFICIENT_ENCRYPTION status.
+         */
+        const val GATT_INSUFFICIENT_ENCRYPTION = "InsufficientEncryption"
+
+        /**
+         * String representation for the INVALID_OFFSET status.
+         */
+        const val GATT_INVALID_OFFSET = "InvalidOffset"
+
+        /**
+         * String representation for the INVALID_ATTRIBUTE_LENGTH status.
+         */
+        const val GATT_INVALID_ATTRIBUTE_LENGTH = "InvalidAttributeLength"
+
+        /**
+         * String representation for the CONNECTION_CONGESTED status.
+         */
+        const val GATT_CONNECTION_CONGESTED = "ConnectionCongested"
+
+        /**
+         * String representation for the FAILURE status.
+         */
+        const val GATT_FAILURE = "Failure"
+
+        /**
+         * String representation for the GATT_ERROR status.
+         */
+        const val GATT_ERROR = "GattError"
+
+        /**
+         * String representation for the DISCONNECTED_BY_PERIPHERAL status.
+         */
+        const val GATT_DISCONNECTED_BY_PERIPHERAL = "DisconnectedByPeripheral"
+
+        /**
+         * Converts a BluetoothGatt GATT status integer to its string representation.
+         *
+         * @param gattStatus a BluetoothGatt.GATT_* constant or UUBluetoothConstants.GATT_* constant
+         * @return the string representation of the GATT status, or "Unknown-{value}" if not recognized
+         */
+        fun from(gattStatus: Int): String
+        {
+            return when (gattStatus)
+            {
+                BluetoothGatt.GATT_SUCCESS -> GATT_SUCCESS
+                BluetoothGatt.GATT_READ_NOT_PERMITTED -> GATT_READ_NOT_PERMITTED
+                BluetoothGatt.GATT_WRITE_NOT_PERMITTED -> GATT_WRITE_NOT_PERMITTED
+                BluetoothGatt.GATT_INSUFFICIENT_AUTHENTICATION -> GATT_INSUFFICIENT_AUTHENTICATION
+                BluetoothGatt.GATT_REQUEST_NOT_SUPPORTED -> GATT_REQUEST_NOT_SUPPORTED
+                BluetoothGatt.GATT_INSUFFICIENT_ENCRYPTION -> GATT_INSUFFICIENT_ENCRYPTION
+                BluetoothGatt.GATT_INVALID_OFFSET -> GATT_INVALID_OFFSET
+                BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH -> GATT_INVALID_ATTRIBUTE_LENGTH
+                BluetoothGatt.GATT_CONNECTION_CONGESTED -> GATT_CONNECTION_CONGESTED
+                BluetoothGatt.GATT_FAILURE -> GATT_FAILURE
+                UUBluetoothConstants.GATT_ERROR -> GATT_ERROR
+                UUBluetoothConstants.GATT_DISCONNECTED_BY_PERIPHERAL -> GATT_DISCONNECTED_BY_PERIPHERAL
+                else -> String.format(Locale.US, "Unknown-%d", gattStatus)
+            }
         }
     }
 }

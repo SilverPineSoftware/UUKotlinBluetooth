@@ -1,11 +1,7 @@
 package com.silverpine.uu.bluetooth
 
 import android.Manifest
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothManager
-import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothServerSocket
 import android.content.Context
 import android.content.pm.PackageManager
@@ -19,36 +15,6 @@ import com.silverpine.uu.core.UUError
 import com.silverpine.uu.core.uuToHexData
 import java.util.Locale
 import java.util.UUID
-
-/*
-public class UUBluetooth
-{
-    private init() {}
-
-    private static var provider: UUBluetoothProvider = UUDefaultProvider()
-
-    public static func setProvider(_ provider: UUBluetoothProvider)
-    {
-        UUBluetooth.provider = provider
-    }
-
-    public static func initializeCoreBluetooth()
-    {
-        // Simply access singleton will create a CBCentralManager and prompt users for permissions.
-        _ = UUCentralManager.shared
-    }
-
-    public static var scanner: UUPeripheralScanner
-    {
-        return provider.scanner
-    }
-
-    public static func createSession(peripheral: UUPeripheral) -> UUPeripheralSession
-    {
-        return provider.createSession(peripheral: peripheral)
-    }
-}
-*/
 
 /**
  * Helpful Bluetooth methods, constants, interfaces
@@ -167,106 +133,6 @@ object UUBluetooth
      * @since 1.0.0
      */
     val BUILD_DATE: String = BuildConfig.BUILD_DATE
-
-    /**
-     * Returns a developer friendly string for a BluetoothGatt.GATT_* response code
-     *
-     * @param gattStatus any integer, but assumes one of BluetoothGatt.GATT_* codes
-     * @return a string
-     */
-    fun gattStatusToString(gattStatus: Int): String
-    {
-        return when (gattStatus)
-        {
-            BluetoothGatt.GATT_SUCCESS -> "Success"
-            BluetoothGatt.GATT_READ_NOT_PERMITTED -> "ReadNotPermitted"
-            BluetoothGatt.GATT_WRITE_NOT_PERMITTED -> "WriteNotPermitted"
-            BluetoothGatt.GATT_INSUFFICIENT_AUTHENTICATION -> "InsufficientAuthentication"
-            BluetoothGatt.GATT_REQUEST_NOT_SUPPORTED -> "RequestNotSupported"
-            BluetoothGatt.GATT_INSUFFICIENT_ENCRYPTION -> "InsufficientEncryption"
-            BluetoothGatt.GATT_INVALID_OFFSET -> "InvalidOffset"
-            BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH -> "InvalidAttributeLength"
-            BluetoothGatt.GATT_CONNECTION_CONGESTED -> "ConnectionCongested"
-            BluetoothGatt.GATT_FAILURE -> "Failure"
-            UUBluetoothConstants.GATT_ERROR -> "GattError"
-            UUBluetoothConstants.GATT_DISCONNECTED_BY_PERIPHERAL -> "DisconnectedByPeripheral"
-            else -> String.format(Locale.US, "Unknown-%d", gattStatus)
-        }
-    }
-
-    /**
-     * Returns a developer friendly string for a BluetoothProfile.STATE_* response code
-     *
-     * @param connectionState any integer, but assumes one of BluetoothProfile.STATE_* codes
-     * @return a string
-     */
-    fun connectionStateToString(connectionState: Int): String
-    {
-        return when (connectionState)
-        {
-            BluetoothProfile.STATE_CONNECTED -> "Connected"
-            BluetoothProfile.STATE_CONNECTING -> "Connecting"
-            BluetoothProfile.STATE_DISCONNECTING -> "Disconnecting"
-            BluetoothProfile.STATE_DISCONNECTED -> "Disconnected"
-            else -> String.format(Locale.US, "Unknown-%d", connectionState)
-        }
-    }
-
-    /**
-     * Returns a developer friendly string for a BluetoothDevice.DEVICE_TYPE_* value
-     *
-     * @param deviceType the device type
-     *
-     * @return a string
-     */
-    fun deviceTypeToString(deviceType: Int): String
-    {
-        return when (deviceType)
-        {
-            BluetoothDevice.DEVICE_TYPE_UNKNOWN -> "Unknown"
-            BluetoothDevice.DEVICE_TYPE_CLASSIC -> "Classic"
-            BluetoothDevice.DEVICE_TYPE_LE -> "LE"
-            BluetoothDevice.DEVICE_TYPE_DUAL -> "Dual"
-            else -> String.format(Locale.US, "Unknown-%d", deviceType)
-        }
-    }
-
-    /**
-     * Returns a developer friendly string for a BluetoothDevice_BOND_* value
-     *
-     * @param bondState a bond state value
-     *
-     * @return a string
-     */
-    fun bondStateToString(bondState: Int): String
-    {
-        return when (bondState)
-        {
-            BluetoothDevice.BOND_NONE -> "None"
-            BluetoothDevice.BOND_BONDED -> "Bonded"
-            BluetoothDevice.BOND_BONDING -> "Bonding"
-            else -> String.format(Locale.US, "Unknown-%d", bondState)
-        }
-    }
-
-    /**
-     * Returns a developer friendly string for a BluetoothAdapter.STATE* power state value
-     *
-     * @param powerState a bond state value
-     *
-     * @return a string
-     */
-    fun powerStateToString(powerState: Int): String
-    {
-        return when (powerState)
-        {
-            BluetoothAdapter.STATE_OFF -> "Off"
-            BluetoothAdapter.STATE_ON -> "On"
-            BluetoothAdapter.STATE_TURNING_ON -> "TurningOn"
-            BluetoothAdapter.STATE_TURNING_OFF -> "TurningOff"
-            else -> String.format(Locale.US, "Unknown-%d", powerState)
-        }
-    }
 
     /**
      * Returns a common name for a Bluetooth UUID.  These strings are directly

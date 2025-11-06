@@ -8,7 +8,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.silverpine.uu.bluetooth.UUBluetooth
 import com.silverpine.uu.bluetooth.UUPeripheral
-import com.silverpine.uu.bluetooth.extensions.uuCharacteristicPropertiesDescription
+import com.silverpine.uu.bluetooth.extensions.uuCharacteristicPropertiesString
 import com.silverpine.uu.bluetooth.uuCanReadData
 import com.silverpine.uu.bluetooth.uuCanToggleNotify
 import com.silverpine.uu.bluetooth.uuCanWriteData
@@ -54,7 +54,7 @@ class CharacteristicViewModel(private val peripheral: UUPeripheral, var model: B
     {
         _uuid.value = "${model.uuid}"
         _name.value = UUBluetooth.bluetoothSpecName(model.uuid)
-        _properties.value = model.properties.uuCharacteristicPropertiesDescription()
+        _properties.value = model.properties.uuCharacteristicPropertiesString
         _dataEditable.value = model.uuCanWriteData() or model.uuCanWriteWithoutResponse()
         _canToggleNotify.value = model.uuCanToggleNotify()
         _canReadData.value = model.uuCanReadData()

@@ -13,9 +13,9 @@ import android.bluetooth.BluetoothStatusCodes
 import android.content.Context
 import android.os.Build
 import android.os.Parcelable
-import com.silverpine.uu.bluetooth.UUBluetooth.connectionStateToString
-import com.silverpine.uu.bluetooth.UUBluetooth.gattStatusToString
 import com.silverpine.uu.bluetooth.UUBluetoothConstants.DEFAULT_MTU
+import com.silverpine.uu.bluetooth.extensions.uuConnectionStateString
+import com.silverpine.uu.bluetooth.extensions.uuGattStatusString
 import com.silverpine.uu.bluetooth.internal.safeNotify
 import com.silverpine.uu.bluetooth.internal.uuHashLookup
 import com.silverpine.uu.bluetooth.internal.uuToLowercaseString
@@ -194,7 +194,7 @@ class UUPeripheral(): Closeable
             debugLog(
                 "onConnectionStateChanged", String.format(
                     Locale.US, "status: %s, newState: %s (%d)",
-                    statusLog(status), connectionStateToString(newState), newState))
+                    statusLog(status), newState.uuConnectionStateString, newState))
 
             if (status == BluetoothGatt.GATT_SUCCESS && newState == BluetoothGatt.STATE_CONNECTED)
             {
@@ -1119,7 +1119,7 @@ class UUPeripheral(): Closeable
 
     private fun statusLog(status: Int): String
     {
-        return String.format(Locale.US, "%s (%d)", gattStatusToString(status), status)
+        return String.format(Locale.US, "%s (%d)", status.uuGattStatusString, status)
     }
 
     private fun debugLog(method: String, message: String)

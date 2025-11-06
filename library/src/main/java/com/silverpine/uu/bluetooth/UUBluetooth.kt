@@ -296,59 +296,6 @@ object UUBluetooth
     }
 
     /**
-     * Formats a string with human friendly properties of BluetoothGattCharacteristics
-     *
-     * @param properties properties bitmask
-     * @return a string
-     */
-    fun characteristicPropertiesToString(properties: Int): String
-    {
-        val parts = ArrayList<Any>()
-
-        if (properties.uuIsBitSet(BluetoothGattCharacteristic.PROPERTY_BROADCAST))
-        {
-            parts.add("Broadcast")
-        }
-
-        if (properties.uuIsBitSet(BluetoothGattCharacteristic.PROPERTY_READ))
-        {
-            parts.add("Read")
-        }
-
-        if (properties.uuIsBitSet(BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE))
-        {
-            parts.add("WriteWithoutResponse")
-        }
-
-        if (properties.uuIsBitSet(BluetoothGattCharacteristic.PROPERTY_WRITE))
-        {
-            parts.add("Write")
-        }
-
-        if (properties.uuIsBitSet(BluetoothGattCharacteristic.PROPERTY_NOTIFY))
-        {
-            parts.add("Notify")
-        }
-
-        if (properties.uuIsBitSet(BluetoothGattCharacteristic.PROPERTY_INDICATE))
-        {
-            parts.add("Indicate")
-        }
-
-        if (properties.uuIsBitSet(BluetoothGattCharacteristic.PROPERTY_SIGNED_WRITE))
-        {
-            parts.add("SignedWrite")
-        }
-
-        if (properties.uuIsBitSet(BluetoothGattCharacteristic.PROPERTY_EXTENDED_PROPS))
-        {
-            parts.add("ExtendedProperties")
-        }
-
-        return parts.joinToString(", ")
-    }
-
-    /**
      * Formats a string with human friendly permissions of BluetoothGattCharacteristics
      *
      * @param permissions permissions bitmask

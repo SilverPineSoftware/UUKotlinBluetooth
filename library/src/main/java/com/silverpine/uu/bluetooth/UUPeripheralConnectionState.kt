@@ -32,6 +32,38 @@ enum class UUPeripheralConnectionState
      */
     UNDETERMINED;
 
+    /**
+     * Returns true if this connection state is CONNECTED.
+     *
+     * @return true if this state is CONNECTED, false otherwise
+     */
+    val isConnected: Boolean
+        get() = (this == CONNECTED)
+
+    /**
+     * Returns true if this connection state is CONNECTING.
+     *
+     * @return true if this state is CONNECTING, false otherwise
+     */
+    val isConnecting: Boolean
+        get() = (this == CONNECTING)
+
+    /**
+     * Returns true if this connection state is DISCONNECTING.
+     *
+     * @return true if this state is DISCONNECTING, false otherwise
+     */
+    val isDisconnecting: Boolean
+        get() = (this == DISCONNECTING)
+
+    /**
+     * Returns true if this connection state is DISCONNECTED.
+     *
+     * @return true if this state is DISCONNECTED, false otherwise
+     */
+    val isDisconnected: Boolean
+        get() = (this == DISCONNECTED)
+
     companion object
     {
         /**

@@ -77,4 +77,19 @@ class UUPeripheralConnectionStateTests
             assertEquals(expectedState, UUPeripheralConnectionState.fromProfileConnectionState(profileState))
         }
     }
+
+    @Test
+    fun boolHelpers()
+    {
+        assertEquals(true, UUPeripheralConnectionState.CONNECTING.isConnecting)
+        assertEquals(true, UUPeripheralConnectionState.DISCONNECTING.isDisconnecting)
+        assertEquals(true, UUPeripheralConnectionState.DISCONNECTED.isDisconnected)
+        assertEquals(true, UUPeripheralConnectionState.CONNECTING.isConnecting)
+
+        assertEquals(false, UUPeripheralConnectionState.CONNECTING.isDisconnected)
+        assertEquals(false, UUPeripheralConnectionState.DISCONNECTING.isConnecting)
+        assertEquals(false, UUPeripheralConnectionState.DISCONNECTED.isConnecting)
+        assertEquals(false, UUPeripheralConnectionState.CONNECTING.isConnected)
+
+    }
 }

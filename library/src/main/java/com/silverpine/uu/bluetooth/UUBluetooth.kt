@@ -26,7 +26,7 @@ object UUBluetooth
 
     //private lateinit var provider: UUBluetoothProvider// by lazy { UUDefaultProvider() }
 
-    private var provider: UUBluetoothProvider? = null
+    //private var provider: UUBluetoothProvider? = null
 
     /*
     private var provider: UUBluetoothProvider
@@ -47,29 +47,29 @@ object UUBluetooth
             _provider = value
         }*/
 
-
-    fun setProvider(provider: UUBluetoothProvider)
-    {
-        this.provider = provider
-    }
-
-    private fun getProvider(): UUBluetoothProvider
-    {
-        var p = provider
-        if (p == null)
-        {
-            p = UUDefaultProvider()
-            provider = p
-        }
-
-        return p
-    }
-
-    val scanner: UUPeripheralScanner
-        get()
-        {
-            return getProvider().scanner
-        }
+//
+//    fun setProvider(provider: UUBluetoothProvider)
+//    {
+//        this.provider = provider
+//    }
+//
+//    private fun getProvider(): UUBluetoothProvider
+//    {
+//        var p = provider
+//        if (p == null)
+//        {
+//            p = UUDefaultProvider()
+//            provider = p
+//        }
+//
+//        return p
+//    }
+//
+//    val scanner: UUPeripheralScanner
+//        get()
+//        {
+//            return getProvider().scanner
+//        }
 
     /*fun createSession(peripheral: UUPeripheral): UUPeripheralSession
     {
@@ -163,6 +163,7 @@ object UUBluetooth
     // Static Initialization
     ////////////////////////////////////////////////////////////////////////////////////////////////
     private var applicationContext: Context? = null
+    private var provider: UUBluetoothProvider = UUDefaultProvider()
 
     /**
      * One time library initialization.  Must be called prior to using any other UUAndroidBluetooth
@@ -170,7 +171,7 @@ object UUBluetooth
      *
      * @param applicationContext application context
      */
-    fun init(applicationContext: Context) //, provider: UUBluetoothProvider = UUDefaultProvider())
+    fun init(applicationContext: Context) //, provider: UUBluetoothProvider)
     {
         UUBluetooth.applicationContext = applicationContext
 
@@ -187,6 +188,30 @@ object UUBluetooth
 
         return ctx
     }
+
+
+    fun setProvider(provider: UUBluetoothProvider)
+    {
+        this.provider = provider
+    }
+
+    /*private fun getProvider(): UUBluetoothProvider
+    {
+        var p = provider
+        if (p == null)
+        {
+            p = UUDefaultProvider()
+            provider = p
+        }
+
+        return p
+    }*/
+
+    val scanner: UUPeripheralScanner
+        get()
+        {
+            return provider.scanner
+        }
 
     val isBluetoothLeSupported: Result<Boolean>
         get() = runCatching()

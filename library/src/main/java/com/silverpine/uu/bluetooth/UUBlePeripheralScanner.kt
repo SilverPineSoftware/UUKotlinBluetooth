@@ -1,7 +1,6 @@
 package com.silverpine.uu.bluetooth
 
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
@@ -33,8 +32,12 @@ class UUBlePeripheralScanner : UUPeripheralScanner
 
     private var nearbyPeripheralSubscription: Job? = null
 
-    private val bluetoothAdapter: BluetoothAdapter
-    private var bluetoothLeScanner: BluetoothLeScanner
+    private val bluetoothLeScanner: BluetoothLeScanner by lazy {
+        val bluetoothManager = UUBluetooth.requireApplicationContext().getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        val bluetoothAdapter = bluetoothManager.adapter
+        bluetoothAdapter.bluetoothLeScanner
+    }
+
     private var scanCallback: ScanCallback = object: ScanCallback()
     {
         override fun onScanResult(callbackType: Int, result: ScanResult)
@@ -53,13 +56,6 @@ class UUBlePeripheralScanner : UUPeripheralScanner
             // TODO: Handle scan failed
             UULog.d(javaClass, "onScanFailed", "errorCode: $errorCode")
         }
-    }
-
-    init
-    {
-        val bluetoothManager = UUBluetooth.requireApplicationContext().getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-        bluetoothAdapter = bluetoothManager.adapter
-        bluetoothLeScanner = bluetoothAdapter.bluetoothLeScanner
     }
 
     override var isScanning: Boolean = false

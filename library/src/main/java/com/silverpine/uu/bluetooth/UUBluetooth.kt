@@ -178,6 +178,12 @@ object UUBluetooth
         //setProvider(provider)
     }
 
+    val isInitialized: Boolean
+        get()
+        {
+            return (applicationContext != null)
+        }
+
     fun requireApplicationContext(): Context
     {
         val ctx = applicationContext

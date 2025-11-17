@@ -5,6 +5,7 @@ import com.silverpine.uu.core.uuReadUInt8
 import com.silverpine.uu.core.uuSubData
 import com.silverpine.uu.logging.UULog
 
+private const val LOG_TAG = "UUScanRecord"
 
 /*
 when (dataType.toByte())
@@ -69,19 +70,19 @@ class UUScanRecord(private val scanResult: ScanResult)
             val dataType = bytes.uuReadUInt8(index).getOrElse { return }
             index += Byte.SIZE_BYTES
 
-            UULog.d(javaClass, "parseScanRecord", "DataType: $dataType")
+            UULog.debug(LOG_TAG, "parseScanRecord, DataType: $dataType")
 
             val dataLength = length - 1
             val data = bytes.uuSubData(index, dataLength)
             if (data == null)
             {
-                UULog.d(javaClass, "parseScanRecord", "Unable to get data chunk at index $index with count $dataLength")
+                UULog.debug(LOG_TAG, "parseScanRecord, Unable to get data chunk at index $index with count $dataLength")
                 break
             }
 
             if (data.size != dataLength)
             {
-                UULog.d(javaClass, "parseScanRecord", "Data length is wrong. Expected $dataLength but got ${data.size}")
+                UULog.debug(LOG_TAG, "parseScanRecord, Data length is wrong. Expected $dataLength but got ${data.size}")
             }
 
             index += data.size

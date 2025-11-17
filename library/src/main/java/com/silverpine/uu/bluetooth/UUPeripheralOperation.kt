@@ -2,6 +2,9 @@ package com.silverpine.uu.bluetooth
 
 import com.silverpine.uu.core.UUError
 import com.silverpine.uu.logging.UULog
+import com.silverpine.uu.logging.logException
+
+private const val LOG_TAG = "UUPeripheralOperation"
 
 open class UUPeripheralOperation<Result>(
     val peripheral: UUPeripheral,
@@ -33,7 +36,7 @@ open class UUPeripheralOperation<Result>(
             }
             catch (ex: Exception)
             {
-                UULog.d(javaClass, "safeNotify", "", ex)
+                UULog.logException(LOG_TAG, "safeNotify", ex)
             }
         }
     }

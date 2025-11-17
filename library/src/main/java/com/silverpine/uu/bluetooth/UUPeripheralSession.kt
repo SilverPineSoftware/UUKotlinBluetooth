@@ -31,96 +31,11 @@ import java.nio.charset.Charset
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
+private const val LOG_TAG = "UUPeripheralSession"
+
 typealias UUPeripheralSessionStartedCallback = ((UUPeripheralSession) -> Unit)
 typealias UUPeripheralSessionObjectErrorCallback<T> = ((UUPeripheralSession, T?, UUError?) -> Unit)
 typealias UUPeripheralSessionErrorCallback = ((UUPeripheralSession, UUError?) -> Unit)
-
-/*
-/**
- * Defines a session for interacting with a single UUPeripheral.
- * Implementers should provide a constructor accepting a UUPeripheral.
- */
-interface UUPeripheralSession
-{
-    /** The peripheral this session operates on. */
-    val peripheral: UUPeripheral
-
-    /** Configuration for this session. */
-    var configuration: UUPeripheralSessionConfiguration
-
-    /** Services discovered on the peripheral. */
-    val discoveredServices: List<BluetoothGattService>
-
-    /** Characteristics discovered per service UUID. */
-    val discoveredCharacteristics: Map<UUID, List<BluetoothGattCharacteristic>>
-
-    /** Descriptors discovered per characteristic UUID. */
-    val discoveredDescriptors: Map<UUID, List<BluetoothGattDescriptor>>
-
-    /** Error that ended the session, if any. */
-    val sessionEndError: UUError?
-
-    /** Callback invoked when the session has started. */
-    var started: UUPeripheralSessionStartedCallback?
-
-    /** Callback invoked when the session has ended, with optional error. */
-    var ended: UUPeripheralSessionErrorCallback?
-
-    /** Begin the session (discover services, etc.). */
-    fun start()
-
-    /** End the session, optionally with an error. */
-    fun end(error: UUError?)
-
-    fun startTimer(name: String, timeout: Long, block: ()->Unit)
-
-    fun cancelTimer(name: String)
-
-    /**
-     * Read data from the specified characteristic.
-     * @param characteristic UUID of the characteristic to read.
-     * @param completion Called with the read bytes, or null on failure.
-     */
-    fun read(
-        characteristic: UUID,
-        completion: UUPeripheralSessionObjectErrorCallback<ByteArray>)
-
-    /**
-     * Write data to a characteristic.
-     * @param data Bytes to write.
-     * @param characteristic UUID of the target characteristic.
-     * @param withResponse True to request write-with-response, false for without-response.
-     * @param completion Invoked when the write is complete.
-     */
-    fun write(
-        data: ByteArray,
-        characteristic: UUID,
-        withResponse: Boolean,
-        completion: UUPeripheralSessionErrorCallback)
-
-    /**
-     * Start listening for changes on a characteristic.
-     * @param characteristic UUID to monitor.
-     * @param dataChanged Called when new data arrives.
-     * @param completion Called once notification is set up.
-     */
-    fun startListeningForDataChanges(
-        characteristic: UUID,
-        dataChanged: UUPeripheralSessionObjectErrorCallback<ByteArray>,
-        completion: UUPeripheralSessionErrorCallback)
-
-    /**
-     * Stop listening for changes on a characteristic.
-     * @param characteristic UUID to stop monitoring.
-     * @param completion Called when notifications are torn down.
-     */
-    fun stopListeningForDataChanges(
-        characteristic: UUID,
-        completion: UUPeripheralSessionErrorCallback)
-}
-*/
-
-
 
 open class UUPeripheralSession(val peripheral: UUPeripheral)
 {
@@ -155,7 +70,7 @@ open class UUPeripheralSession(val peripheral: UUPeripheral)
 
     open fun end(error: UUError?)
     {
-        UULog.d(javaClass, "end", "Session ending with error: $error")
+        UULog.debug(LOG_TAG, "end, Session ending with error: $error")
 
         sessionEndError = error
         disconnect()
@@ -204,7 +119,7 @@ open class UUPeripheralSession(val peripheral: UUPeripheral)
             return
         }
 
-        UULog.d(javaClass, "write", "TX (${data.size}) [${data.uuToHex()}] to $characteristic, withResponse: $withResponse")
+        UULog.debug(LOG_TAG, "write, TX (${data.size}) [${data.uuToHex()}] to $characteristic, withResponse: $withResponse")
 
         val writeType = if (withResponse)
         {
@@ -413,12 +328,12 @@ open class UUPeripheralSession(val peripheral: UUPeripheral)
 
     private fun logDiscoveredServices()
     {
-        UULog.d(javaClass, "discoverServices", "Discovered ${discoveredServices.size} services.")
+        UULog.debug(LOG_TAG, "discoverServices, Discovered ${discoveredServices.size} services.")
         discoveredServices.forEach()
         { service ->
             //let serviceDescription = UUServiceRepresentation(from: service)
             //UULog.debug(tag: LOG_TAG, message: "Service: \(serviceDescription.uuToJsonString())")
-            UULog.d(javaClass, "discoverServices", "Service: ${service.uuid}, ${service.uuid.uuCommonName}")
+            UULog.debug(LOG_TAG, "discoverServices, Service: ${service.uuid}, ${service.uuid.uuCommonName}")
         }
     }
 
@@ -446,14 +361,14 @@ open class UUPeripheralSession(val peripheral: UUPeripheral)
     {
         discoveredCharacteristics.forEach()
         { service, characteristics ->
-            UULog.d(javaClass, "discoverCharacteristics", "Discovered ${characteristics.size} characteristics on service $service")
+            UULog.debug(LOG_TAG, "discoverCharacteristics, Discovered ${characteristics.size} characteristics on service $service")
 
             characteristics.forEach()
             { characteristic ->
                 //let characteristicDescription = UUCharacteristicRepresentation(from: characteristic)
                 //UULog.debug(tag: LOG_TAG, message: "Characteristic: \(characteristicDescription.uuToJsonString())")
 
-                UULog.d(javaClass, "discoverCharacteristics", "Characteristic: ${characteristic.uuid}, ${characteristic.uuid.uuCommonName}")
+                UULog.debug(LOG_TAG, "discoverCharacteristics, Characteristic: ${characteristic.uuid}, ${characteristic.uuid.uuCommonName}")
             }
         }
     }
@@ -482,14 +397,14 @@ open class UUPeripheralSession(val peripheral: UUPeripheral)
     {
         discoveredDescriptors.forEach()
         { characteristic, descriptors ->
-            UULog.d(javaClass, "discoverDescriptors", "Discovered ${descriptors.size} descriptors on characteristic $characteristic")
+            UULog.debug(LOG_TAG, "discoverDescriptors, Discovered ${descriptors.size} descriptors on characteristic $characteristic")
 
             descriptors.forEach()
             { descriptor ->
                 //let descriptorDescription = UUDescriptorRepresentation(from: descriptor)
                 //UULog.debug(tag: LOG_TAG, message: "Descriptor: \(descriptorDescription.uuToJsonString())")
 
-                UULog.d(javaClass, "discoverDescriptors", "Descriptor: ${descriptor.uuid}, ${descriptor.uuid.uuCommonName}")
+                UULog.debug(LOG_TAG, "discoverDescriptors, Descriptor: ${descriptor.uuid}, ${descriptor.uuid.uuCommonName}")
             }
         }
     }

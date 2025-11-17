@@ -28,11 +28,14 @@ import com.silverpine.uu.core.UUTimer
 import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.logging.UULog
+import com.silverpine.uu.logging.logException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.io.Closeable
 import java.util.Locale
 import java.util.UUID
+
+private const val LOG_TAG = "UUPeripheral"
 
 typealias UUPeripheralConnectedBlock = (()->Unit)
 typealias UUPeripheralDisconnectedBlock = ((UUError?)->Unit)
@@ -1132,15 +1135,15 @@ class UUPeripheral(): Closeable
     {
 //        if (LOGGING_ENABLED)
 //        {
-        UULog.d(javaClass, method, message)
+        UULog.debug(LOG_TAG, "$method, $message")
         //}
     }
 
-    private fun logException(method: String, exception: Throwable)
+    private fun logException(method: String, exception: Exception)
     {
 //        if (LOGGING_ENABLED)
 //        {
-        UULog.d(javaClass, method, "", exception)
+        UULog.logException(LOG_TAG, method, exception)
         //}
     }
 

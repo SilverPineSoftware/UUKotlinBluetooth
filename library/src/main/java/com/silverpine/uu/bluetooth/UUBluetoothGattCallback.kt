@@ -16,6 +16,8 @@ import com.silverpine.uu.core.dispatch
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.logging.UULog
 
+private const val LOG_TAG = "UUBluetoothGattCallback"
+
 class UUBluetoothGattCallback : BluetoothGattCallback()
 {
     var connectionStateChangedCallback: UUObjectBlock<Pair<Int,Int>>? = null
@@ -226,14 +228,14 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
 
     override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int)
     {
-        UULog.d(javaClass, "onConnectionStateChange", "status: $status, newState: $newState")
+        UULog.debug(LOG_TAG, "onConnectionStateChange, status: $status, newState: $newState")
 
         notifyConnectionStateChanged(status, newState)
     }
 
     override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int)
     {
-        UULog.d(javaClass, "onServicesDiscovered", "gatt.services: ${gatt.services}, status: $status")
+        UULog.debug(LOG_TAG, "onServicesDiscovered, gatt.services: ${gatt.services}, status: $status")
 
         notifyServicesDiscovered(gatt.services, UUBluetoothError.gattStatusError("onServicesDiscovered", status))
     }
@@ -247,7 +249,7 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
         characteristic: BluetoothGattCharacteristic?,
         status: Int)
     {
-        UULog.d(javaClass, "onCharacteristicRead", "characteristic: ${characteristic?.uuid}, value: ${characteristic?.value?.uuToHex()}, status: $status")
+        UULog.debug(LOG_TAG, "onCharacteristicRead, characteristic: ${characteristic?.uuid}, value: ${characteristic?.value?.uuToHex()}, status: $status")
 
         val chr = characteristic ?: return
         notifyCharacteristicRead(chr.uuHashLookup(), chr.value, UUBluetoothError.gattStatusError("onCharacteristicRead", status))
@@ -260,7 +262,7 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
         value: ByteArray,
         status: Int)
     {
-        UULog.d(javaClass, "onCharacteristicRead", "characteristic: ${characteristic.uuid}, value: ${value.uuToHex()}, status: $status")
+        UULog.debug(LOG_TAG, "onCharacteristicRead, characteristic: ${characteristic.uuid}, value: ${value.uuToHex()}, status: $status")
 
         notifyCharacteristicRead(characteristic.uuHashLookup(), value, UUBluetoothError.gattStatusError("onCharacteristicRead", status))
     }
@@ -270,7 +272,7 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
         characteristic: BluetoothGattCharacteristic,
         value: ByteArray)
     {
-        UULog.d(javaClass, "onCharacteristicChanged", "characteristic: ${characteristic.uuid}, data: ${value.uuToHex()}")
+        UULog.debug(LOG_TAG, "onCharacteristicChanged, characteristic: ${characteristic.uuid}, data: ${value.uuToHex()}")
 
         notifyCharacteristicChanged(characteristic.uuHashLookup(), value)
     }
@@ -283,7 +285,7 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
         gatt: BluetoothGatt?,
         characteristic: BluetoothGattCharacteristic?)
     {
-        UULog.d(javaClass, "onCharacteristicChanged", "characteristic: ${characteristic?.uuid}, data: ${characteristic?.value?.uuToHex()}")
+        UULog.debug(LOG_TAG, "onCharacteristicChanged, characteristic: ${characteristic?.uuid}, data: ${characteristic?.value?.uuToHex()}")
 
         val chr = characteristic ?: return
         notifyCharacteristicChanged(characteristic.uuHashLookup(), chr.value)
@@ -295,7 +297,7 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
         characteristic: BluetoothGattCharacteristic?,
         status: Int)
     {
-        UULog.d(javaClass, "onCharacteristicWrite", "characteristic: ${characteristic?.uuid}, data: ${characteristic?.value?.uuToHex()} status: $status")
+        UULog.debug(LOG_TAG, "onCharacteristicWrite, characteristic: ${characteristic?.uuid}, data: ${characteristic?.value?.uuToHex()} status: $status")
 
         val chr = characteristic ?: return
         notifyCharacteristicWrite(chr.uuHashLookup(), UUBluetoothError.gattStatusError("onCharacteristicWrite", status))
@@ -310,7 +312,7 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
         descriptor: BluetoothGattDescriptor?,
         status: Int)
     {
-        UULog.d(javaClass, "onDescriptorRead", "descriptor: ${descriptor?.uuid}, data: ${descriptor?.value?.uuToHex()} status: $status")
+        UULog.debug(LOG_TAG, "onDescriptorRead, descriptor: ${descriptor?.uuid}, data: ${descriptor?.value?.uuToHex()} status: $status")
 
         val desc = descriptor ?: return
         notifyDescriptorRead(desc.uuHashLookup(), desc.value, UUBluetoothError.gattStatusError("onDescriptorRead", status))
@@ -322,7 +324,7 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
         status: Int,
         value: ByteArray)
     {
-        UULog.d(javaClass, "onDescriptorRead", "descriptor: ${descriptor.uuid}, data: ${value.uuToHex()} status: $status")
+        UULog.debug(LOG_TAG, "onDescriptorRead, descriptor: ${descriptor.uuid}, data: ${value.uuToHex()} status: $status")
 
         notifyDescriptorRead(descriptor.uuHashLookup(), value, UUBluetoothError.gattStatusError("onDescriptorRead", status))
     }
@@ -333,7 +335,7 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
         descriptor: BluetoothGattDescriptor?,
         status: Int)
     {
-        UULog.d(javaClass, "onDescriptorWrite", "descriptor: ${descriptor?.uuid}, data: ${descriptor?.value?.uuToHex()} status: $status")
+        UULog.debug(LOG_TAG, "onDescriptorWrite, descriptor: ${descriptor?.uuid}, data: ${descriptor?.value?.uuToHex()} status: $status")
 
         val desc = descriptor ?: return
         notifyDescriptorWrite(desc.uuHashLookup(), UUBluetoothError.gattStatusError("onDescriptorWrite", status))
@@ -341,42 +343,42 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
 
     override fun onReliableWriteCompleted(gatt: BluetoothGatt?, status: Int)
     {
-        UULog.d(javaClass, "onReliableWriteCompleted", "status: $status")
+        UULog.debug(LOG_TAG, "onReliableWriteCompleted, status: $status")
 
         notifyReliableWriteComplete(UUBluetoothError.gattStatusError("onReliableWriteCompleted", status))
     }
 
     override fun onReadRemoteRssi(gatt: BluetoothGatt?, rssi: Int, status: Int)
     {
-        UULog.d(javaClass, "onReadRemoteRssi", "rssi: $rssi, status: $status")
+        UULog.debug(LOG_TAG, "onReadRemoteRssi, rssi: $rssi, status: $status")
 
         notifyRemoteRssiRead(rssi, UUBluetoothError.gattStatusError("onReadRemoteRssi", status))
     }
 
     override fun onMtuChanged(gatt: BluetoothGatt?, mtu: Int, status: Int)
     {
-        UULog.d(javaClass, "onMtuChanged", "mtu: $mtu, status: $status")
+        UULog.debug(LOG_TAG, "onMtuChanged, mtu: $mtu, status: $status")
 
         notifyMtuChanged(mtu, UUBluetoothError.gattStatusError("onMtuChanged", status))
     }
 
     override fun onPhyRead(gatt: BluetoothGatt?, txPhy: Int, rxPhy: Int, status: Int)
     {
-        UULog.d(javaClass, "onPhyRead", "txPhy: $txPhy, rxPhy: $rxPhy, status: $status")
+        UULog.debug(LOG_TAG, "onPhyRead, txPhy: $txPhy, rxPhy: $rxPhy, status: $status")
 
         notifyPhyRead(txPhy, rxPhy, UUBluetoothError.gattStatusError("onPhyRead", status))
     }
 
     override fun onPhyUpdate(gatt: BluetoothGatt?, txPhy: Int, rxPhy: Int, status: Int)
     {
-        UULog.d(javaClass, "onPhyUpdate", "txPhy: $txPhy, rxPhy: $rxPhy, status: $status")
+        UULog.debug(LOG_TAG, "onPhyUpdate, txPhy: $txPhy, rxPhy: $rxPhy, status: $status")
 
         notifyPhyUpdate(txPhy, rxPhy, UUBluetoothError.gattStatusError("onPhyUpdate", status))
     }
 
     override fun onServiceChanged(gatt: BluetoothGatt)
     {
-        UULog.d(javaClass, "onServiceChanged", "GATT database is out of sync, re-discover services.")
+        UULog.debug(LOG_TAG, "onServiceChanged, GATT database is out of sync, re-discover services.")
 
         notifyServiceChanged()
     }

@@ -11,7 +11,10 @@ import com.silverpine.uu.core.UUWorkerThread
 import com.silverpine.uu.core.uuSafeClose
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.logging.UULog
+import com.silverpine.uu.logging.logException
 import java.util.Locale
+
+private const val LOG_TAG = "UUL2CapChannel"
 
 @RequiresApi(Build.VERSION_CODES.Q)
 @SuppressLint("MissingPermission")
@@ -258,7 +261,7 @@ open class UUL2CapChannel
     {
         if (LOGGING_ENABLED)
         {
-            UULog.d(javaClass, method, message)
+            UULog.debug(LOG_TAG, "$method: $message")
         }
     }
 
@@ -266,15 +269,15 @@ open class UUL2CapChannel
     {
         if (DATA_LOGGING_ENABLED)
         {
-            UULog.d(javaClass, method, "$tag: ${data.uuToHex()}")
+            UULog.debug(LOG_TAG, "$method, $tag: ${data.uuToHex()}")
         }
     }
 
-    protected fun logException(method: String, exception: Throwable)
+    protected fun logException(method: String, exception: Exception)
     {
         if (LOGGING_ENABLED)
         {
-            UULog.d(javaClass, method, "", exception)
+            UULog.logException(LOG_TAG, method, exception)
         }
     }
 

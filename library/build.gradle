@@ -9,6 +9,7 @@ plugins {
 }
 
 apply from: "${uu_build_common}/uu-build-library-common.gradle"
+apply from: "${uu_build_common}/uu-build-test-common.gradle"
 
 dependencies {
 

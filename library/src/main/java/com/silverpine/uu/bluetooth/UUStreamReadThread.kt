@@ -5,6 +5,9 @@ import android.bluetooth.BluetoothSocket
 import com.silverpine.uu.core.uuSafeClose
 import com.silverpine.uu.core.uuSubData
 import com.silverpine.uu.logging.UULog
+import com.silverpine.uu.logging.logException
+
+private const val LOG_TAG = "UUStreamReadThread"
 
 open class UUStreamReadThread(
     name: String = "UUStreamReadThread",
@@ -140,15 +143,15 @@ open class UUStreamReadThread(
     {
         if (LOGGING_ENABLED)
         {
-            UULog.d(javaClass, method, message)
+            UULog.debug(LOG_TAG, "$method, $message")
         }
     }
 
-    private fun logException(method: String, exception: Throwable)
+    private fun logException(method: String, exception: Exception)
     {
         if (LOGGING_ENABLED)
         {
-            UULog.d(javaClass, method, "", exception)
+            UULog.logException(LOG_TAG, method, exception)
         }
     }
 }

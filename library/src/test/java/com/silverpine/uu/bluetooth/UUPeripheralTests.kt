@@ -27,7 +27,7 @@ class UUPeripheralTests
     @BeforeEach
     fun setupTests()
     {
-        UULog.init(UnitTestLogger())
+        UnitTestLogger.init()
 
         UUTimer.workerThread = UnitTestTimerThread()
         UUTimer.listActiveTimers().forEach { it.cancel() }
@@ -217,7 +217,7 @@ class UUPeripheralTests
     @Test
     fun connect_error_invokesConnected_and_setsGatt_andClearsWatchdog()
     {
-        UULog.init(UnitTestLogger())
+        UnitTestLogger.init()
 
         val address = "AA:00:AA:00:AA:00"
         val advertisement = UUAdvertisement(

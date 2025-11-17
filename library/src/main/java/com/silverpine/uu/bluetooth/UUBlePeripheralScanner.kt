@@ -8,6 +8,7 @@ import android.bluetooth.le.ScanResult
 import android.content.Context
 import com.silverpine.uu.core.UUError
 import com.silverpine.uu.logging.UULog
+import com.silverpine.uu.logging.logException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -20,6 +21,8 @@ import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.withContext
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
+
+private const val LOG_TAG = "UUBlePeripheralScanner"
 
 @SuppressLint("MissingPermission")
 class UUBlePeripheralScanner : UUPeripheralScanner
@@ -54,7 +57,7 @@ class UUBlePeripheralScanner : UUPeripheralScanner
         override fun onScanFailed(errorCode: Int)
         {
             // TODO: Handle scan failed
-            UULog.d(javaClass, "onScanFailed", "errorCode: $errorCode")
+            UULog.debug(LOG_TAG, "onScanFailed, errorCode: $errorCode")
         }
     }
 
@@ -176,7 +179,7 @@ class UUBlePeripheralScanner : UUPeripheralScanner
         }
         catch (ex: Exception)
         {
-            UULog.d(javaClass, "handleScanResult", "", ex)
+            UULog.logException(LOG_TAG, "handleScanResult", ex)
         }
     }
 
@@ -184,7 +187,7 @@ class UUBlePeripheralScanner : UUPeripheralScanner
     {
         if (advertisement.address.isEmpty())
         {
-            UULog.w(javaClass, "handleAdvertisement", "Throwing out advertisement with empty address")
+            UULog.warn(LOG_TAG, "handleAdvertisement, Throwing out advertisement with empty address")
             return
         }
 

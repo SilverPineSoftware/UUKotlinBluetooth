@@ -21,8 +21,11 @@ import com.silverpine.uu.core.uuDispatch
 import com.silverpine.uu.core.uuSleep
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.logging.UULog
+import com.silverpine.uu.logging.logException
 import java.util.Locale
 import java.util.UUID
+
+private const val LOG_TAG = "UUBluetoothAdvertiser"
 
 @SuppressLint("MissingPermission")
 class UUBluetoothAdvertiser(context: Context)
@@ -541,16 +544,16 @@ class UUBluetoothAdvertiser(context: Context)
     {
         if (LOGGING_ENABLED)
         {
-            UULog.d(javaClass, method, message)
+            UULog.debug(LOG_TAG, "$method: $message")
         }
     }
 
     @Synchronized
-    private fun debugLog(method: String, exception: Throwable)
+    private fun debugLog(method: String, exception: Exception)
     {
         if (LOGGING_ENABLED)
         {
-            UULog.d(javaClass, method, "", exception)
+            UULog.logException(LOG_TAG, method, exception)
         }
     }
 

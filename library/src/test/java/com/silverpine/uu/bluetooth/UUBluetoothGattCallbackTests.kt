@@ -2117,8 +2117,7 @@ class UUBluetoothGattCallbackTests
     fun onCharacteristicChanged_nullChar()
     {
         val cb = UUBluetoothGattCallback()
-        val logger = UnitTestLogger()
-        UULog.init(logger)
+        val logger = UnitTestLogger.init()
 
         cb.onCharacteristicChanged(mockGatt(), null)
         assertEquals(1, logger.logLines.count())
@@ -2128,8 +2127,7 @@ class UUBluetoothGattCallbackTests
     fun onCharacteristicWriteChanged_nullChar()
     {
         val cb = UUBluetoothGattCallback()
-        val logger = UnitTestLogger()
-        UULog.init(logger)
+        val logger = UnitTestLogger.init()
 
         cb.onCharacteristicWrite(mockGatt(), null, 0)
         assertEquals(1, logger.logLines.count())
@@ -2139,8 +2137,7 @@ class UUBluetoothGattCallbackTests
     fun onDescriptorWrite_nullChar()
     {
         val cb = UUBluetoothGattCallback()
-        val logger = UnitTestLogger()
-        UULog.init(logger)
+        val logger = UnitTestLogger.init()
 
         cb.onDescriptorWrite(mockGatt(), null, 0)
         assertEquals(1, logger.logLines.count())
@@ -2150,8 +2147,7 @@ class UUBluetoothGattCallbackTests
     fun onCharacteristicWrite_nullData()
     {
         val cb = UUBluetoothGattCallback()
-        val logger = UnitTestLogger()
-        UULog.init(logger)
+        val logger = UnitTestLogger.init()
 
         val chr = mockCharacteristic(data = null)
 
@@ -2163,8 +2159,7 @@ class UUBluetoothGattCallbackTests
     fun onDescriptorWrite_nullGatt_nullChar()
     {
         val cb = UUBluetoothGattCallback()
-        val logger = UnitTestLogger()
-        UULog.init(logger)
+        val logger = UnitTestLogger.init()
 
         cb.onDescriptorWrite(null, null, 0)
         assertEquals(1, logger.logLines.count())
@@ -2174,13 +2169,10 @@ class UUBluetoothGattCallbackTests
     fun onDescriptorWrite_nullData()
     {
         val cb = UUBluetoothGattCallback()
-        val logger = UnitTestLogger()
-        UULog.init(logger)
+        val logger = UnitTestLogger.init()
 
         val d = mockDescriptor(data = null)
         cb.onDescriptorWrite(null, d, 0)
         assertEquals(1, logger.logLines.count())
     }
-
-
 }

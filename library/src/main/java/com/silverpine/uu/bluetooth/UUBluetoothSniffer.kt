@@ -15,6 +15,8 @@ import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.core.uuUtf8ByteArray
 import com.silverpine.uu.logging.UULog
 
+private const val LOG_TAG = "UUBluetoothSniffer"
+
 @SuppressLint("MissingPermission")
 class UUSnifferResult(val callbackType: Int, val scanResult: ScanResult)
 {
@@ -193,7 +195,7 @@ class UUBluetoothSniffer(context: Context)
 
         override fun onScanFailed(errorCode: Int)
         {
-            UULog.d(javaClass, "onScanFailed", "Scan failed! ErrorCode: $errorCode")
+            UULog.warn(LOG_TAG, "onScanFailed, Scan failed! ErrorCode: $errorCode")
             super.onScanFailed(errorCode)
         }
     }

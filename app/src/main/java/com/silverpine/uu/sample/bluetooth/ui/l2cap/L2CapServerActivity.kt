@@ -8,6 +8,7 @@ import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import com.silverpine.uu.logging.UULog
+import com.silverpine.uu.sample.bluetooth.LOG_TAG
 import com.silverpine.uu.sample.bluetooth.databinding.ActivityL2CapServerBinding
 import com.silverpine.uu.ux.UUMenuHandler
 import com.silverpine.uu.ux.UUMenuItem
@@ -48,7 +49,7 @@ class L2CapServerActivity : AppCompatActivity()
             UUPermissions.requestPermissions(arrayOf(Manifest.permission.BLUETOOTH_ADVERTISE))
             { result ->
 
-                UULog.d(javaClass, "checkPermissions", "$result")
+                UULog.debug(LOG_TAG, "checkPermissions, $result")
                 completion()
             }
         }

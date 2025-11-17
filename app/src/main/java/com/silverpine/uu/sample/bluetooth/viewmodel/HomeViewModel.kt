@@ -11,6 +11,7 @@ import com.silverpine.uu.core.UUTimer
 import com.silverpine.uu.core.uuDispatch
 import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.logging.UULog
+import com.silverpine.uu.sample.bluetooth.LOG_TAG
 import com.silverpine.uu.sample.bluetooth.R
 import com.silverpine.uu.sample.bluetooth.operations.ReadDeviceInfoOperation
 import com.silverpine.uu.sample.bluetooth.tisensortag.TiSensorTagSession
@@ -98,12 +99,12 @@ class HomeViewModel: RecyclerViewModel()
         scanner.config = config
         scanner.started =
         { scanner ->
-            UULog.d(javaClass, "startScanning", "Scan was started")
+            UULog.debug(LOG_TAG, "startScanning, Scan was started")
         }
 
         scanner.ended =
         { scanner, error ->
-            UULog.d(javaClass, "startScanning", "Scan ended")
+            UULog.debug(LOG_TAG, "startScanning, Scan ended")
         }
 
         scanner.listChanged =
@@ -235,14 +236,14 @@ class HomeViewModel: RecyclerViewModel()
             sensorTagSession = TiSensorTagSession(peripheral)
             sensorTagSession?.started =
             { s ->
-                UULog.d(javaClass, "openSensorTagSession", "Session started")
+                UULog.debug(LOG_TAG, "openSensorTagSession, Session started")
 
                 latch.countDown()
             }
 
             sensorTagSession?.ended =
             { s, e ->
-                UULog.d(javaClass, "openSensorTagSession", "Session ended, error: $e")
+                UULog.debug(LOG_TAG, "openSensorTagSession, Session ended, error: $e")
                 endLatch.countDown()
             }
 
@@ -264,7 +265,7 @@ class HomeViewModel: RecyclerViewModel()
         list.sortedWith(sortByLastRssi(true))
         //list.sortedWith(sortByMacAddress()) // sortByLastRssiUpdateTime(true))
 
-        UULog.d(javaClass, "sortPeripherals", "There are ${list.size} nearby peripherals")
+        UULog.debug(LOG_TAG, "sortPeripherals, There are ${list.size} nearby peripherals")
     }
 
     private fun sortByLastRssi(strongestFirst: Boolean): java.util.Comparator<in UUPeripheralViewModel>

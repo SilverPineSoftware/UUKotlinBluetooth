@@ -6,26 +6,30 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.silverpine.uu.core.UUDate
 import com.silverpine.uu.core.UUTimer
 import com.silverpine.uu.core.uuFormatAsExtendedFileName
-import com.silverpine.uu.core.uuFormatDate
-import com.silverpine.uu.logging.UUConsoleLogger
+import com.silverpine.uu.logging.UUConsoleLogWriter
 import com.silverpine.uu.logging.UULog
+import com.silverpine.uu.logging.UULogLevel
+import com.silverpine.uu.logging.UULogger
+import com.silverpine.uu.test.instrumented.annotations.UUInteractionRequired
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
 import org.junit.FixMethodOrder
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.MethodSorters
-import java.io.File
-import java.util.Date
 
 @RunWith(AndroidJUnit4::class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@UUInteractionRequired
 class BleSnifferTest: BaseTest()
 {
     @Test
     fun runBleSniffer() = runBlocking()
     {
-        UULog.init(UUConsoleLogger())
+        val logger = UULogger(UUConsoleLogWriter())
+        logger.logLevel = UULogLevel.VERBOSE
+        UULog.setLogger(logger)
+
         UUBluetooth.init(InstrumentationRegistry.getInstrumentation().targetContext)
         
         val timeout = 20 * UUDate.Constants.MILLIS_IN_ONE_SECOND

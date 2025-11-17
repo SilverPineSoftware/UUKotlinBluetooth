@@ -3,15 +3,17 @@ package com.silverpine.uu.bluetooth
 import android.util.Log
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.platform.app.InstrumentationRegistry
-import com.silverpine.uu.test.UUTestPermissions
-import com.silverpine.uu.test.ui.uuAppendOutputLine
-import com.silverpine.uu.test.ui.uuSetTestName
+import com.silverpine.uu.test.instrumented.UUTestPermissions
+import com.silverpine.uu.test.instrumented.annotations.UUInteractionRequired
+import com.silverpine.uu.test.instrumented.uuAppendOutputLine
+import com.silverpine.uu.test.instrumented.uuSetTestName
 import org.junit.Rule
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
+@UUInteractionRequired
 open class BaseTest
 {
     @Rule @JvmField

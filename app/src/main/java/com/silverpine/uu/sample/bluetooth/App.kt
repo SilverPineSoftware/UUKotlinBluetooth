@@ -5,10 +5,11 @@ import com.silverpine.uu.bluetooth.UUBluetooth
 import com.silverpine.uu.bluetooth.uuShortCodeToUuid
 import com.silverpine.uu.bluetooth.uuUuidFromString
 import com.silverpine.uu.core.UUResources
-import com.silverpine.uu.logging.UUConsoleLogger
+import com.silverpine.uu.logging.UUConsoleLogWriter
 import com.silverpine.uu.logging.UULog
+import com.silverpine.uu.logging.UULogLevel
+import com.silverpine.uu.logging.UULogger
 import com.silverpine.uu.sample.bluetooth.ui.Strings
-import com.silverpine.uu.ux.permissions.UUPermissions
 import java.util.UUID
 
 class App: Application()
@@ -19,11 +20,20 @@ class App: Application()
 
         UUResources.init(applicationContext)
         UUBluetooth.init(applicationContext)
-        UULog.init(UUConsoleLogger())
+
+        val logger = UULogger(UUConsoleLogWriter())
+        logger.logLevel = UULogLevel.VERBOSE
+        UULog.setLogger(logger)
         Strings.init(applicationContext)
         TiSensorTagConstants.addSpecNames()
     }
 }
+
+val Any.LOG_TAG: String
+    get()
+    {
+        return javaClass.name
+    }
 
 
 object TiSensorTagConstants

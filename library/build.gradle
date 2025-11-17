@@ -36,6 +36,7 @@ dependencies {
     androidTestImplementation "com.silverpine.uu:uu-core-ktx:${uu_core_version}"
     androidTestImplementation "com.silverpine.uu:uu-ux-ktx:${uu_ux_version}"
     androidTestImplementation "com.silverpine.uu:uu-test-ktx:${uu_test_version}"
+    androidTestImplementation "com.silverpine.uu:uu-test-instrumented-ktx:${uu_test_version}"
     androidTestImplementation 'androidx.constraintlayout:constraintlayout:2.2.1'
 
 }

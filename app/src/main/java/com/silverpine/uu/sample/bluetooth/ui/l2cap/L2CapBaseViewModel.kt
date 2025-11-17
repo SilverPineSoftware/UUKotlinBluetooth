@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.silverpine.uu.core.uuDispatchMain
 import com.silverpine.uu.logging.UULog
+import com.silverpine.uu.sample.bluetooth.LOG_TAG
 import com.silverpine.uu.sample.bluetooth.viewmodel.BaseViewModel
 
 abstract class L2CapBaseViewModel: BaseViewModel()
@@ -16,7 +17,7 @@ abstract class L2CapBaseViewModel: BaseViewModel()
         uuDispatchMain()
         {
             _output.value += "\n$line"
-            UULog.d(javaClass, "outputLog", line)
+            UULog.debug(LOG_TAG, "outputLog: $line")
         }
     }
 }

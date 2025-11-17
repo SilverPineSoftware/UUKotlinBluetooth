@@ -17,7 +17,7 @@ buildscript {
 
     ext.uu_test_version = '0.0.9'
     ext.uu_core_version = '0.0.18'
-    ext.uu_ux_version = '0.0.14.125-develop-SNAPSHOT'
+    ext.uu_ux_version = '0.0.14.127-develop-SNAPSHOT'
 }
 
 plugins {

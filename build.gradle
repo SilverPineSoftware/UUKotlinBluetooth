@@ -15,9 +15,9 @@ buildscript {
     ext.uu_build_common_url = 'https://raw.githubusercontent.com/SilverPineSoftware/UUKotlinBuild'
     ext.uu_build_common = "${uu_build_common_url}/${uu_build_common_version}"
 
-    ext.uu_test_version = '0.0.9'
-    ext.uu_core_version = '0.0.18'
-    ext.uu_ux_version = '0.0.14'
+    ext.uu_test_version = '0.0.16'
+    ext.uu_core_version = '0.0.22'
+    ext.uu_ux_version = '0.0.15'
 }
 
 plugins {

@@ -2,7 +2,7 @@ package com.silverpine.uu.bluetooth.models
 
 import com.silverpine.uu.bluetooth.UUBluetooth
 import com.silverpine.uu.bluetooth.UUPeripheral
-import com.silverpine.uu.logging.UULog
+import com.silverpine.uu.core.UUJson
 import kotlinx.serialization.Serializable
 
 /**
@@ -149,5 +149,11 @@ data class UUPeripheralRepresentation(
         }
 
         //UULog.debug("UUPeripheralRepresentation", "Mapped common names: $mappedNames")
+    }
+
+    override fun toString(): String
+    {
+        val peripheralJson = UUJson.toJson(this, UUPeripheralRepresentation::class.java).getOrNull()
+        return peripheralJson ?: super.toString()
     }
 }

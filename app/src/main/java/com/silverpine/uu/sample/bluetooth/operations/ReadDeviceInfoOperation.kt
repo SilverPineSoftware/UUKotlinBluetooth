@@ -2,7 +2,7 @@ package com.silverpine.uu.sample.bluetooth.operations
 
 import com.silverpine.uu.bluetooth.UUBluetoothConstants
 import com.silverpine.uu.bluetooth.UUPeripheral
-import com.silverpine.uu.bluetooth.UUPeripheralOperation
+import com.silverpine.uu.bluetooth.operations.UUPeripheralOperation
 import com.silverpine.uu.bluetooth.readUtf8
 import com.silverpine.uu.core.UUError
 

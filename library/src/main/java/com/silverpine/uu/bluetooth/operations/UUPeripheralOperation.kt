@@ -1,5 +1,8 @@
-package com.silverpine.uu.bluetooth
+package com.silverpine.uu.bluetooth.operations
 
+import com.silverpine.uu.bluetooth.UUPeripheral
+import com.silverpine.uu.bluetooth.UUPeripheralSession
+import com.silverpine.uu.bluetooth.UUPeripheralSessionConfiguration
 import com.silverpine.uu.core.UUError
 import com.silverpine.uu.logging.UULog
 import com.silverpine.uu.logging.logException
@@ -8,7 +11,8 @@ private const val LOG_TAG = "UUPeripheralOperation"
 
 open class UUPeripheralOperation<Result>(
     val peripheral: UUPeripheral,
-    configuration: UUPeripheralSessionConfiguration = UUPeripheralSessionConfiguration())
+    configuration: UUPeripheralSessionConfiguration = UUPeripheralSessionConfiguration()
+)
 {
     protected var session: UUPeripheralSession
         private set
@@ -68,5 +72,3 @@ open class UUPeripheralOperation<Result>(
         }
     }
 }
-
-

@@ -7,6 +7,7 @@ import com.silverpine.uu.bluetooth.UUBluetoothSniffer
 import com.silverpine.uu.bluetooth.UUPeripheral
 import com.silverpine.uu.bluetooth.UUPeripheralScanner
 import com.silverpine.uu.bluetooth.UUPeripheralScannerConfig
+import com.silverpine.uu.bluetooth.operations.UUExportPeripheralOperation
 import com.silverpine.uu.core.UUTimer
 import com.silverpine.uu.core.uuDispatch
 import com.silverpine.uu.core.uuDispatchMain
@@ -145,6 +146,7 @@ class HomeViewModel: RecyclerViewModel()
         items.add(UUButton("Read Info") { readDeviceInfo(peripheral) })
         items.add(UUButton("Start L2Cap Client") { gotoL2CapClient(peripheral) })
         items.add(UUButton("Open Sensor Tag Session") { openSensorTagSession(peripheral) })
+        items.add(UUButton("Export") { exportPeripheral(peripheral) })
 
         val dlg = UUAlertDialog()
         dlg.title = "Choose an action for ${peripheral.name} - ${peripheral.identifier}"
@@ -257,6 +259,44 @@ class HomeViewModel: RecyclerViewModel()
             }
 
             endLatch.await(30, TimeUnit.SECONDS)
+        }
+    }
+
+    private var exportPeripheralOperation: UUExportPeripheralOperation? = null
+    private fun exportPeripheral(peripheral: UUPeripheral)
+    {
+        val op = UUExportPeripheralOperation(peripheral)
+        exportPeripheralOperation = op
+        op.start()
+        { result, err ->
+
+            uuDispatchMain()
+            {
+                if (err != null)
+                {
+                    val dlg = UUAlertDialog()
+                    dlg.title = "Export Peripheral"
+                    dlg.message = "Error: $err"
+                    dlg.positiveButton = UUButton("OK")
+                    {
+
+                    }
+
+                    showAlertDialog(dlg)
+                }
+                else
+                {
+                    val dlg = UUAlertDialog()
+                    dlg.title = "Export Peripheral"
+                    dlg.message = "${result?.toString()}"
+                    dlg.positiveButton = UUButton("OK")
+                    {
+
+                    }
+
+                    showAlertDialog(dlg)
+                }
+            }
         }
     }
 

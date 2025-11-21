@@ -6,6 +6,7 @@ plugins {
     id 'maven-publish'
     id 'signing'
     id 'org.jetbrains.kotlin.android'
+    id 'org.jetbrains.kotlin.plugin.serialization'
 }
 
 apply from: "${uu_build_common}/uu-build-library-common.gradle"
@@ -16,6 +17,7 @@ dependencies {
     implementation 'androidx.annotation:annotation:1.9.1'
     implementation 'androidx.appcompat:appcompat:1.7.1'
     implementation 'androidx.core:core-ktx:1.17.0'
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0'
     implementation "com.silverpine.uu:uu-core-ktx:${uu_core_version}"
 
     testImplementation platform('org.junit:junit-bom:6.0.0')

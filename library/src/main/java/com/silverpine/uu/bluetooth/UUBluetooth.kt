@@ -10,6 +10,7 @@ import android.os.ParcelUuid
 import androidx.annotation.RequiresApi
 import androidx.annotation.RequiresPermission
 import androidx.core.content.ContextCompat
+import com.silverpine.uu.bluetooth.extensions.uuToUuid
 import com.silverpine.uu.core.UUDate
 import com.silverpine.uu.core.UUError
 import com.silverpine.uu.core.uuToHexData
@@ -22,71 +23,6 @@ import java.util.UUID
 @SuppressWarnings("unused")
 object UUBluetooth
 {
-    //private var provider: UUBluetoothProvider lazy by { UUDefaultProvider() }
-
-    //private lateinit var provider: UUBluetoothProvider// by lazy { UUDefaultProvider() }
-
-    //private var provider: UUBluetoothProvider? = null
-
-    /*
-    private var provider: UUBluetoothProvider
-        get()
-        {
-            var p = _provider
-            if (p == null)
-            {
-                p = UUDefaultProvider()
-                _provider = p
-            }
-
-            return p
-        }
-
-        set(value)
-        {
-            _provider = value
-        }*/
-
-//
-//    fun setProvider(provider: UUBluetoothProvider)
-//    {
-//        this.provider = provider
-//    }
-//
-//    private fun getProvider(): UUBluetoothProvider
-//    {
-//        var p = provider
-//        if (p == null)
-//        {
-//            p = UUDefaultProvider()
-//            provider = p
-//        }
-//
-//        return p
-//    }
-//
-//    val scanner: UUPeripheralScanner
-//        get()
-//        {
-//            return getProvider().scanner
-//        }
-
-    /*fun createSession(peripheral: UUPeripheral): UUPeripheralSession
-    {
-        return provider.createSession(peripheral)
-    }*/
-
-
-
-
-
-
-
-
-
-
-
-
     object Constants
     {
         /**
@@ -157,6 +93,13 @@ object UUBluetooth
     fun addBluetoothSpecName(uuid: UUID, name: String)
     {
         UUBluetoothConstants.BLUETOOTH_SPEC_NAMES[uuid] = name
+    }
+
+    fun registerSpecName(uuid: String?, name: String?)
+    {
+        val actualUuid = uuid?.uuToUuid ?: return
+        val actualName = name ?: return
+        addBluetoothSpecName(actualUuid, actualName)
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

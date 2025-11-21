@@ -126,3 +126,14 @@ fun mockDescriptor(uuid: UUID = UUID.randomUUID(), data: ByteArray? = byteArrayO
     `when`(d.characteristic).thenReturn(characteristic)
     return d
 }
+
+@Suppress("Deprecation")
+fun mockService(uuid: UUID = UUID.randomUUID(), type: Int = android.bluetooth.BluetoothGattService.SERVICE_TYPE_PRIMARY): android.bluetooth.BluetoothGattService
+{
+    val s = mock(android.bluetooth.BluetoothGattService::class.java)
+    `when`(s.uuid).thenReturn(uuid)
+    `when`(s.type).thenReturn(type)
+    `when`(s.includedServices).thenReturn(null)
+    `when`(s.characteristics).thenReturn(null)
+    return s
+}

@@ -284,7 +284,7 @@ open class UUPeripheralSession(val peripheral: UUPeripheral)
         disconnectTimeMeasurement.end()
 
         // Only set error if not already set.  In the case where end(error) forcefully ends the session, preserve that error.
-        if (sessionEndError != null)
+        if (sessionEndError == null)
         {
             sessionEndError = disconnectError
         }

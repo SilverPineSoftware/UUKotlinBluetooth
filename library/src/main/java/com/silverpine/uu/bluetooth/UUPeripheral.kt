@@ -134,23 +134,23 @@ class UUPeripheral(): Closeable
         }
 
         val existing = peripheralStateCache[identifier]
-        if (force || existing == null) {
-
+        if (force || existing == null)
+        {
             val bluetoothManager = UUBluetooth.requireApplicationContext().getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
             var state = bluetoothManager.getConnectionState(bluetoothDevice, BluetoothProfile.GATT)
-            debugLog("getConnectionState", "Actual connection state is: $state (${UUPeripheralConnectionState.fromProfileConnectionState(state)})")
+            debugLog("getConnectionState", "Actual connection state is: $state (${UUPeripheralConnectionState.fromProfileConnectionState(state)}) for $identifier")
             val gatt = bluetoothGatt
 
             if (gatt != null)
             {
                 if ((state != BluetoothProfile.STATE_CONNECTING) && isConnecting)
                 {
-                    debugLog("getConnectionState", "Forcing state to connecting")
+                    debugLog("getConnectionState", "Forcing state to connecting for $identifier")
                     state = BluetoothProfile.STATE_CONNECTING
                 }
                 else if (state != BluetoothProfile.STATE_DISCONNECTED && bluetoothGatt == null)
                 {
-                    debugLog("getConnectionState", "Forcing state to disconnected")
+                    debugLog("getConnectionState", "Forcing state to disconnected for $identifier")
                     state = BluetoothProfile.STATE_DISCONNECTED
                 }
             }

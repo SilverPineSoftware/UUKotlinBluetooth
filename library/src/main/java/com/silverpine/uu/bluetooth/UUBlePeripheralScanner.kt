@@ -14,6 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -38,6 +39,10 @@ class UUBlePeripheralScanner : UUPeripheralScanner
         val bluetoothManager = UUBluetooth.requireApplicationContext().getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         val bluetoothAdapter = bluetoothManager.adapter
         bluetoothAdapter.bluetoothLeScanner
+    }
+
+    private val bluetoothStateWatcher: UUBluetoothStateWatcher by lazy {
+        UUBluetoothStateWatcher(UUBluetooth.requireApplicationContext())
     }
 
     private var scanCallback: ScanCallback = object: ScanCallback()
@@ -71,9 +76,12 @@ class UUBlePeripheralScanner : UUPeripheralScanner
     @OptIn(FlowPreview::class)
     override fun start()
     {
+        UULog.debug(LOG_TAG, "Start Scan")
+
         var error = UUBluetooth.checkPermissions()
         if (error != null)
         {
+            UULog.debug(LOG_TAG, "Unable to start scan, permissions check failed, error: $error")
             endScan(error)
             return
         }
@@ -81,6 +89,7 @@ class UUBlePeripheralScanner : UUPeripheralScanner
         error = UUBluetooth.checkBluetoothState()
         if (error != null)
         {
+            UULog.debug(LOG_TAG, "Unable to start scan, bluetooth state check failed, error: $error")
             endScan(error)
             return
         }
@@ -90,22 +99,29 @@ class UUBlePeripheralScanner : UUPeripheralScanner
         // cancel any existing subscription
         nearbyPeripheralSubscription?.cancel()
 
+        val peripheralNotifications = combine(
+            nearbyPeripherals,
+            bluetoothStateWatcher.stateFlow,
+        ) { peripheralList, btState ->
+            Pair(peripheralList, btState)
+        }
+
         val throttleMillis = config.callbackThrottleMillis
         if (throttleMillis > 0)
         {
-            nearbyPeripheralSubscription = nearbyPeripherals
+            nearbyPeripheralSubscription = peripheralNotifications
                 .sample(throttleMillis.toDuration(DurationUnit.MILLISECONDS))
                 .flowOn(Dispatchers.IO)
-                .onEach { peripheralList ->
-                    notifyNearbyPeripherals(peripheralList)
+                .onEach { pair ->
+                    notifyNearbyPeripherals(pair.first, pair.second)
                 }
                 .launchIn(scope)
         }
         else
         {
-            nearbyPeripheralSubscription = nearbyPeripherals
-                .onEach { peripheralList ->
-                    notifyNearbyPeripherals(peripheralList)
+            nearbyPeripheralSubscription = peripheralNotifications
+                .onEach { pair ->
+                    notifyNearbyPeripherals(pair.first, pair.second)
                 }
                 .launchIn(scope)
         }
@@ -114,12 +130,15 @@ class UUBlePeripheralScanner : UUPeripheralScanner
         val scanFilters = config.buildUuidFilters()
         val scanSettings = config.buildScanSettings()
 
+        bluetoothStateWatcher.start()
+
         notifyScanStarted()
         bluetoothLeScanner.startScan(scanFilters, scanSettings, scanCallback)
     }
 
     override fun stop()
     {
+        UULog.debug(LOG_TAG, "Stopping scan")
         endScan(null)
     }
 
@@ -131,6 +150,7 @@ class UUBlePeripheralScanner : UUPeripheralScanner
         nearbyPeripheralSubscription = null
 
         bluetoothLeScanner.stopScan(scanCallback)
+        bluetoothStateWatcher.stop()
 
         notifyScanEnded(error)
     }
@@ -168,7 +188,15 @@ class UUBlePeripheralScanner : UUPeripheralScanner
         {
             if (!isScanning)
             {
-                //debugLog("handleScanResult", "Not scanning, ignoring advertisement from " + scanResult.getDevice().getAddress());
+                UULog.verbose(LOG_TAG, "Not scanning, ignoring advertisement from ${scanResult.device.address}")
+                return
+            }
+
+            val watcherState = bluetoothStateWatcher.currentState
+
+            if (watcherState != UUBluetoothState.ON)
+            {
+                UULog.verbose(LOG_TAG, "BLE is not on, ignoring advertisement from ${scanResult.device.address}")
                 return
             }
 
@@ -190,6 +218,8 @@ class UUBlePeripheralScanner : UUPeripheralScanner
             return
         }
 
+        //UULog.verbose(LOG_TAG, "handleAdvertisement: $advertisement")
+
         synchronized(nearbyPeripheralMap)
         {
             val peripheral = nearbyPeripheralMap[advertisement.address] ?: UUPeripheral()
@@ -207,19 +237,19 @@ class UUBlePeripheralScanner : UUPeripheralScanner
         return filters.all { it.shouldDiscover(peripheral) }
     }
 
-    private fun notifyNearbyPeripherals(list: List<UUPeripheral>)
+    private fun notifyNearbyPeripherals(list: List<UUPeripheral>, state: UUBluetoothState)
     {
-        val error = UUBluetooth.checkBluetoothState()
-        if (error != null)
+        if (state == UUBluetoothState.TURNING_OFF || state == UUBluetoothState.OFF)
         {
-            endScan(error)
+            UULog.debug(LOG_TAG, "notifyNearbyPeripherals, Unable to continue scan, bluetooth state is off or turning off, state: $state")
+            endScan(UUBluetoothError.makeError(UUBluetoothErrorCode.BluetoothDisabled))
             return
         }
 
-    val sorted = config.peripheralSorting?.let()
-        { comparator ->
-            list.sortedWith(comparator)
-        } ?: list
+        val sorted = config.peripheralSorting?.let()
+            { comparator ->
+                list.sortedWith(comparator)
+            } ?: list
 
         peripherals = sorted
         listChanged(this, sorted)

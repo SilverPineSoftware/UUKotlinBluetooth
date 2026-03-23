@@ -254,20 +254,20 @@ object UUBluetooth
         }.getOrNull()
     }
 
-    val currentState: Result<UUBluetoothState>
+    val currentState: UUBluetoothState
         get() = runCatching()
         {
             val bluetoothManager = requireApplicationContext().getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
             val adapter = bluetoothManager.adapter
             return if (adapter != null)
             {
-                Result.success(UUBluetoothState.fromBluetoothState(adapter.state))
+                UUBluetoothState.fromBluetoothState(adapter.state)
             }
             else
             {
-                Result.success(UUBluetoothState.UNKNOWN)
+                UUBluetoothState.UNKNOWN
             }
-        }
+        }.getOrDefault(UUBluetoothState.UNKNOWN)
 
     /**
      * Checks the current bluetooth state.  If its disabled or unable to determine if the current
@@ -275,8 +275,7 @@ object UUBluetooth
      */
     fun checkBluetoothState(): UUError?
     {
-        val state = currentState.getOrNull() ?: return UUBluetoothError.unexpectedError("Unable to get bluetooth state")
-        if (state != UUBluetoothState.ON)
+        if (currentState != UUBluetoothState.ON)
         {
             return UUBluetoothError.makeError(UUBluetoothErrorCode.BluetoothDisabled)
         }

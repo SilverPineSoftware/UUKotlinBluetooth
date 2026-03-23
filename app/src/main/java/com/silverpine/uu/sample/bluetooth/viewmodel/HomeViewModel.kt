@@ -1,5 +1,8 @@
 package com.silverpine.uu.sample.bluetooth.viewmodel
 
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import com.silverpine.uu.bluetooth.UUBluetooth
@@ -29,7 +32,7 @@ import java.util.concurrent.TimeUnit
 class HomeViewModel: RecyclerViewModel()
 {
     private val scanner: UUPeripheralScanner = UUBluetooth.scanner
-    private val sniffer: UUBluetoothSniffer = UUBluetoothSniffer(UUBluetooth.requireApplicationContext())
+//    private val sniffer: UUBluetoothSniffer = UUBluetoothSniffer(UUBluetooth.requireApplicationContext())
 
     //private var lastUpdate: Long = 0
 
@@ -61,12 +64,12 @@ class HomeViewModel: RecyclerViewModel()
 
     private fun startSniffer()
     {
-        sniffer.start()
+        //sniffer.start()
     }
 
     private fun stopSniffer()
     {
-        sniffer.stop()
+        //sniffer.stop()
     }
 
     private fun startScanning()

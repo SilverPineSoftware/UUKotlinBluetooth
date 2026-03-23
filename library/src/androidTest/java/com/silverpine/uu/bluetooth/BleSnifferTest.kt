@@ -37,7 +37,7 @@ class BleSnifferTest: BaseTest()
         startTest("BLE Sniffer Test")
 
         val job = Job()
-        val sniffer = UUBluetoothSniffer(context)
+        val sniffer = UUBluetoothSniffer()
 
         appendOutputLine("Starting sniffer, timeout: ${timeout / 1000.0f}")
         sniffer.start()

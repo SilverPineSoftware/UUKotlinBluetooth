@@ -170,16 +170,21 @@ class UUSnifferSessionSummary
 }
 
 @SuppressLint("MissingPermission")
-class UUBluetoothSniffer(context: Context)
+class UUBluetoothSniffer
 {
-    private val bluetoothScanner: BluetoothLeScanner
     private var workingSummary = UUSnifferSessionSummary()
 
-    init
-    {
-        val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-        bluetoothScanner = bluetoothManager.adapter.bluetoothLeScanner
-    }
+    private val bluetoothLeScanner: BluetoothLeScanner?
+        get()
+        {
+            return runCatching()
+            {
+                val bluetoothManager = UUBluetooth.requireApplicationContext()
+                    .getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+                val bluetoothAdapter = bluetoothManager.adapter
+                bluetoothAdapter.bluetoothLeScanner
+            }.getOrNull()
+        }
 
     private val scanCallback = object: ScanCallback()
     {
@@ -217,12 +222,12 @@ class UUBluetoothSniffer(context: Context)
         //filters.add(ScanFilter.Builder().setDeviceAddress("00:17:55:D6:0C:06").build())
 
         workingSummary = UUSnifferSessionSummary()
-        bluetoothScanner.startScan(filters, settings, scanCallback)
+        bluetoothLeScanner?.startScan(filters, settings, scanCallback)
     }
 
     fun stop(): UUSnifferSessionSummary
     {
-        bluetoothScanner.stopScan(scanCallback)
+        bluetoothLeScanner?.stopScan(scanCallback)
         workingSummary.end()
         return workingSummary
     }

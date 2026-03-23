@@ -32,9 +32,7 @@ import java.util.concurrent.TimeUnit
 class HomeViewModel: RecyclerViewModel()
 {
     private val scanner: UUPeripheralScanner = UUBluetooth.scanner
-//    private val sniffer: UUBluetoothSniffer = UUBluetoothSniffer(UUBluetooth.requireApplicationContext())
-
-    //private var lastUpdate: Long = 0
+    private val sniffer: UUBluetoothSniffer = UUBluetoothSniffer()
 
     fun start()
     {
@@ -64,12 +62,12 @@ class HomeViewModel: RecyclerViewModel()
 
     private fun startSniffer()
     {
-        //sniffer.start()
+        sniffer.start()
     }
 
     private fun stopSniffer()
     {
-        //sniffer.stop()
+        sniffer.stop()
     }
 
     private fun startScanning()

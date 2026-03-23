@@ -132,6 +132,11 @@ class UUAdvertisement(
 
         return result
     }
+
+    override fun toString(): String
+    {
+        return "address=$address, rssi=$rssi, localName=$localName, isConnectable=$isConnectable"
+    }
 }
 
 internal fun ScanResult.uuSolicitedServices(): List<UUID>?

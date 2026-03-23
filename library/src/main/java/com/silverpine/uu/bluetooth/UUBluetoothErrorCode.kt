@@ -98,4 +98,12 @@ enum class UUBluetoothErrorCode(val rawValue: Int)
                 else -> this.toString()
             }
         }
+
+    companion object
+    {
+        fun fromInt(value: Int): UUBluetoothErrorCode?
+        {
+            return entries.firstOrNull { it.rawValue == value }
+        }
+    }
 }

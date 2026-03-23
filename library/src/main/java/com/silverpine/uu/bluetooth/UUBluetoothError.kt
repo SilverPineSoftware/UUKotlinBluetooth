@@ -19,7 +19,7 @@ internal object UUBluetoothError
     private const val USER_INFO_KEY_STATUS_CODE = "statusCode"
     private const val USER_INFO_SCAN_FAILURE_CODE = "scanFailureCode"
 
-    private const val DOMAIN = "UUBluetoothError"
+    const val DOMAIN = "UUBluetoothError"
 
     /**
      * Creates a UUBluetoothError
@@ -233,3 +233,22 @@ internal object UUBluetoothError
         return err
     }
 }
+
+val UUError.uuIsBluetoothError: Boolean
+    get()
+    {
+        return  (domain == UUBluetoothError.DOMAIN)
+    }
+
+val UUError.uuBluetoothErrorCode: UUBluetoothErrorCode?
+    get()
+    {
+        return if (uuIsBluetoothError)
+        {
+            return UUBluetoothErrorCode.fromInt(code)
+        }
+        else
+        {
+            null
+        }
+    }

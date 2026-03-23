@@ -28,22 +28,13 @@ import java.util.concurrent.TimeUnit
 
 class HomeViewModel: RecyclerViewModel()
 {
-    // private val scanner: UUBluetoothScanner<UUPeripheral> = UUBluetoothScanner(UUBluetooth.requireApplicationContext(), UUDefaultPeripheralFactory())
-
     private val scanner: UUPeripheralScanner = UUBluetooth.scanner
     private val sniffer: UUBluetoothSniffer = UUBluetoothSniffer(UUBluetooth.requireApplicationContext())
 
-    private var lastUpdate: Long = 0
-
-
+    //private var lastUpdate: Long = 0
 
     fun start()
     {
-        /*scanner.scanDelayedCallback =
-        { delayMillis ->
-            onToast(UUToast("Scanning too frequently. Scan will resume in $delayMillis milliseconds", Toast.LENGTH_SHORT))
-        }*/
-
         stopScanning()
         updateMenu()
     }
@@ -80,10 +71,6 @@ class HomeViewModel: RecyclerViewModel()
 
     private fun startScanning()
     {
-        //Log.d(TAG, "startScanning")
-
-        //adapter.update(listOf())
-
         val config = UUPeripheralScannerConfig()
 
 //        val filters: ArrayList<UUPeripheralFilter<UUPeripheral>> = arrayListOf()
@@ -105,15 +92,29 @@ class HomeViewModel: RecyclerViewModel()
 
         scanner.ended =
         { scanner, error ->
-            UULog.debug(LOG_TAG, "startScanning, Scan ended")
+            UULog.debug(LOG_TAG, "startScanning, Scan ended, error: $error")
+
+            error?.let()
+            { err ->
+
+                uuDispatchMain()
+                {
+                    updateMenu()
+
+                    val dlg = UUAlertDialog()
+                    dlg.title = "Scan ended with an error"
+                    dlg.message = err.toString()
+                    showAlertDialog(dlg)
+                }
+            }
         }
 
         scanner.listChanged =
         { scanner, list ->
 
-            val timeSinceLastUpdate = System.currentTimeMillis() - this.lastUpdate
-            if (timeSinceLastUpdate > 300)
-            {
+            //val timeSinceLastUpdate = System.currentTimeMillis() - this.lastUpdate
+            //if (timeSinceLastUpdate > 300)
+            //{
                 uuDispatchMain()
                 {
                     val tmp = ArrayList<UUAdapterItemViewModel>()
@@ -128,9 +129,9 @@ class HomeViewModel: RecyclerViewModel()
                     tmp.addAll(vmList)
                     updateData(tmp)
 
-                    lastUpdate = System.currentTimeMillis()
+                    //lastUpdate = System.currentTimeMillis()
                 }
-            }
+            //}
         }
 
         scanner.start()

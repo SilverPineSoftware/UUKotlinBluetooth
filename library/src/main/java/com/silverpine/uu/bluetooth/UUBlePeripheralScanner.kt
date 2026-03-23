@@ -18,7 +18,6 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.sample
-import kotlinx.coroutines.withContext
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
@@ -56,8 +55,8 @@ class UUBlePeripheralScanner : UUPeripheralScanner
 
         override fun onScanFailed(errorCode: Int)
         {
-            // TODO: Handle scan failed
             UULog.debug(LOG_TAG, "onScanFailed, errorCode: $errorCode")
+            endScan(UUBluetoothError.scanFailedError(errorCode))
         }
     }
 
@@ -72,12 +71,21 @@ class UUBlePeripheralScanner : UUPeripheralScanner
     @OptIn(FlowPreview::class)
     override fun start()
     {
-        val error = UUBluetooth.checkPermissions()
+        var error = UUBluetooth.checkPermissions()
         if (error != null)
         {
-            notifyScanEnded(error)
+            endScan(error)
             return
         }
+
+        error = UUBluetooth.checkBluetoothState()
+        if (error != null)
+        {
+            endScan(error)
+            return
+        }
+
+        clearNearbyPeripherals()
 
         // cancel any existing subscription
         nearbyPeripheralSubscription?.cancel()
@@ -89,9 +97,7 @@ class UUBlePeripheralScanner : UUPeripheralScanner
                 .sample(throttleMillis.toDuration(DurationUnit.MILLISECONDS))
                 .flowOn(Dispatchers.IO)
                 .onEach { peripheralList ->
-                    withContext(Dispatchers.Main) {
-                        notifyNearbyPeripherals(peripheralList)
-                    }
+                    notifyNearbyPeripherals(peripheralList)
                 }
                 .launchIn(scope)
         }
@@ -99,9 +105,7 @@ class UUBlePeripheralScanner : UUPeripheralScanner
         {
             nearbyPeripheralSubscription = nearbyPeripherals
                 .onEach { peripheralList ->
-                    withContext(Dispatchers.Main) {
-                        notifyNearbyPeripherals(peripheralList)
-                    }
+                    notifyNearbyPeripherals(peripheralList)
                 }
                 .launchIn(scope)
         }
@@ -116,6 +120,11 @@ class UUBlePeripheralScanner : UUPeripheralScanner
 
     override fun stop()
     {
+        endScan(null)
+    }
+
+    private fun endScan(error: UUError? = null)
+    {
         isScanning = false
 
         nearbyPeripheralSubscription?.cancel()
@@ -123,19 +132,8 @@ class UUBlePeripheralScanner : UUPeripheralScanner
 
         bluetoothLeScanner.stopScan(scanCallback)
 
-        notifyScanEnded(null)
+        notifyScanEnded(error)
     }
-
-    /*
-    @OptIn(FlowPreview::class)
-    override fun startScan(
-        settings: UUBluetoothScanSettings,
-        callback: (List<UUPeripheral>) -> Unit
-    ) {
-        this.scanSettings = settings
-        this.nearbyPeripheralCallback = callback
-        clearNearbyPeripherals()
-    }*/
 
     override fun getPeripheral(identifier: String): UUPeripheral?
     {
@@ -147,7 +145,8 @@ class UUBlePeripheralScanner : UUPeripheralScanner
 
     private fun clearNearbyPeripherals()
     {
-        synchronized(nearbyPeripheralMap) {
+        synchronized(nearbyPeripheralMap)
+        {
             nearbyPeripheralMap.clear()
             nearbyPeripherals.value = emptyList()
         }
@@ -210,7 +209,14 @@ class UUBlePeripheralScanner : UUPeripheralScanner
 
     private fun notifyNearbyPeripherals(list: List<UUPeripheral>)
     {
-        val sorted = config.peripheralSorting?.let()
+        val error = UUBluetooth.checkBluetoothState()
+        if (error != null)
+        {
+            endScan(error)
+            return
+        }
+
+    val sorted = config.peripheralSorting?.let()
         { comparator ->
             list.sortedWith(comparator)
         } ?: list

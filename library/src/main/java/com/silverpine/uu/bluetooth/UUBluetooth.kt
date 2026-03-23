@@ -144,18 +144,6 @@ object UUBluetooth
         this.provider = provider
     }
 
-    /*private fun getProvider(): UUBluetoothProvider
-    {
-        var p = provider
-        if (p == null)
-        {
-            p = UUDefaultProvider()
-            provider = p
-        }
-
-        return p
-    }*/
-
     val scanner: UUPeripheralScanner
         get()
         {
@@ -280,6 +268,21 @@ object UUBluetooth
                 Result.success(UUBluetoothState.UNKNOWN)
             }
         }
+
+    /**
+     * Checks the current bluetooth state.  If its disabled or unable to determine if the current
+     * state is ON, then an error is returned.
+     */
+    fun checkBluetoothState(): UUError?
+    {
+        val state = currentState.getOrNull() ?: return UUBluetoothError.unexpectedError("Unable to get bluetooth state")
+        if (state != UUBluetoothState.ON)
+        {
+            return UUBluetoothError.makeError(UUBluetoothErrorCode.BluetoothDisabled)
+        }
+
+        return null
+    }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // L2Cap Support

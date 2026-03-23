@@ -60,7 +60,22 @@ enum class UUBluetoothErrorCode(val rawValue: Int)
     /**
      * The calling application does not have the permissions required to perform the operation
      */
-    INSUFFICIENT_PERMISSIONS(10);
+    INSUFFICIENT_PERMISSIONS(10),
+
+    /**
+     * Bluetooth is turned off
+     */
+    BluetoothDisabled(11),
+
+    /**
+     * Bluetooth Scan failed.
+     */
+    ScanFailed(12),
+
+    /**
+     * An unexpected error occurred.
+     */
+    UnexpectedFailure(-1);
 
     /**
      *
@@ -77,6 +92,9 @@ enum class UUBluetoothErrorCode(val rawValue: Int)
                 ConnectionFailed -> "The connection attempt failed."
                 Disconnected -> "The peripheral was disconnected."
                 PreconditionFailed -> "Unable to perform the operation."
+                BluetoothDisabled -> "Bluetooth is disabled."
+                UnexpectedFailure -> "An unexpected error occurred."
+                ScanFailed -> "A bluetooth scan failed."
                 else -> this.toString()
             }
         }

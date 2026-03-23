@@ -17,6 +17,7 @@ internal object UUBluetoothError
     private const val USER_INFO_KEY_GATT_STATUS = "gattStatus"
     private const val USER_INFO_KEY_MISSING_CHARACTERISTIC = "missingCharacteristic"
     private const val USER_INFO_KEY_STATUS_CODE = "statusCode"
+    private const val USER_INFO_SCAN_FAILURE_CODE = "scanFailureCode"
 
     private const val DOMAIN = "UUBluetoothError"
 
@@ -200,5 +201,35 @@ internal object UUBluetoothError
         {
             null
         }
+    }
+
+    /**
+     * Wrapper method to return an unexpected error
+     *
+     * @param message a developer friendly message about the failure.
+     *
+     * @return a UUBluetoothError object
+     */
+    fun unexpectedError(message: String): UUError
+    {
+        val err = makeError(UUBluetoothErrorCode.UnexpectedFailure)
+        err.addUserInfo(USER_INFO_KEY_MESSAGE, message)
+        err.errorDescription = "Unexpected Failure: $message"
+        return err
+    }
+
+    /**
+     * Wrapper method to return a scan failed error
+     *
+     * @param code error code from bluetooth onScanFailed
+     *
+     * @return a UUBluetoothError object
+     */
+    fun scanFailedError(code: Int): UUError
+    {
+        val err = makeError(UUBluetoothErrorCode.ScanFailed)
+        err.addUserInfo(USER_INFO_SCAN_FAILURE_CODE, "$code")
+        err.errorDescription = "Scan Failed: $code"
+        return err
     }
 }

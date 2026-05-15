@@ -16,7 +16,6 @@ android {
 dependencies {
     implementation(uuBuild.androidx.appcompat)
     implementation(libs.androidx.constraintlayout)
-    implementation(libs.androidx.core.ktx)
     implementation(libs.google.material)
     implementation(libs.uu.core.ktx)
     implementation(libs.uu.ux.ktx)

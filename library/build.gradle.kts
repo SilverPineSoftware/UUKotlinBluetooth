@@ -11,7 +11,6 @@ plugins {
 dependencies {
     implementation(uuBuild.androidx.annotation)
     implementation(uuBuild.androidx.appcompat)
-    implementation(libs.androidx.core.ktx)
     implementation(uuBuild.kotlinx.serialization.json)
     implementation(libs.uu.core.ktx)
 

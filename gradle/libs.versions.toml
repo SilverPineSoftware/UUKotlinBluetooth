@@ -2,14 +2,13 @@
 
 # library
 constraintlayout = "2.2.1"
-core_ktx = "1.17.0"
-mockk = "1.13.12"
+mockk = "1.14.9"
 
 # app
-material = "1.12.0"
+material = "1.14.0"
 
 # uu
-uu_core = "0.0.24"
+uu_core = "0.0.28"
 uu_test = "0.0.20"
 uu_ux = "0.0.18"
 
@@ -17,7 +16,6 @@ uu_ux = "0.0.18"
 
 # library
 androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayout" }
-androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "core_ktx" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 
 # app

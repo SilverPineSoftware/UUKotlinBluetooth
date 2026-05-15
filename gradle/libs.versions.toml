@@ -1,0 +1,30 @@
+[versions]
+
+# library
+constraintlayout = "2.2.1"
+core_ktx = "1.17.0"
+mockk = "1.13.12"
+
+# app
+material = "1.12.0"
+
+# uu
+uu_core = "0.0.24"
+uu_test = "0.0.20"
+uu_ux = "0.0.18"
+
+[libraries]
+
+# library
+androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayout" }
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "core_ktx" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+
+# app
+google-material = { module = "com.google.android.material:material", version.ref = "material" }
+
+# uu
+uu-core-ktx = { module = "com.silverpine.uu:uu-core-ktx", version.ref = "uu_core" }
+uu-test-ktx = { module = "com.silverpine.uu:uu-test-ktx", version.ref = "uu_test" }
+uu-test-instrumented-ktx = { module = "com.silverpine.uu:uu-test-instrumented-ktx", version.ref = "uu_test" }
+uu-ux-ktx = { module = "com.silverpine.uu:uu-ux-ktx", version.ref = "uu_ux" }

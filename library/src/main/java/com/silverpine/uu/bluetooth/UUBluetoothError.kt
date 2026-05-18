@@ -245,7 +245,7 @@ val UUError.uuBluetoothErrorCode: UUBluetoothErrorCode?
     {
         return if (uuIsBluetoothError)
         {
-            return UUBluetoothErrorCode.fromInt(code)
+            UUBluetoothErrorCode.fromInt(code)
         }
         else
         {

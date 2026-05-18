@@ -8,8 +8,8 @@ mockk = "1.14.9"
 material = "1.14.0"
 
 # uu
-uu_core = "0.0.30"
-uu_test = "0.0.23"
+uu_core = "0.0.31"
+uu_test = "0.0.24"
 uu_ux = "0.0.18"
 
 [libraries]

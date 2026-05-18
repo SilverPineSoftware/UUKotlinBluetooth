@@ -10,7 +10,7 @@ material = "1.14.0"
 # uu
 uu_core = "0.0.31"
 uu_test = "0.0.24"
-uu_ux = "0.0.18"
+uu_ux = "0.0.22"
 
 [libraries]
 

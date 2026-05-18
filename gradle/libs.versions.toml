@@ -8,7 +8,7 @@ mockk = "1.14.9"
 material = "1.14.0"
 
 # uu
-uu_core = "0.0.29"
+uu_core = "0.0.30"
 uu_test = "0.0.23"
 uu_ux = "0.0.18"
 

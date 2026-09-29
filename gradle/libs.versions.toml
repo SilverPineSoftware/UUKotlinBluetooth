@@ -1,16 +1,16 @@
 [versions]
 
 # library
-constraintlayout = "2.2.1"
-mockk = "1.14.9"
+constraintlayout = "2.2.2"
+mockk = "1.14.11"
 
 # app
 material = "1.14.0"
 
 # uu
-uu_core = "0.0.31"
-uu_test = "0.0.24"
-uu_ux = "0.0.21"
+uu_core = "0.0.37"
+uu_test = "0.0.25"
+uu_ux = "0.5.0"
 
 [libraries]
 

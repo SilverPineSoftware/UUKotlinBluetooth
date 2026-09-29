@@ -42,7 +42,8 @@ class UUBluetoothAdvertiser(context: Context)
 
         val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothAdapter = bluetoothManager.adapter
-        advertiser = bluetoothAdapter.bluetoothLeAdvertiser
+        // TODO: Find a better solution that using requireNotNull
+        advertiser = requireNotNull(bluetoothAdapter.bluetoothLeAdvertiser)
         gattServer = bluetoothManager.openGattServer(context, InnerGattServerCallback())
     }
 

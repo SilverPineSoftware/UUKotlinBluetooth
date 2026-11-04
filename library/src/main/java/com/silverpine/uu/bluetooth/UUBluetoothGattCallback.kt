@@ -531,77 +531,32 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
         block?.safeNotify()
     }
 
-    private fun UUVoidBlock.safeNotify()
-    {
-        dispatchThread.post()
-        {
-            try
-            {
-                this()
-            }
-            catch (ex: Exception)
-            {
-                UULog.logException(LOG_TAG, "safeNotify", ex)
-            }
-        }
-    }
+    private fun UUVoidBlock.safeNotify() =
+        postSafely { this() }
 
-    private fun UUErrorBlock.safeNotify(error: UUError?)
-    {
-        dispatchThread.post()
-        {
-            try
-            {
-                this(error)
-            }
-            catch (ex: Exception)
-            {
-                UULog.logException(LOG_TAG, "safeNotify", ex)
-            }
-        }
-    }
+    private fun UUErrorBlock.safeNotify(error: UUError?) =
+        postSafely { this(error) }
 
-    private fun <T> UUObjectBlock<T>.safeNotify(obj: T)
-    {
-        dispatchThread.post()
-        {
-            try
-            {
-                this(obj)
-            }
-            catch (ex: Exception)
-            {
-                UULog.logException(LOG_TAG, "safeNotify", ex)
-            }
-        }
-    }
+    private fun <T> UUObjectBlock<T>.safeNotify(obj: T) =
+        postSafely { this(obj) }
 
-    private fun <T> UUObjectErrorBlock<T>.safeNotify(obj: T?, error: UUError?)
-    {
-        dispatchThread.post()
-        {
-            try
-            {
-                this(obj, error)
-            }
-            catch (ex: Exception)
-            {
-                UULog.logException(LOG_TAG, "safeNotify", ex)
-            }
-        }
-    }
+    private fun <T> UUObjectErrorBlock<T>.safeNotify(obj: T?, error: UUError?) =
+        postSafely { this(obj, error) }
 
-    private fun <T> UUListErrorBlock<T>.safeNotify(obj: List<T>?, error: UUError?)
+    private fun <T> UUListErrorBlock<T>.safeNotify(obj: List<T>?, error: UUError?) =
+        postSafely { this(obj, error) }
+
+    private fun postSafely(block: ()->Unit)
     {
         dispatchThread.post()
         {
             try
             {
-                this(obj, error)
+                block()
             }
             catch (ex: Exception)
             {
-                UULog.logException(LOG_TAG, "safeNotify", ex)
+                UULog.logException(LOG_TAG, "postSafely", ex)
             }
         }
     }

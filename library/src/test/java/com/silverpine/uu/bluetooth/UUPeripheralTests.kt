@@ -27,6 +27,7 @@ class UUPeripheralTests
     @BeforeEach
     fun setupTests()
     {
+        mockGattCallbackHandler()
         UnitTestLogger.init()
 
         UUTimer.workerThread = UnitTestTimerThread()

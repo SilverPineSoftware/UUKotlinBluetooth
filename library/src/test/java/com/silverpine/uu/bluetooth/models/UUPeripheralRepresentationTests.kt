@@ -2,6 +2,7 @@ package com.silverpine.uu.bluetooth.models
 
 import com.silverpine.uu.bluetooth.UUBluetooth
 import com.silverpine.uu.bluetooth.UUPeripheral
+import com.silverpine.uu.bluetooth.mockGattCallbackHandler
 import com.silverpine.uu.bluetooth.mockUUBluetoothContext
 import com.silverpine.uu.bluetooth.uuShortCodeToUuid
 import io.mockk.every
@@ -28,6 +29,7 @@ class UUPeripheralRepresentationTests
     @BeforeEach
     fun setup()
     {
+        mockGattCallbackHandler()
         mockUUBluetoothContext()
         mockkObject(UUBluetooth)
         every { UUBluetooth.registerSpecName(any(), any()) } returns Unit

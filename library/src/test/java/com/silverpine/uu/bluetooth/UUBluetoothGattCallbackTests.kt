@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.fail
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
@@ -31,6 +32,12 @@ import kotlin.concurrent.atomics.ExperimentalAtomicApi
 @OptIn(ExperimentalAtomicApi::class)
 class UUBluetoothGattCallbackTests
 {
+    @BeforeEach
+    fun setUp()
+    {
+        mockGattCallbackHandler()
+    }
+
     // clearAll tests
 
     @Test
@@ -108,10 +115,8 @@ class UUBluetoothGattCallbackTests
             latch.countDown()
         }
 
-        // This may fan out via uuDispatch(Dispatchers.IO) internally → async
         cb.notifyCharacteristicRead(id, byteArrayOf(1, 2), null)
 
-        // Wait for IO callback to happen
         assertTrue(latch.await(1, TimeUnit.SECONDS), "Callback did not fire in time")
         assertTrue(called.load())
         assertTrue(got.load())

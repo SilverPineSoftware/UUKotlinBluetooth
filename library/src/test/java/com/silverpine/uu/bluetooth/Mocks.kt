@@ -6,14 +6,46 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.content.Context
 import com.silverpine.uu.core.UUError
+import com.silverpine.uu.core.UUWorkerThread
 import com.silverpine.uu.core.uuDispatch
 import com.silverpine.uu.core.uuDispatchMain
 import io.mockk.every
 import io.mockk.mockkObject
 import io.mockk.mockkStatic
+import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.mockConstruction
 import org.mockito.Mockito.`when`
+import org.mockito.kotlin.any
 import java.util.UUID
+import java.util.concurrent.Executors
+
+// GATT creates its shared handler wrapper during class initialization. Substitute it
+// once per test JVM before constructing a callback or peripheral.
+private val mockGattCallbackHandler by lazy {
+    val executor = Executors.newSingleThreadExecutor { block ->
+        Thread(block, "GattCallbackTestHandler").apply { isDaemon = true }
+    }
+
+    mockConstruction(UUWorkerThread::class.java) { worker, _ ->
+        doAnswer { call ->
+            val callback = call.getArgument<() -> Unit>(0)
+            executor.execute { callback() }
+            null
+        }.`when`(worker).post(any())
+    }.use { workers ->
+        val callbackClass = UUBluetoothGattCallback::class.java
+        Class.forName(callbackClass.name, true, callbackClass.classLoader)
+        check(workers.constructed().size == 1) {
+            "Install the GATT handler mock before constructing a callback or peripheral"
+        }
+    }
+}
+
+internal fun mockGattCallbackHandler()
+{
+    mockGattCallbackHandler
+}
 
 fun mockError(domain: String, code: Int): UUError
 {

@@ -12,9 +12,10 @@ import com.silverpine.uu.core.UUListErrorBlock
 import com.silverpine.uu.core.UUObjectBlock
 import com.silverpine.uu.core.UUObjectErrorBlock
 import com.silverpine.uu.core.UUVoidBlock
-import com.silverpine.uu.core.dispatch
+import com.silverpine.uu.core.UUWorkerThread
 import com.silverpine.uu.core.uuToHex
 import com.silverpine.uu.logging.UULog
+import com.silverpine.uu.logging.logException
 
 private const val LOG_TAG = "UUBluetoothGattCallback"
 
@@ -35,6 +36,11 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
 
     var executeReliableWriteCallback: UUErrorBlock? = null
     var serviceChangedCallback: UUVoidBlock? = null
+
+    private companion object
+    {
+        private val dispatchThread = UUWorkerThread("UUBluetoothGattCallback")
+    }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Public Methods
@@ -119,7 +125,7 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
         error: UUError?)
     {
         val block = popSetCharacteristicNotificationCallback(identifier)
-        block?.dispatch(error)
+        block?.safeNotify(error)
     }
 
     fun registerCharacteristicDataChangedCallback(identifier: String, callback: UUObjectBlock<ByteArray>)
@@ -350,7 +356,7 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
 
     override fun onReadRemoteRssi(gatt: BluetoothGatt?, rssi: Int, status: Int)
     {
-        UULog.debug(LOG_TAG, "onReadRemoteRssi, rssi: $rssi, status: $status")
+        UULog.debug(LOG_TAG, "onReadRemoteRssi, RSSI: $rssi, status: $status")
 
         notifyRemoteRssiRead(rssi, UUBluetoothError.gattStatusError("onReadRemoteRssi", status))
     }
@@ -393,14 +399,14 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
 
         // Do not clear the delegate because the connection state can be invoked multiple times.
 
-        block?.dispatch(Pair(status, newState))
+        block?.safeNotify(Pair(status, newState))
     }
 
     fun notifyServicesDiscovered(services: List<BluetoothGattService>?, error: UUError?)
     {
         val block = servicesDiscoveredCallback
         servicesDiscoveredCallback = null
-        block?.dispatch(services, error)
+        block?.safeNotify(services, error)
     }
 
     fun notifyCharacteristicRead(
@@ -409,7 +415,7 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
         error: UUError?)
     {
         val block = popReadCharacteristicCallback(identifier)
-        block?.dispatch(value, error)
+        block?.safeNotify(value, error)
     }
 
     private fun notifyCharacteristicChanged(
@@ -425,7 +431,7 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
 
         value?.let()
         { actualValue ->
-            block?.dispatch(actualValue)
+            block?.safeNotify(actualValue)
         }
     }
 
@@ -434,7 +440,7 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
         error: UUError?)
     {
         val block = popWriteCharacteristicCallback(identifier)
-        block?.dispatch(error)
+        block?.safeNotify(error)
     }
 
     fun notifyDescriptorRead(
@@ -443,7 +449,7 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
         error: UUError?)
     {
         val block = popReadDescriptorCallback(identifier)
-        block?.dispatch(value, error)
+        block?.safeNotify(value, error)
     }
 
     fun notifyDescriptorWrite(
@@ -451,7 +457,7 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
         error: UUError?)
     {
         val block = popWriteDescriptorCallback(identifier)
-        block?.dispatch(error)
+        block?.safeNotify(error)
     }
 
     fun notifyRemoteRssiRead(
@@ -460,7 +466,7 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
     {
         val block = readRssiCallback
         readRssiCallback = null
-        block?.dispatch(value, error)
+        block?.safeNotify(value, error)
     }
 
     fun notifyMtuChanged(
@@ -469,7 +475,7 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
     {
         val block = mtuChangedCallback
         mtuChangedCallback = null
-        block?.dispatch(value, error)
+        block?.safeNotify(value, error)
     }
 
     fun notifyPhyRead(
@@ -487,7 +493,7 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
             result = Pair(txPhy, rxPhy)
         }
 
-        block?.dispatch(result, error)
+        block?.safeNotify(result, error)
     }
 
     fun notifyPhyUpdate(
@@ -505,14 +511,14 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
             result = Pair(txPhy, rxPhy)
         }
 
-        block?.dispatch(result, error)
+        block?.safeNotify(result, error)
     }
 
     private fun notifyReliableWriteComplete(error: UUError?)
     {
         val block = executeReliableWriteCallback
         executeReliableWriteCallback = null
-        block?.dispatch(error)
+        block?.safeNotify(error)
     }
 
     private fun notifyServiceChanged()
@@ -521,6 +527,82 @@ class UUBluetoothGattCallback : BluetoothGattCallback()
 
         // Don't null out block since this potentially could be invoked many times within a session
 
-        block?.dispatch()
+
+        block?.safeNotify()
+    }
+
+    private fun UUVoidBlock.safeNotify()
+    {
+        dispatchThread.post()
+        {
+            try
+            {
+                this()
+            }
+            catch (ex: Exception)
+            {
+                UULog.logException(LOG_TAG, "safeNotify", ex)
+            }
+        }
+    }
+
+    private fun UUErrorBlock.safeNotify(error: UUError?)
+    {
+        dispatchThread.post()
+        {
+            try
+            {
+                this(error)
+            }
+            catch (ex: Exception)
+            {
+                UULog.logException(LOG_TAG, "safeNotify", ex)
+            }
+        }
+    }
+
+    private fun <T> UUObjectBlock<T>.safeNotify(obj: T)
+    {
+        dispatchThread.post()
+        {
+            try
+            {
+                this(obj)
+            }
+            catch (ex: Exception)
+            {
+                UULog.logException(LOG_TAG, "safeNotify", ex)
+            }
+        }
+    }
+
+    private fun <T> UUObjectErrorBlock<T>.safeNotify(obj: T?, error: UUError?)
+    {
+        dispatchThread.post()
+        {
+            try
+            {
+                this(obj, error)
+            }
+            catch (ex: Exception)
+            {
+                UULog.logException(LOG_TAG, "safeNotify", ex)
+            }
+        }
+    }
+
+    private fun <T> UUListErrorBlock<T>.safeNotify(obj: List<T>?, error: UUError?)
+    {
+        dispatchThread.post()
+        {
+            try
+            {
+                this(obj, error)
+            }
+            catch (ex: Exception)
+            {
+                UULog.logException(LOG_TAG, "safeNotify", ex)
+            }
+        }
     }
 }

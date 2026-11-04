@@ -36,6 +36,7 @@ private const val LOG_TAG = "UUPeripheralSession"
 typealias UUPeripheralSessionStartedCallback = ((UUPeripheralSession) -> Unit)
 typealias UUPeripheralSessionObjectErrorCallback<T> = ((UUPeripheralSession, T?, UUError?) -> Unit)
 typealias UUPeripheralSessionErrorCallback = ((UUPeripheralSession, UUError?) -> Unit)
+typealias UUPeripheralSessionStateChangedCallback = ((UUPeripheralSession) -> Unit)
 
 open class UUPeripheralSession(val peripheral: UUPeripheral)
 {
@@ -54,14 +55,42 @@ open class UUPeripheralSession(val peripheral: UUPeripheral)
     var sessionEndError: UUError? = null
         protected set
 
-    var started: UUPeripheralSessionStartedCallback? = null
-    var ended: UUPeripheralSessionErrorCallback? = null
+    var state: UUPeripheralSessionState = UUPeripheralSessionState.NOT_STARTED
+        private set
+
+    var started: UUPeripheralSessionStartedCallback =
+    { session ->
+        UULog.fatal(LOG_TAG, "Session started callback not implemented, session: $session")
+    }
+
+    var ended: UUPeripheralSessionErrorCallback =
+    { session, error ->
+        UULog.fatal(LOG_TAG, "Session ended callback not implemented, session: $session, error: $error")
+    }
+
+    var stateChanged: UUPeripheralSessionStateChangedCallback =
+    { _ ->
+        // Default is a no-op
+    }
 
     private val connectTimeMeasurement = UUTimedMetric("connectTime")
     private val disconnectTimeMeasurement = UUTimedMetric("disconnectTime")
     private val serviceDiscoveryTimeMeasurement = UUTimedMetric("serviceDiscoveryTime")
     private val characteristicDiscoveryTimeMeasurement = UUTimedMetric("characteristicDiscoveryTime")
     private val descriptorDiscoveryTimeMeasurement = UUTimedMetric("descriptorDiscoveryTime")
+    private val sessionTimeMeasurement = UUTimedMetric("sessionTime")
+    private val sessionReadyTimeMeasurement = UUTimedMetric("sessionReadyTime")
+
+    private val timeMetrics = listOf(
+        connectTimeMeasurement,
+        disconnectTimeMeasurement,
+        serviceDiscoveryTimeMeasurement,
+        characteristicDiscoveryTimeMeasurement,
+        descriptorDiscoveryTimeMeasurement,
+        sessionTimeMeasurement,
+        sessionReadyTimeMeasurement
+    )
+
 
     open fun start()
     {
@@ -72,8 +101,7 @@ open class UUPeripheralSession(val peripheral: UUPeripheral)
     {
         UULog.debug(LOG_TAG, "end, Session ending with error: $error")
 
-        sessionEndError = error
-        disconnect()
+        disconnect(error)
     }
 
     fun startTimer(name: String, timeout: Long, block: () -> Unit)
@@ -139,29 +167,6 @@ open class UUPeripheralSession(val peripheral: UUPeripheral)
             { error: UUError? ->
                 completion.safeNotify(this, error)
             })
-
-        /*
-        if (withResponse)
-        {
-            peripheral.write(
-                data = data,
-                characteristic = char,
-                timeout = configuration.writeTimeout,
-                completion =
-                    { error: UUError? ->
-                        completion.safeNotify(this, error)
-                    })
-        }
-        else
-        {
-            peripheral.writeWithoutResponse(
-                data = data,
-                characteristic = char,
-                completion =
-                    { error: UUError? ->
-                        completion.safeNotify(this, error)
-                    })
-        }*/
     }
 
     fun startListeningForDataChanges(
@@ -242,7 +247,9 @@ open class UUPeripheralSession(val peripheral: UUPeripheral)
 
     private fun connect()
     {
+        changeState(UUPeripheralSessionState.CONNECTING)
         connectTimeMeasurement.start()
+        sessionTimeMeasurement.start()
 
         peripheral.connect(
             timeout = configuration.connectTimeout,
@@ -252,16 +259,28 @@ open class UUPeripheralSession(val peripheral: UUPeripheral)
 
     private fun handleSessionStarted()
     {
+        UULog.debug(LOG_TAG, "handleSessionStarted")
+
+        changeState(UUPeripheralSessionState.FINISH_SESSION_START)
+
         finishSessionStart()
         {
-            started?.safeNotify(this)
+            UULog.debug(LOG_TAG, "handleSessionStarted, notifying session started delegate")
+
+            changeState(UUPeripheralSessionState.STARTED)
+            sessionReadyTimeMeasurement.start()
+            started.safeNotify(this)
         }
     }
 
-    private fun disconnect()
+    private fun disconnect(error: UUError?)
     {
+        sessionEndError = error
+
+        changeState(UUPeripheralSessionState.DISCONNECTING)
         disconnectTimeMeasurement.start()
-        peripheral.disconnect(null)
+
+        peripheral.disconnect(error)
     }
 
     private fun handleConnected()
@@ -289,7 +308,15 @@ open class UUPeripheralSession(val peripheral: UUPeripheral)
             sessionEndError = disconnectError
         }
 
-        ended?.safeNotify(this, sessionEndError)
+        changeState(UUPeripheralSessionState.ENDED)
+        endMetrics()
+        ended.safeNotify(this, sessionEndError)
+    }
+
+    private fun endMetrics()
+    {
+        // Make sure all metrics are ended when the session ends
+        timeMetrics.forEach { it.end(false) }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -298,6 +325,7 @@ open class UUPeripheralSession(val peripheral: UUPeripheral)
 
     private fun startServiceDiscovery()
     {
+        changeState(UUPeripheralSessionState.SERVICE_DISCOVERY)
         serviceDiscoveryTimeMeasurement.start()
 
         discoveredServices.clear()
@@ -343,6 +371,7 @@ open class UUPeripheralSession(val peripheral: UUPeripheral)
 
     private fun startCharacteristicDiscovery()
     {
+        changeState(UUPeripheralSessionState.CHARACTERISTIC_DISCOVERY)
         characteristicDiscoveryTimeMeasurement.start()
         discoveredCharacteristics.clear()
 
@@ -379,6 +408,7 @@ open class UUPeripheralSession(val peripheral: UUPeripheral)
 
     private fun startDescriptorDiscovery()
     {
+        changeState(UUPeripheralSessionState.DESCRIPTOR_DISCOVERY)
         descriptorDiscoveryTimeMeasurement.start()
         discoveredDescriptors.clear()
 
@@ -396,7 +426,7 @@ open class UUPeripheralSession(val peripheral: UUPeripheral)
     private fun logDiscoveredDescriptors()
     {
         discoveredDescriptors.forEach()
-        { characteristic, descriptors ->
+        { (characteristic, descriptors) ->
             UULog.debug(LOG_TAG, "discoverDescriptors, Discovered ${descriptors.size} descriptors on characteristic $characteristic")
 
             descriptors.forEach()
@@ -421,6 +451,17 @@ open class UUPeripheralSession(val peripheral: UUPeripheral)
     open fun finishSessionStart(completion: ()->Unit)
     {
         completion()
+    }
+
+    private fun changeState(state: UUPeripheralSessionState)
+    {
+        val old = this.state
+
+        this.state = state
+
+        UULog.debug(LOG_TAG, "Peripheral Session State changing from $old to $state")
+
+        stateChanged.safeNotify(this)
     }
 }
 

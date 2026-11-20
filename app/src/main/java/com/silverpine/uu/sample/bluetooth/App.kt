@@ -18,14 +18,14 @@ class App: Application()
     {
         super.onCreate()
 
-        UUResources.init(applicationContext)
-        UUBluetooth.init(applicationContext)
-
         val logger = UULogger(UUConsoleLogWriter())
         logger.logLevel = UULogLevel.VERBOSE
         UULog.setLogger(logger)
         Strings.init(applicationContext)
         TiSensorTagConstants.addSpecNames()
+
+        UUResources.init(applicationContext)
+        UUBluetooth.init(applicationContext)
     }
 }
 

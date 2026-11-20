@@ -22,16 +22,13 @@ dependencies {
     testRuntimeOnly(uuBuild.junit.platform.launcher)
     testImplementation(uuBuild.mockito.junit.jupiter)
     testImplementation(uuBuild.mockito.core)
-    testImplementation(uuBuild.mockito.inline)
     testImplementation(uuBuild.mockito.kotlin)
     testImplementation(libs.mockk)
-
     testImplementation(libs.uu.test.ktx)
 
     androidTestImplementation(uuBuild.androidx.junit)
     androidTestImplementation(uuBuild.androidx.espresso.core)
     androidTestImplementation(libs.androidx.constraintlayout)
-    androidTestImplementation(libs.uu.core.ktx)
     androidTestImplementation(libs.uu.ux.ktx)
     androidTestImplementation(libs.uu.test.ktx)
     androidTestImplementation(libs.uu.test.instrumented.ktx)

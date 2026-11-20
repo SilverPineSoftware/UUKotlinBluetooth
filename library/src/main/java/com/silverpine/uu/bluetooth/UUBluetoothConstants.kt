@@ -8,7 +8,7 @@ import java.util.UUID
 object UUBluetoothConstants
 {
     /**
-     * String formatter for building full 128 UUID's from a 16 bit BTLE shortcode
+     * String formatter for building full 128 UUIDs from a 16 bit BTLE shortcode
      */
     const val BLUETOOTH_UUID_SHORTCODE_FORMAT = "0000%s-0000-1000-8000-00805F9B34FB"
 
@@ -510,7 +510,7 @@ object UUBluetoothConstants
 
     object Services
     {
-        val SERIAL_PORT_PROFILE_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
+        val SERIAL_PORT_PROFILE_UUID: UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
 
         /**
          * SpecificationName: Alert Notification Service
